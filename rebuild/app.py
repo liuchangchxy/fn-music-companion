@@ -496,6 +496,21 @@ class Handler(BaseHTTPRequestHandler):
         elif parsed.path == "/api/accessible-paths":
             paths = [str(p) for p in accessible_paths()]
             self.send(200, json.dumps(paths, ensure_ascii=False), "application/json")
+        elif parsed.path in ("/favicon.ico", "/favicon.png", "/icon.png"):
+            icon_file = Path(__file__).with_name("favicon.ico" if parsed.path == "/favicon.ico" else "favicon.png")
+            if not icon_file.is_file():
+                icon_file = Path(__file__).with_name("favicon.png")
+            if icon_file.is_file():
+                ctype = "image/x-icon" if icon_file.suffix == ".ico" else "image/png"
+                data = icon_file.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", ctype)
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Cache-Control", "public, max-age=86400")
+                self.end_headers()
+                self.wfile.write(data)
+                return
+            self.send(404, "Icon not found", "text/plain")
         elif parsed.path == "/api/sponsor-qr":
             qr_type = parse_qs(parsed.query).get("type", ["wechat"])[0]
             filename = "wechat_pay.png" if qr_type == "wechat" else "alipay_pay.png"

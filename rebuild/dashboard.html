@@ -915,6 +915,10 @@
         </div>
       </div>
       <div class="header-actions">
+        <button class="btn-sponsor" id="guideBtn" style="background: var(--bg-subtle); border-color: var(--card-border); color: var(--text);" title="新手极速上手与常见问题" onclick="openAboutModal('guide')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          <span>使用指南 & FAQ</span>
+        </button>
         <button class="btn-sponsor" id="sponsorBtn" title="赞助支持与关于应用" onclick="openAboutModal('sponsor')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
           <span>赞助 / 关于</span>
@@ -1104,7 +1108,9 @@
           任务控制中心
         </div>
         <div id="actionArea">
-          <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 12px;">系统已锁定受控运行状态，请根据当前阶段执行操作：</p>
+          <div id="onboardingBanner" style="background: rgba(56, 189, 248, 0.08); border-left: 3px solid #38bdf8; padding: 10px 12px; border-radius: 6px; font-size: 13px; line-height: 1.5; color: var(--text); margin-bottom: 12px;">
+            <span>✨ <b>极速上手提示</b>：请先检查左侧目录，再点击下方【开始验证样本】安全试跑 10 首歌（沙盒模拟，不写物理文件）。</span>
+          </div>
           <button class="btn-main" id="actionBtn" disabled>
             <span id="actionBtnText">加载中...</span>
           </button>
@@ -1195,14 +1201,99 @@
       </div>
       
       <div class="modal-tabs">
-        <button class="modal-tab-btn active" id="tabBtnSponsor" onclick="switchModalTab('sponsor')">☕ 赞助打赏</button>
+        <button class="modal-tab-btn active" id="tabBtnGuide" onclick="switchModalTab('guide')">📖 极速上手 & FAQ</button>
         <button class="modal-tab-btn" id="tabBtnFeatures" onclick="switchModalTab('features')">🌟 架构设计与优势</button>
+        <button class="modal-tab-btn" id="tabBtnSponsor" onclick="switchModalTab('sponsor')">☕ 赞助打赏</button>
         <button class="modal-tab-btn" id="tabBtnAbout" onclick="switchModalTab('about')">ℹ️ 关于与 GitHub</button>
       </div>
 
       <div class="modal-body">
+        <!-- Tab 0: Guide & FAQ -->
+        <div class="tab-pane" id="paneGuide">
+          <div style="background: rgba(56, 189, 248, 0.08); border-left: 3px solid #38bdf8; padding: 12px 14px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; line-height: 1.6;">
+            <strong>💡 飞牛音乐伴侣只需 3 步，即可打造属于你的完美私人曲库：</strong>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+            <div style="display: flex; gap: 12px; align-items: flex-start; background: var(--bg-subtle); padding: 12px 14px; border-radius: 8px; border: 1px solid var(--card-border);">
+              <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">1</div>
+              <div>
+                <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">确认目录（原始音乐与整理后曲库）</div>
+                <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                  • <b>原始文件夹</b>：你的音乐下载目录。系统会以底层只读（:ro）保护，<b>绝对不会修改、删除或破坏你的原文件</b>。<br>
+                  • <b>整理后文件夹</b>：用于存放标准化分类（歌手/专辑/曲目）后的正式曲库。<b>Btrfs 零拷贝机制不会占用额外硬盘空间</b>。<br>
+                  • <i>快捷提示：在飞牛桌面打开「文件管理」-> 右键文件夹「属性」-> 点击「位置」右侧复制图标即可粘贴真实路径。</i>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; align-items: flex-start; background: var(--bg-subtle); padding: 12px 14px; border-radius: 8px; border: 1px solid var(--card-border);">
+              <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">2</div>
+              <div>
+                <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">首次试跑：点击【样本验证】</div>
+                <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                  系统会自动抽取 10 首样本在内存沙盒中模拟探针、NCM解密、声纹识别与 QQ/网易云双引擎刮削。<br>
+                  <b>样本验证阶段不会向整理后目录写入任何文件</b>，仅用于让你确认封面、歌词与网络连通性。验证通过后即可一键全量整理。
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; align-items: flex-start; background: var(--bg-subtle); padding: 12px 14px; border-radius: 8px; border: 1px solid var(--card-border);">
+              <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--success); color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">3</div>
+              <div>
+                <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">联动收听：在飞牛自带「音乐」App 中添加媒体库</div>
+                <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                  整理完成后，打开飞牛桌面或手机端的<b>「飞牛音乐」App</b>，进入设置 -> 媒体库，把刚才设置的<b>「整理后文件夹」</b>添加进去。<br>
+                  飞牛音乐会自动秒级索引，精美高清封面墙与双语流动歌词即可无缝呈现！
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="font-weight: 700; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+            <span>❓ 常见问题答疑 (FAQ)</span>
+          </div>
+
+          <div class="faq-list" style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+            <details style="background: var(--bg-subtle); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--card-border);">
+              <summary style="font-weight: 600; cursor: pointer;">Q1: 会不会误删或改乱我原始下载目录里的歌曲？</summary>
+              <div style="margin-top: 8px; color: var(--text-secondary); font-size: 12px; line-height: 1.5;">
+                <b>100% 绝对不会。</b>原始音乐目录在系统底层采用 Docker 物理只读挂载（<code>:ro</code>），代码层面彻底剥离了删除和重命名指令。无论发生断电或误操作，原始文件依然原封不动。
+              </div>
+            </details>
+
+            <details style="background: var(--bg-subtle); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--card-border);">
+              <summary style="font-weight: 600; cursor: pointer;">Q2: 为什么整理后飞牛自带的「音乐」App 里没看到歌曲？</summary>
+              <div style="margin-top: 8px; color: var(--text-secondary); font-size: 12px; line-height: 1.5;">
+                飞牛自带的「音乐」App 拥有独立的媒体库设置。请打开飞牛「音乐」App -> 点击「设置」-> 进入「媒体库设置」-> 点击「添加文件夹」，选中你设置的<b>整理后文件夹</b>，飞牛音乐就会立即自动收录！
+              </div>
+            </details>
+
+            <details style="background: var(--bg-subtle); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--card-border);">
+              <summary style="font-weight: 600; cursor: pointer;">Q3: 后面我新下载了歌曲，该怎么整理？会重复处理老歌吗？</summary>
+              <div style="margin-top: 8px; color: var(--text-secondary); font-size: 12px; line-height: 1.5;">
+                直接点击控制台的<b>【增量整理】</b>按钮即可！系统通过 SQLite 全生命周期账本精准追踪每个文件的哈希与修改时间，已整理完成的老歌直接纳秒级跳过，仅抓取新下载的文件，几秒钟即可完成补充。
+              </div>
+            </details>
+
+            <details style="background: var(--bg-subtle); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--card-border);">
+              <summary style="font-weight: 600; cursor: pointer;">Q4: 所谓的 Btrfs 零物理空间占用是什么意思？</summary>
+              <div style="margin-top: 8px; color: var(--text-secondary); font-size: 12px; line-height: 1.5;">
+                飞牛系统默认采用 Btrfs 文件系统。在发布歌曲时，本软件优先使用底层写时复制（Reflink CoW）。原文件和整理库文件共享同一块底层磁盘数据，即便整理出 100GB 的规范目录，新增的物理硬盘占用几乎为 0（仅写入标签与封面差异块）。
+              </div>
+            </details>
+
+            <details style="background: var(--bg-subtle); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--card-border);">
+              <summary style="font-weight: 600; cursor: pointer;">Q5: 离线整理模式是什么时候使用的？</summary>
+              <div style="margin-top: 8px; color: var(--text-secondary); font-size: 12px; line-height: 1.5;">
+                如果你的 NAS 处于纯局域网、无法访问外网，或者你已经对歌曲内嵌了完整的标签只想快速归档分目录，可以在配置中勾选「离线整理模式」。该模式完全不发起外网网络请求，纯靠本地内嵌标签整理，速度极快。
+              </div>
+            </details>
+          </div>
+        </div>
+
         <!-- Tab 1: Sponsor -->
-        <div class="tab-pane" id="paneSponsor">
+        <div class="tab-pane" id="paneSponsor" style="display: none;">
           <div class="sponsor-notice">
             <p><strong>感谢支持开源！</strong> 本项目为 100% 独立全开源作品，永久免费，无任何收费解锁、功能限制或商业捆绑。</p>
             <p style="margin-top:6px;font-size:12px;color:var(--text-secondary);">如果您觉得它帮您理顺了混乱的海量曲库，或者利用 <b>Btrfs 零拷贝 (Reflink CoW)</b> 帮您省下了宝贵的 NAS 存储空间与排查时间，欢迎请作者喝一杯咖啡 ☕，鼓励更多功能迭代与官方应用商店维护！</p>
@@ -1559,27 +1650,49 @@
         editDirBtn.style.display = isRunning ? "none" : "inline-flex";
       }
 
+      const ob = document.getElementById("onboardingBanner");
+
       if (isRunning) {
         btnText.textContent = "整理流水线正在运行中...";
         btn.style.background = "var(--primary)";
+        if (ob) {
+          ob.style.background = "rgba(47, 129, 247, 0.1)";
+          ob.style.borderColor = "var(--primary)";
+          ob.innerHTML = "⚙️ <b>流水线运行中</b>：正在自动执行声纹波形比对去重与正版歌词封面刮削，已完成曲目已实时写入，请安心等待。";
+        }
       } else if (isInit) {
         btnText.textContent = "增量整理 (新增 / 改动 / 重判 / 回补)";
         btn.style.background = "var(--success)";
         btn.dataset.mode = "incremental";
         hint.style.display = "block";
         hint.innerHTML = "💡 <strong>增量整理</strong>：只处理 <b>真新增 / 源文件改动 / 旧规则重判 / 未完成回补</b> 四类，其余曲目跳过。判定口径升级后，旧规则做出的判定会自动重判。";
+        if (ob) {
+          ob.style.background = "rgba(46, 160, 67, 0.1)";
+          ob.style.borderColor = "var(--success)";
+          ob.innerHTML = "🎉 <b>曲库已整理就绪！</b> 后续新下载了歌曲，点击下方【增量整理】即可秒级补充入库；请在飞牛「音乐」App 中添加整理后目录享受流动歌词！";
+        }
       } else if (isSampled) {
         btnText.textContent = "启动全量整理 (支持断点续跑)";
         btn.style.background = "var(--primary)";
         btn.dataset.mode = "full";
         hint.style.display = "block";
         hint.innerHTML = "💡 <strong>智能幂等全量</strong>：支持断点续跑与缓存复用。已处理的文件将秒级复用，系统自动处理未完成和失败的文件。";
+        if (ob) {
+          ob.style.background = "rgba(56, 189, 248, 0.1)";
+          ob.style.borderColor = "#38bdf8";
+          ob.innerHTML = "✅ <b>样本测试已通过！</b> 刮削与环境验证一切正常，请点击下方【启动全量整理】开始正式对齐整理。";
+        }
       } else {
         btnText.textContent = "开始验证样本 (抽样 10 首)";
         btn.style.background = "var(--primary)";
         btn.dataset.mode = "sample";
         hint.style.display = "block";
         hint.innerHTML = "💡 <strong>安全保障</strong>：全量前必须先通过小样本校验。样本阶段不向整理后目录发布文件。";
+        if (ob) {
+          ob.style.background = "rgba(56, 189, 248, 0.1)";
+          ob.style.borderColor = "#38bdf8";
+          ob.innerHTML = "✨ <b>首次使用引导</b>：请先检查左侧目录，再点击下方【开始验证样本】安全试跑 10 首歌（沙盒模拟，不写物理文件）。";
+        }
       }
     }
 
@@ -1807,7 +1920,7 @@
     // About & Sponsor Modal Logic
     let currentQRType = "alipay";
 
-    function openAboutModal(tab = "sponsor") {
+    function openAboutModal(tab = "guide") {
       const modal = document.getElementById("aboutModal");
       if (!modal) return;
       switchModalTab(tab);
@@ -1837,7 +1950,7 @@
     });
 
     function switchModalTab(tabName) {
-      ["sponsor", "features", "about"].forEach(tab => {
+      ["guide", "sponsor", "features", "about"].forEach(tab => {
         const btn = document.getElementById("tabBtn" + tab.charAt(0).toUpperCase() + tab.slice(1));
         const pane = document.getElementById("pane" + tab.charAt(0).toUpperCase() + tab.slice(1));
         if (btn) btn.classList.toggle("active", tab === tabName);

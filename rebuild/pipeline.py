@@ -1171,7 +1171,7 @@ def enrich(temporary: Path, run_root: Path, digest: str | None = None, source_st
         except Exception as exc:
             log(f"知识库注入元数据异常，回退至刮削：{exc}")
 
-    _, _, cur_tags, cur_art = probe(temporary)
+    cur_dur, _, cur_tags, cur_art = probe(temporary)
     cur_lyrics = any((k.startswith("lyrics") or k in ("unsyncedlyrics", "uslt")) and bool(v.strip()) for k, v in cur_tags.items())
     cur_complete = bool(cur_tags.get("title") and (cur_tags.get("artist") or cur_tags.get("album_artist")))
 
@@ -1213,6 +1213,7 @@ def enrich(temporary: Path, run_root: Path, digest: str | None = None, source_st
                 need_metadata=not cur_complete,
                 need_lyrics=not cur_lyrics,
                 need_cover=not cur_art,
+                target_duration=cur_dur,
             )
             dom_source = dom_res.get("source", "")
             dom_lyrics = dom_res.get("lyrics", "")

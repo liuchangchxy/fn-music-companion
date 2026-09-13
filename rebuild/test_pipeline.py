@@ -1319,6 +1319,61 @@ class AppTests(unittest.TestCase):
         p_clean2 = Path("/fake/Hey Jude (Radio-Edit).flac")
         self.assertFalse(pipeline.has_incompatible_variants([p_clean1, p_clean2]))
 
+    def test_confidence_scoring_distinguishes_covers_and_instrumentals(self) -> None:
+        """测试置信度引擎对正歌、翻唱、伴奏及不同时长的打分与门禁。"""
+        try:
+            import domestic_provider
+        except ImportError:
+            domestic_provider = load("domestic_provider", "domestic_provider.py")
+
+        # 1. 真实正歌高置信度匹配（时长吻合，歌名歌手一致） -> 得分 >= 75
+        score, _ = domestic_provider.compute_match_confidence(
+            target_title="晴天",
+            target_artist="周杰伦",
+            target_duration=269.0,
+            cand_title="晴天",
+            cand_artists=["周杰伦"],
+            cand_album="叶惠美",
+            cand_duration=269.5,
+        )
+        self.assertGreaterEqual(score, 75.0)
+
+        # 2. 伴奏或纯音乐（即便歌手相同，也因命中变体词重罚不及格） -> 得分 < 75
+        score, _ = domestic_provider.compute_match_confidence(
+            target_title="晴天",
+            target_artist="周杰伦",
+            target_duration=269.0,
+            cand_title="晴天 (伴奏)",
+            cand_artists=["周杰伦"],
+            cand_album="叶惠美",
+            cand_duration=269.0,
+        )
+        self.assertLess(score, 75.0)
+
+        # 3. 翻唱（歌手不同，且时长有偏差） -> 得分严重不及格
+        score, _ = domestic_provider.compute_match_confidence(
+            target_title="晴天",
+            target_artist="周杰伦",
+            target_duration=269.0,
+            cand_title="晴天",
+            cand_artists=["张三 (Cover: 周杰伦)"],
+            cand_album="网络翻唱合辑",
+            cand_duration=210.0,
+        )
+        self.assertLess(score, 50.0)
+
+        # 4. 时长严重不符（原唱 269s，候选短视频片段 60s） -> 一票否决
+        score, _ = domestic_provider.compute_match_confidence(
+            target_title="晴天",
+            target_artist="周杰伦",
+            target_duration=269.0,
+            cand_title="晴天",
+            cand_artists=["周杰伦"],
+            cand_album="短视频截取",
+            cand_duration=60.0,
+        )
+        self.assertLess(score, 50.0)
+
     def test_traditional_chinese_is_normalised_for_domestic_search(self) -> None:
         """国内源按简体收录，繁体查询（周杰倫/東風破）必须归一到简体。"""
         try:

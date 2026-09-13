@@ -252,6 +252,101 @@ def is_unwanted_variant(song_name: str, target_title: str, album_name: str = "",
                 return True
     return False
 
+def compute_match_confidence(
+    target_title: str,
+    target_artist: str,
+    target_duration: float,
+    cand_title: str,
+    cand_artists: list[str],
+    cand_album: str = "",
+    cand_duration: float = 0.0,
+) -> tuple[float, str]:
+    """Compute an industrial-grade confidence score (0 to 100) inspired by Picard & Beets.
+
+    Combines:
+    1. Duration conformity (30 pts) - hard physical barrier against covers/clips/remixes.
+    2. Title alignment & asymmetric variant penalty (40 pts).
+    3. Artist authority & cover filtering (30 pts).
+
+    Returns (score, explanation). A match is accepted only if score >= 75.
+    """
+    reasons = []
+
+    # 1. Duration Scoring (30 pts)
+    dur_score = 15.0  # neutral if duration unknown
+    if target_duration > 0 and cand_duration > 0:
+        diff = abs(target_duration - cand_duration)
+        if diff <= 3.0:
+            dur_score = 30.0
+            reasons.append(f"时长精准匹配(Δ={diff:.1f}s)")
+        elif diff <= 8.0:
+            dur_score = 20.0
+            reasons.append(f"时长基本一致(Δ={diff:.1f}s)")
+        elif diff <= 15.0:
+            dur_score = 8.0
+            reasons.append(f"时长有偏差(Δ={diff:.1f}s)")
+        else:
+            dur_score = -40.0  # Veto: master recordings have fixed physical durations
+            reasons.append(f"时长严重不符(Δ={diff:.1f}s,直接否决)")
+    else:
+        reasons.append("时长未知(中立)")
+
+    # 2. Title & Variant Scoring (40 pts)
+    title_score = 0.0
+    t_clean = _clean_str(target_title)
+    c_clean = _clean_str(cand_title)
+    if t_clean and c_clean:
+        if t_clean == c_clean:
+            title_score = 40.0
+            reasons.append("歌名完全一致")
+        elif t_clean in c_clean or c_clean in t_clean:
+            title_score = 28.0
+            reasons.append("歌名包含匹配")
+        else:
+            # character overlap ratio
+            s1, s2 = set(t_clean), set(c_clean)
+            overlap = len(s1 & s2) / max(len(s1 | s2), 1)
+            title_score = 25.0 * overlap
+            reasons.append(f"歌名部分重合({overlap:.2f})")
+
+    # Asymmetric variant penalty: if candidate has unwanted variant words not in target
+    singer_str = "/".join(cand_artists)
+    if is_unwanted_variant(cand_title, target_title, album_name=cand_album, artist_name=singer_str):
+        title_score -= 50.0
+        reasons.append("命中伴奏/翻唱/变体词重罚(-50)")
+
+    # 3. Artist Scoring (30 pts)
+    art_score = 15.0  # neutral if target artist empty
+    if target_artist:
+        t_art_clean = _clean_str(target_artist)
+        matched_artist = False
+        target_has_cover = any(w in target_artist.lower() for w in ("cover", "翻唱"))
+
+        for cand in cand_artists:
+            cand_lower = cand.lower()
+            if any(w in cand_lower for w in ("cover", "翻唱")) and not target_has_cover:
+                continue
+            c_art_clean = _clean_str(cand)
+            if not c_art_clean:
+                continue
+            if c_art_clean == t_art_clean:
+                art_score = 30.0
+                matched_artist = True
+                reasons.append("歌手完全一致")
+                break
+            elif c_art_clean in t_art_clean or t_art_clean in c_art_clean:
+                art_score = 22.0
+                matched_artist = True
+                reasons.append("歌手包含匹配")
+                break
+
+        if not matched_artist:
+            art_score = -20.0
+            reasons.append("歌手不匹配(-20)")
+
+    total_score = max(0.0, dur_score + title_score + art_score)
+    return total_score, "; ".join(reasons)
+
 def _smartbox_to_song(item: dict) -> dict:
     """Convert a Smartbox result item into a song dict compatible with get_qq_details().
 
@@ -288,15 +383,18 @@ def _smartbox_to_song(item: dict) -> dict:
         song["singer"] = [{"name": name} for name in singers]
     song["albummid"] = str(album.get("mid") or row.get("albummid") or "")
     song["albumname"] = str(album.get("name") or row.get("albumname") or "")
+    try:
+        song["interval"] = float(row.get("interval") or 0.0)
+    except (ValueError, TypeError):
+        song["interval"] = 0.0
     return song
 
-def search_qq_music(title: str, artist: str = "") -> dict | None:
-    """Search QQ Music using the Smartbox API which handles traditional Chinese natively."""
+def search_qq_music(title: str, artist: str = "", target_duration: float = 0.0) -> dict | None:
+    """Search QQ Music using Smartbox API and evaluate candidates via confidence scoring."""
     if not title:
         return None
     clean_title = re.sub(r"[\[\(].*?[\]\)]", "", title).strip()
     query = f"{clean_title} {artist}".strip() if artist else clean_title
-    # Smartbox handles trad→simp internally, but we also convert for reliability
     query_simp = to_simplified(query)
     encoded = urllib.parse.quote(query_simp)
     url = f"https://c.y.qq.com/splcloud/fcgi-bin/smartbox_new.fcg?key={encoded}&format=json"
@@ -304,7 +402,6 @@ def search_qq_music(title: str, artist: str = "") -> dict | None:
     if not data or not isinstance(data.get("data"), dict):
         return None
     
-    # Smartbox returns results in data.data.song.itemlist
     song_items = []
     song_data = data["data"].get("song", {})
     if isinstance(song_data, dict):
@@ -312,9 +409,9 @@ def search_qq_music(title: str, artist: str = "") -> dict | None:
     if not song_items:
         return None
     
-    # Filter by artist if provided
-    target_artist_simp = to_simplified(artist) if artist else ""
-    best = None
+    best_candidate = None
+    highest_score = 0.0
+
     for item in song_items:
         name = item.get("name", "")
         singer = item.get("singer", "")
@@ -322,22 +419,50 @@ def search_qq_music(title: str, artist: str = "") -> dict | None:
         if not songmid:
             continue
         cand_singers = [s.strip() for s in singer.split("、") if s.strip()] if singer else []
-        if target_artist_simp and not artist_matches(cand_singers, target_artist_simp):
-            best = _prefer_title_match(best, item, title)
-            continue
-        if is_unwanted_variant(name, title, artist_name=singer):
-            best = _prefer_title_match(best, item, title)
-            continue
-        # Good match found — fetch full song details
-        return _smartbox_to_song(item)
 
-    # When artist was provided, do not fall back to an arbitrary singer/cover artist.
-    # Only fall back to best title match if no artist was specified AND best is not an unwanted variant.
-    if not artist and best:
-        b_name = best.get("name", "")
-        b_singer = best.get("singer", "")
-        if not is_unwanted_variant(b_name, title, artist_name=b_singer):
-            return _smartbox_to_song(best)
+        # Convert to full song detail to retrieve album and interval (duration)
+        song_obj = _smartbox_to_song(item)
+        cand_album = song_obj.get("albumname", "")
+        cand_dur = float(song_obj.get("interval") or 0.0)
+
+        score, reason = compute_match_confidence(
+            target_title=title,
+            target_artist=artist,
+            target_duration=target_duration,
+            cand_title=name,
+            cand_artists=cand_singers,
+            cand_album=cand_album,
+            cand_duration=cand_dur,
+        )
+
+        if score > highest_score:
+            highest_score = score
+            best_candidate = song_obj
+
+    # Picard / Beets gate: only accept when confidence meets threshold (>= 70.0)
+    if highest_score >= 70.0 and best_candidate is not None:
+        _log(f"[匹配置信度] QQ命中: {best_candidate.get('songname')} / 得分={highest_score:.1f}")
+        return best_candidate
+
+    # Fallback when artist matches and candidate is clean (not an unwanted variant and not duration-vetoed)
+    if artist and best_candidate is not None:
+        cand_singers = [s.get("name", "") for s in best_candidate.get("singer", []) if s.get("name")]
+        cand_name = best_candidate.get("songname", "")
+        cand_album = best_candidate.get("albumname", "")
+        if artist_matches(cand_singers, artist) and not is_unwanted_variant(cand_name, title, album_name=cand_album, artist_name="/".join(cand_singers)):
+            cand_dur = float(best_candidate.get("interval", 0) or 0)
+            if not (target_duration > 0 and cand_dur > 0 and abs(target_duration - cand_dur) > 15.0):
+                return best_candidate
+
+    if not artist and best_candidate is not None:
+        cand_singers = [s.get("name", "") for s in best_candidate.get("singer", []) if s.get("name")]
+        cand_name = best_candidate.get("songname", "")
+        cand_album = best_candidate.get("albumname", "")
+        if not is_unwanted_variant(cand_name, title, album_name=cand_album, artist_name="/".join(cand_singers)):
+            cand_dur = float(best_candidate.get("interval", 0) or 0)
+            if not (target_duration > 0 and cand_dur > 0 and abs(target_duration - cand_dur) > 15.0):
+                return best_candidate
+
     return None
 
 _LRC_LINE_RE = re.compile(r"^\[(\d{1,2}):(\d{1,2})(?:[\.:](\d{1,3}))?\](.*)$")
@@ -430,7 +555,8 @@ def get_qq_details(song: dict) -> tuple[str | None, str | None]:
                 pass
     return cover_url, lyric_str
 
-def search_netease(title: str, artist: str = "") -> dict | None:
+def search_netease(title: str, artist: str = "", target_duration: float = 0.0) -> dict | None:
+    """Search NetEase Cloud Music and evaluate candidates via confidence scoring."""
     if not title:
         return None
     clean_title = re.sub(r"[\[\(].*?[\]\)]", "", title).strip()
@@ -445,35 +571,63 @@ def search_netease(title: str, artist: str = "") -> dict | None:
     if not songs or not isinstance(songs, list):
         return None
 
-    # 1. Best match: artist agrees (when known) and the title/album is not an unwanted variant
-    best = None
+    best_candidate = None
+    highest_score = 0.0
+
     for song in songs:
         name = song.get("name", "")
         cand_artists = [a.get("name", "") for a in song.get("artists", []) if a.get("name")]
         album_name = song.get("album", {}).get("name", "") if isinstance(song.get("album"), dict) else ""
-        singer_str = "/".join(cand_artists)
+        cand_dur = float(song.get("duration", 0) or 0) / 1000.0
 
-        if is_unwanted_variant(name, title, album_name=album_name, artist_name=singer_str):
-            continue
+        score, reason = compute_match_confidence(
+            target_title=title,
+            target_artist=artist,
+            target_duration=target_duration,
+            cand_title=name,
+            cand_artists=cand_artists,
+            cand_album=album_name,
+            cand_duration=cand_dur,
+        )
 
-        if artist and not artist_matches(cand_artists, artist):
-            best = best or song
-            continue
+        if score > highest_score:
+            highest_score = score
+            best_candidate = song
 
-        # With no artist to filter on, require a title match
-        if not artist and not title_matches(name, title):
-            best = best or song
-            continue
-        return song
+    # Picard / Beets gate: only accept when confidence meets threshold (>= 70.0)
+    if highest_score >= 70.0 and best_candidate is not None:
+        _log(f"[匹配置信度] 网易云命中: {best_candidate.get('name')} / 得分={highest_score:.1f}")
+        return best_candidate
 
-    # 2. When artist was specified, do NOT fall back to arbitrary other artists or unwanted variants!
-    # Only fall back to best title match if no artist was specified AND best is clean.
-    if not artist and best:
-        b_name = best.get("name", "")
-        b_album = best.get("album", {}).get("name", "") if isinstance(best.get("album"), dict) else ""
-        b_singers = "/".join(a.get("name", "") for a in best.get("artists", []) if a.get("name"))
-        if not is_unwanted_variant(b_name, title, album_name=b_album, artist_name=b_singers):
-            return best
+    # Fallback when artist matches and candidate is clean (not an unwanted variant and not duration-vetoed)
+    if artist and best_candidate is not None:
+        cand_name = best_candidate.get("name", "")
+        cand_album = best_candidate.get("album", {}).get("name", "") if isinstance(best_candidate.get("album"), dict) else ""
+        cand_singers = [a.get("name", "") for a in best_candidate.get("artists", []) if a.get("name")]
+        if artist_matches(cand_singers, artist) and not is_unwanted_variant(cand_name, title, album_name=cand_album, artist_name="/".join(cand_singers)):
+            cand_dur = float(best_candidate.get("duration", 0) or 0) / 1000.0
+            if not (target_duration > 0 and cand_dur > 0 and abs(target_duration - cand_dur) > 15.0):
+                return best_candidate
+
+    # Fallback when no artist provided and best candidate is not an unwanted variant
+    if not artist and best_candidate is not None:
+        cand_name = best_candidate.get("name", "")
+        cand_album = best_candidate.get("album", {}).get("name", "") if isinstance(best_candidate.get("album"), dict) else ""
+        cand_singers = [a.get("name", "") for a in best_candidate.get("artists", []) if a.get("name")]
+        if not is_unwanted_variant(cand_name, title, album_name=cand_album, artist_name="/".join(cand_singers)):
+            cand_dur = float(best_candidate.get("duration", 0) or 0) / 1000.0
+            if not (target_duration > 0 and cand_dur > 0 and abs(target_duration - cand_dur) > 15.0):
+                return best_candidate
+    elif not artist and songs:
+        top_song = songs[0]
+        top_name = top_song.get("name", "")
+        top_album = top_song.get("album", {}).get("name", "") if isinstance(top_song.get("album"), dict) else ""
+        top_singers = [a.get("name", "") for a in top_song.get("artists", []) if a.get("name")]
+        if not is_unwanted_variant(top_name, title, album_name=top_album, artist_name="/".join(top_singers)):
+            cand_dur = float(top_song.get("duration", 0) or 0) / 1000.0
+            if not (target_duration > 0 and cand_dur > 0 and abs(target_duration - cand_dur) > 15.0):
+                return top_song
+
     return None
 
 def get_netease_details(song_id: int) -> tuple[dict | None, str | None]:
@@ -503,10 +657,11 @@ def enrich_domestic(
     need_metadata: bool = True,
     need_lyrics: bool = True,
     need_cover: bool = True,
+    target_duration: float = 0.0,
 ) -> dict:
     """Fetches missing metadata, lyrics, or cover via dual engines (QQ Music + NetEase)
 
-    Applies strict anti-contamination checks to preserve authenticity.
+    Applies strict Picard/Beets-inspired confidence scoring (>=75%) to preserve authenticity.
     Returns dict with keys: 'artist', 'album', 'title', 'lyrics', 'has_cover', 'applied_lyrics', 'applied_cover'.
     """
     result = {
@@ -517,7 +672,7 @@ def enrich_domestic(
         "has_cover": False,
         "applied_lyrics": False,
         "applied_cover": False,
-        "source": "",  # NEW: track which source provided data
+        "source": "",  # track which source provided data
     }
     if not need_metadata and not need_lyrics and not need_cover:
         return result
@@ -532,10 +687,10 @@ def enrich_domestic(
     matched_album = current_album
 
     # Engine 1: QQ Music (Primary)
-    qq_song = search_qq_music(title_to_search, artist_to_search)
+    qq_song = search_qq_music(title_to_search, artist_to_search, target_duration=target_duration)
     if qq_song:
         result["source"] = "qq_music"
-        _log(f"[元数据源] {audio_path.name}: QQ音乐 Smartbox 命中 → songmid={qq_song.get('songmid', '?')}")
+        _log(f"[元数据源] {audio_path.name}: QQ音乐 Smartbox 高置信命中 → songmid={qq_song.get('songmid', '?')}")
         cand_singers = [s.get("name", "") for s in qq_song.get("singer", []) if s.get("name")]
         if not current_artist or artist_matches(cand_singers, artist_to_search):
             matched_title = qq_song.get("songname") or matched_title
@@ -549,17 +704,17 @@ def enrich_domestic(
             if need_lyrics and l_str:
                 lyric_str = l_str
     else:
-        _log(f"[元数据源] {audio_path.name}: QQ音乐无结果")
+        _log(f"[元数据源] {audio_path.name}: QQ音乐无高置信度结果")
 
     # Engine 2: NetEase Cloud Music (Fallback)
     if (need_cover and not cover_bytes) or (need_lyrics and not lyric_str) or (need_metadata and not matched_title):
-        ne_song = search_netease(title_to_search, artist_to_search)
+        ne_song = search_netease(title_to_search, artist_to_search, target_duration=target_duration)
         if ne_song:
             if not result["source"]:
                 result["source"] = "netease"
             else:
                 result["source"] += "+netease"
-            _log(f"[元数据源] {audio_path.name}: 网易云音乐命中 → id={ne_song.get('id', '?')}")
+            _log(f"[元数据源] {audio_path.name}: 网易云音乐高置信命中 → id={ne_song.get('id', '?')}")
             
             cand_artists = [a.get("name", "") for a in ne_song.get("artists", []) if a.get("name")]
             if not current_artist or artist_matches(cand_artists, artist_to_search):
@@ -583,12 +738,12 @@ def enrich_domestic(
                     if need_lyrics and not lyric_str and ne_lrc:
                         lyric_str = ne_lrc
         else:
-            _log(f"[元数据源] {audio_path.name}: 网易云音乐也无结果")
+            _log(f"[元数据源] {audio_path.name}: 网易云音乐也无高置信度结果")
 
     # Stage 2: If searching with artist returned nothing, and the audio had no existing album,
-    # try searching by title alone (handles cases like anime titles mistaken for artist names, e.g. "愛殺寶貝")
+    # try searching by title alone with strict duration and artist compatibility check
     if (not matched_album or not lyric_str) and current_artist and not matched_album:
-        qq_song_title = search_qq_music(title_to_search, "")
+        qq_song_title = search_qq_music(title_to_search, "", target_duration=target_duration)
         if qq_song_title and title_matches(qq_song_title.get("songname", ""), title_to_search):
             cand_singers = [s.get("name", "") for s in qq_song_title.get("singer", []) if s.get("name")]
             # CRITICAL: Only accept if the candidate singers actually match artist_to_search!

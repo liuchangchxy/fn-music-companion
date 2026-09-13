@@ -1248,6 +1248,20 @@ class AppTests(unittest.TestCase):
             self.assertEqual(os.environ.get("HTTP_PROXY"), "http://127.0.0.1:7890")
             self.assertEqual(os.environ.get("HTTPS_PROXY"), "http://127.0.0.1:7890")
 
+    def test_validate_settings_allows_offline_and_admin_password(self) -> None:
+        cfg = {
+            "source_dir": "/vol2/src",
+            "output_dir": "/vol2/out",
+            "offline_mode": False,
+            "admin_password": "secret",
+            "sample_verified": {"run_id": "r1"},
+            "initialized": True,
+        }
+        with patch.object(Path, "is_dir", return_value=True), patch.object(os, "access", return_value=True):
+            s, o = pipeline.validate_settings(cfg)
+            self.assertEqual(str(s).replace("\\", "/"), "/vol2/src")
+            self.assertEqual(str(o).replace("\\", "/"), "/vol2/out")
+
     def test_scan_dupsonic_chunking(self) -> None:
         many_paths = [Path(f"/fake/song_{i}.flac") for i in range(350)]
         with patch.object(pipeline, "command") as mock_cmd, patch.object(pipeline, "assert_state_budget"):

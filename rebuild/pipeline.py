@@ -459,7 +459,8 @@ def update_phase(run_id: str, phase: str, done: int, total: int, message: str) -
 
 
 def validate_settings(settings: dict) -> tuple[Path, Path]:
-    if set(settings) - {"source_dir", "output_dir", "sample_verified", "initialized", "proxy"}:
+    allowed_keys = {"source_dir", "output_dir", "sample_verified", "initialized", "proxy", "offline_mode", "admin_password"}
+    if set(settings) - allowed_keys:
         raise RuntimeError("配置只能包含原始文件夹、整理后文件夹及可选代理")
     proxy = str(settings.get("proxy", "")).strip()
     if proxy:

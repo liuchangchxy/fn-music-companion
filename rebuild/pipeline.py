@@ -78,7 +78,11 @@ NO_EMBED_LYRICS_FORMATS = {".wav", ".aiff", ".aif"}
 # Tracks that end up here were published without usable tags; the fnOS indexer
 # cannot file them, so they are re-enriched on the next run.
 UNKNOWN_ARTIST, UNKNOWN_ALBUM = "Unknown Artist", "Unknown Album"
-VARIANT_WORDS = ("live", "remaster", "remastered", "acoustic", "radio edit", "radio-edit", " edit")
+VARIANT_WORDS = (
+    "live", "remaster", "remastered", "acoustic", "radio edit", "radio-edit", " edit",
+    "伴奏", "instrumental", "inst", "karaoke", "卡拉ok", "卡拉 ok", "纯音乐",
+    "翻唱", "cover", "dj", "remix", "深情版", "钢琴版", "吉他版", "古筝版", "女声版", "男声版", "童声版"
+)
 DESTINATION_LOCK = threading.Lock()
 
 
@@ -696,7 +700,7 @@ def normalize_track_stem(stem: str) -> str:
     s = re.sub(r"\s*-\s*副本(?:\s*\(\d+\))?$", "", s)
     s = re.sub(r"\s*\(\d+\)$", "", s)
     s = re.sub(r"[\[\(][^\]\)]*?(?:flac|ape|wav|alac|aiff|mp3|aac|m4a|ogg|opus|wma|320k|128k|192k|24bit|16bit|96k|44\.1k|hi-res|hires|mqms2|kbps)[^\]\)]*?[\]\)]", "", s, flags=re.IGNORECASE)
-    s = re.sub(r"[\[\(]\s*(?:radio\s*edit|single\s*version|album\s*version|deluxe|bonus\s*track|clean\s*version|explicit|original\s*mix|remaster(?:ed)?)\s*[\]\)]", "", s, flags=re.IGNORECASE)
+    s = re.sub(r"[\[\(]\s*(?:radio[\s\-_]*edit|single\s*version|album\s*version|deluxe|bonus\s*track|clean\s*version|explicit|original\s*mix|remaster(?:ed)?)\s*[\]\)]", "", s, flags=re.IGNORECASE)
     s = re.sub(r"(?:www\.[a-z0-9\-\.]+\.[a-z]{2,4})", "", s, flags=re.IGNORECASE)
     s = re.sub(r"\s+", " ", s).strip(" .-_")
     return s.casefold()

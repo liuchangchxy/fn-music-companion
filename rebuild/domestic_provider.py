@@ -168,7 +168,13 @@ def artist_matches(candidate_artists: list[str], target_artist: str) -> bool:
     t_norm = _clean_str(target_artist)
     if not t_norm:
         return True
+    target_has_cover = any(w in target_artist.lower() for w in ("cover", "翻唱"))
     for cand in candidate_artists:
+        cand_lower = cand.lower()
+        cand_has_cover = any(w in cand_lower for w in ("cover", "翻唱"))
+        if cand_has_cover and not target_has_cover:
+            # Candidate explicitly indicates a cover artist, e.g. "周杰伦 (Cover: 张三)"
+            continue
         c_norm = _clean_str(cand)
         if not c_norm:
             continue
@@ -198,13 +204,52 @@ def _prefer_title_match(current: dict | None, candidate: dict, target_title: str
     return current
 
 
-def is_unwanted_variant(song_name: str, target_title: str) -> bool:
-    unwanted = ["深情版", "钢琴版", "吉他版", "dj版", "翻唱", "伴奏", "片段", "铃声", "remix"]
+UNWANTED_VARIANTS = [
+    # 伴奏与纯音乐类
+    "伴奏", "伴奏版", "伴奏带", "原版伴奏", "消音伴奏", "消音版", "纯音乐",
+    "instrumental", "inst", "inst.", "karaoke", "卡拉ok", "卡拉 ok",
+    "backing track", "minus one", "off vocal", "tv size",
+    # 翻唱与声线变体
+    "翻唱", "翻唱版", "cover", "cover版", "cv版", "女声版", "男声版", "童声版",
+    # 改编与特殊演奏版本
+    "深情版", "钢琴版", "吉他版", "古筝版", "萨克斯版", "二胡版", "琵琶版",
+    "dj版", "dj", "remix", "慢摇", "电音版", "车载版", "嗨唱版", "热播版", "高潮版",
+    "片段", "铃声", "变奏", "降调版", "升调版", "变调版", "变速版", "加速版", "减速版",
+    "acoustic", "piano version", "guitar version",
+]
+
+def is_unwanted_variant(song_name: str, target_title: str, album_name: str = "", artist_name: str = "") -> bool:
+    """Check if the candidate song is an unwanted variant (instrumental, cover, karaoke, etc.)
+
+    Checks title, album, and artist fields against unwanted keywords, unless the target title
+    itself explicitly asked for that variant.
+    """
     s_lower = song_name.lower()
     t_lower = target_title.lower()
-    for w in unwanted:
-        if w in s_lower and w not in t_lower:
-            return True
+    a_lower = album_name.lower() if album_name else ""
+    art_lower = artist_name.lower() if artist_name else ""
+    for w in UNWANTED_VARIANTS:
+        if w in t_lower:
+            continue
+        # Check title
+        if w in s_lower:
+            if len(w) <= 4 and w.isascii():
+                if re.search(r'(?:\b|[\(\[\{_\s\-])' + re.escape(w) + r'(?:\b|[\)\]\}\s\-_])', s_lower):
+                    return True
+            else:
+                return True
+        # Check album for instrumental/cover indicators
+        if a_lower and w in ("伴奏", "纯音乐", "instrumental", "karaoke", "cover", "翻唱"):
+            if len(w) <= 4 and w.isascii():
+                if re.search(r'(?:\b|[\(\[\{_\s\-])' + re.escape(w) + r'(?:\b|[\)\]\}\s\-_])', a_lower):
+                    return True
+            else:
+                if w in a_lower:
+                    return True
+        # Check artist for cover/instrumental indicators
+        if art_lower and w in ("cover", "翻唱", "伴奏", "instrumental"):
+            if w in art_lower:
+                return True
     return False
 
 def _smartbox_to_song(item: dict) -> dict:
@@ -280,16 +325,19 @@ def search_qq_music(title: str, artist: str = "") -> dict | None:
         if target_artist_simp and not artist_matches(cand_singers, target_artist_simp):
             best = _prefer_title_match(best, item, title)
             continue
-        if is_unwanted_variant(name, title):
+        if is_unwanted_variant(name, title, artist_name=singer):
             best = _prefer_title_match(best, item, title)
             continue
         # Good match found — fetch full song details
         return _smartbox_to_song(item)
 
     # When artist was provided, do not fall back to an arbitrary singer/cover artist.
-    # Only fall back to best title match if no artist was specified.
+    # Only fall back to best title match if no artist was specified AND best is not an unwanted variant.
     if not artist and best:
-        return _smartbox_to_song(best)
+        b_name = best.get("name", "")
+        b_singer = best.get("singer", "")
+        if not is_unwanted_variant(b_name, title, artist_name=b_singer):
+            return _smartbox_to_song(best)
     return None
 
 _LRC_LINE_RE = re.compile(r"^\[(\d{1,2}):(\d{1,2})(?:[\.:](\d{1,3}))?\](.*)$")
@@ -397,35 +445,35 @@ def search_netease(title: str, artist: str = "") -> dict | None:
     if not songs or not isinstance(songs, list):
         return None
 
-    # 1. Best match: artist agrees (when known) and the title is not an unwanted variant
+    # 1. Best match: artist agrees (when known) and the title/album is not an unwanted variant
     best = None
     for song in songs:
         name = song.get("name", "")
         cand_artists = [a.get("name", "") for a in song.get("artists", []) if a.get("name")]
+        album_name = song.get("album", {}).get("name", "") if isinstance(song.get("album"), dict) else ""
+        singer_str = "/".join(cand_artists)
+
+        if is_unwanted_variant(name, title, album_name=album_name, artist_name=singer_str):
+            continue
+
         if artist and not artist_matches(cand_artists, artist):
             best = best or song
             continue
-        if is_unwanted_variant(name, title):
-            best = best or song
-            continue
-        # With no artist to filter on, the ranking alone is unreliable ("一直很安静"
-        # ranked an unrelated Artemiss track first), so require a title match.
+
+        # With no artist to filter on, require a title match
         if not artist and not title_matches(name, title):
             best = best or song
             continue
         return song
 
-    # 2. Relax variant if artist strictly matches
-    if artist:
-        for song in songs:
-            cand_artists = [a.get("name", "") for a in song.get("artists", []) if a.get("name")]
-            if artist_matches(cand_artists, artist):
-                return song
-
-    # 3. When artist was specified, do NOT fall back to arbitrary other artists' covers/remixes!
-    # Only fall back to best title match if no artist was specified.
+    # 2. When artist was specified, do NOT fall back to arbitrary other artists or unwanted variants!
+    # Only fall back to best title match if no artist was specified AND best is clean.
     if not artist and best:
-        return best
+        b_name = best.get("name", "")
+        b_album = best.get("album", {}).get("name", "") if isinstance(best.get("album"), dict) else ""
+        b_singers = "/".join(a.get("name", "") for a in best.get("artists", []) if a.get("name"))
+        if not is_unwanted_variant(b_name, title, album_name=b_album, artist_name=b_singers):
+            return best
     return None
 
 def get_netease_details(song_id: int) -> tuple[dict | None, str | None]:
@@ -542,17 +590,18 @@ def enrich_domestic(
     if (not matched_album or not lyric_str) and current_artist and not matched_album:
         qq_song_title = search_qq_music(title_to_search, "")
         if qq_song_title and title_matches(qq_song_title.get("songname", ""), title_to_search):
-            if not matched_album and qq_song_title.get("albumname"):
-                matched_album = qq_song_title["albumname"]
-                _log(f"[元数据源] {audio_path.name}: 纯歌名重试命中 QQ 专辑: {matched_album}")
             cand_singers = [s.get("name", "") for s in qq_song_title.get("singer", []) if s.get("name")]
-            if cand_singers and need_metadata:
-                matched_artist = "/".join(cand_singers)
-            c_url, l_str = get_qq_details(qq_song_title)
-            if need_cover and not cover_bytes and c_url:
-                cover_bytes = _http_get_bytes(c_url)
-            if need_lyrics and not lyric_str and l_str:
-                lyric_str = l_str
+            # CRITICAL: Only accept if the candidate singers actually match artist_to_search!
+            # Never overwrite a known artist with an unknown cover artist or random singer.
+            if cand_singers and artist_matches(cand_singers, artist_to_search):
+                if not matched_album and qq_song_title.get("albumname"):
+                    matched_album = qq_song_title["albumname"]
+                    _log(f"[元数据源] {audio_path.name}: 纯歌名重试命中 QQ 专辑: {matched_album}")
+                c_url, l_str = get_qq_details(qq_song_title)
+                if need_cover and not cover_bytes and c_url:
+                    cover_bytes = _http_get_bytes(c_url)
+                if need_lyrics and not lyric_str and l_str:
+                    lyric_str = l_str
 
     if not result["source"]:
         result["source"] = "none"

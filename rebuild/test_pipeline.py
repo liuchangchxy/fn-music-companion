@@ -1293,7 +1293,31 @@ class AppTests(unittest.TestCase):
         self.assertTrue(domestic_provider.artist_matches(["周杰伦", "费玉清"], "周杰伦"))
         self.assertTrue(domestic_provider.is_unwanted_variant("晴天(深情版)", "晴天"))
         self.assertTrue(domestic_provider.is_unwanted_variant("晴天 钢琴版", "晴天"))
+        self.assertTrue(domestic_provider.is_unwanted_variant("晴天 (伴奏)", "晴天"))
+        self.assertTrue(domestic_provider.is_unwanted_variant("Hey Jude (Instrumental)", "Hey Jude"))
+        self.assertTrue(domestic_provider.is_unwanted_variant("Hey Jude (Cover)", "Hey Jude"))
+        self.assertTrue(domestic_provider.is_unwanted_variant("Hey Jude [Inst]", "Hey Jude"))
+        self.assertTrue(domestic_provider.is_unwanted_variant("Hey Jude", "Hey Jude", album_name="Bossa Beatles Instrumental"))
+        self.assertTrue(domestic_provider.is_unwanted_variant("晴天", "晴天", album_name="周杰伦 伴奏专辑"))
         self.assertFalse(domestic_provider.is_unwanted_variant("晴天", "晴天"))
+        self.assertFalse(domestic_provider.is_unwanted_variant("Hey Jude", "Hey Jude"))
+        # Artist cover filtering
+        self.assertFalse(domestic_provider.artist_matches(["周杰伦 (Cover: 小明)"], "周杰伦"))
+        self.assertFalse(domestic_provider.artist_matches(["小明 (翻唱周杰伦)"], "周杰伦"))
+
+    def test_instrumental_and_original_not_deduped_together(self) -> None:
+        """原唱与伴奏（如晴天 与 晴天(伴奏)）即使时长相仿，也绝不能被当成同录音重复判定。"""
+        p1 = Path("/fake/周杰伦 - 晴天.flac")
+        p2 = Path("/fake/周杰伦 - 晴天 (伴奏).mp3")
+        self.assertTrue(pipeline.has_incompatible_variants([p1, p2]))
+        p3 = Path("/fake/Hey Jude.flac")
+        p4 = Path("/fake/Hey Jude (Instrumental).mp3")
+        self.assertTrue(pipeline.has_incompatible_variants([p3, p4]))
+        p5 = Path("/fake/Hey Jude (Cover).mp3")
+        self.assertTrue(pipeline.has_incompatible_variants([p3, p5]))
+        p_clean1 = Path("/fake/Hey Jude (Radio Edit).mp3")
+        p_clean2 = Path("/fake/Hey Jude (Radio-Edit).flac")
+        self.assertFalse(pipeline.has_incompatible_variants([p_clean1, p_clean2]))
 
     def test_traditional_chinese_is_normalised_for_domestic_search(self) -> None:
         """国内源按简体收录，繁体查询（周杰倫/東風破）必须归一到简体。"""

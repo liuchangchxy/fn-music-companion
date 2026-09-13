@@ -292,6 +292,75 @@ def search_qq_music(title: str, artist: str = "") -> dict | None:
         return _smartbox_to_song(best)
     return None
 
+_LRC_LINE_RE = re.compile(r"^\[(\d{1,2}):(\d{1,2})(?:[\.:](\d{1,3}))?\](.*)$")
+
+def _parse_lrc_time(m_str: str, s_str: str, ms_str: str | None) -> int:
+    m = int(m_str)
+    s = int(s_str)
+    if ms_str:
+        if len(ms_str) == 2:
+            ms = int(ms_str) * 10
+        elif len(ms_str) == 3:
+            ms = int(ms_str)
+        elif len(ms_str) == 1:
+            ms = int(ms_str) * 100
+        else:
+            ms = int(ms_str[:3])
+    else:
+        ms = 0
+    return m * 60000 + s * 1000 + ms
+
+def merge_bilingual_lrc(orig_lrc: str | None, trans_lrc: str | None) -> str | None:
+    """Merge original lyrics and translated lyrics into a synchronized bilingual LRC."""
+    if not orig_lrc:
+        return trans_lrc
+    if not trans_lrc:
+        return orig_lrc
+
+    trans_map: dict[int, str] = {}
+    trans_times: list[int] = []
+    for line in trans_lrc.strip().splitlines():
+        line = line.strip()
+        match = _LRC_LINE_RE.match(line)
+        if match:
+            ms = _parse_lrc_time(match.group(1), match.group(2), match.group(3))
+            text = match.group(4).strip()
+            if text:
+                trans_map[ms] = text
+                trans_times.append(ms)
+
+    if not trans_map:
+        return orig_lrc
+
+    trans_times.sort()
+    merged_lines: list[str] = []
+    used_trans: set[int] = set()
+
+    for line in orig_lrc.strip().splitlines():
+        clean_line = line.strip()
+        merged_lines.append(clean_line)
+        match = _LRC_LINE_RE.match(clean_line)
+        if match:
+            orig_tag = clean_line[:match.end() - len(match.group(4))]
+            orig_ms = _parse_lrc_time(match.group(1), match.group(2), match.group(3))
+            orig_text = match.group(4).strip()
+
+            best_t_ms = None
+            min_diff = 350
+            for t_ms in trans_times:
+                diff = abs(t_ms - orig_ms)
+                if diff < min_diff:
+                    min_diff = diff
+                    best_t_ms = t_ms
+
+            if best_t_ms is not None and best_t_ms not in used_trans:
+                trans_text = trans_map[best_t_ms]
+                if trans_text and trans_text != orig_text:
+                    merged_lines.append(f"{orig_tag}{trans_text}")
+                    used_trans.add(best_t_ms)
+
+    return "\n".join(merged_lines)
+
 def get_qq_details(song: dict) -> tuple[str | None, str | None]:
     albummid = song.get("albummid", "")
     cover_url = f"https://y.gtimg.cn/music/photo_new/T002R800x800M000{albummid}.jpg" if albummid else None
@@ -305,6 +374,10 @@ def get_qq_details(song: dict) -> tuple[str | None, str | None]:
                 raw_b64 = ldata["lyric"]
                 decoded = base64.b64decode(raw_b64).decode("utf-8", errors="replace")
                 lyric_str = html.unescape(decoded)
+                if ldata.get("trans"):
+                    trans_decoded = base64.b64decode(ldata["trans"]).decode("utf-8", errors="replace")
+                    trans_str = html.unescape(trans_decoded)
+                    lyric_str = merge_bilingual_lrc(lyric_str, trans_str)
             except Exception:
                 pass
     return cover_url, lyric_str
@@ -368,6 +441,9 @@ def get_netease_details(song_id: int) -> tuple[dict | None, str | None]:
     lyric_str = None
     if lyric_data and isinstance(lyric_data.get("lrc"), dict):
         lyric_str = lyric_data["lrc"].get("lyric")
+        tlyric = lyric_data.get("tlyric", {}).get("lyric") if isinstance(lyric_data.get("tlyric"), dict) else None
+        if tlyric:
+            lyric_str = merge_bilingual_lrc(lyric_str, tlyric)
 
     return song_info, lyric_str
 

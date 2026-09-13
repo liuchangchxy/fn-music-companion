@@ -1523,6 +1523,20 @@ class AppTests(unittest.TestCase):
                 pipeline.assert_state_budget()
                 self.assertFalse(legacy_runs.exists())
 
+    def test_merge_bilingual_lrc(self) -> None:
+        import domestic_provider
+        orig = "[00:10.00]Hello world\n[00:20.00]Goodbye world"
+        trans = "[00:10.00]你好世界\n[00:20.00]再见世界"
+        merged = domestic_provider.merge_bilingual_lrc(orig, trans)
+        self.assertIn("[00:10.00]Hello world", merged)
+        self.assertIn("[00:10.00]你好世界", merged)
+        self.assertIn("[00:20.00]Goodbye world", merged)
+        self.assertIn("[00:20.00]再见世界", merged)
+
+        # None or empty fallback
+        self.assertEqual(domestic_provider.merge_bilingual_lrc(orig, None), orig)
+        self.assertEqual(domestic_provider.merge_bilingual_lrc(None, trans), trans)
+
 
 if __name__ == "__main__":
     unittest.main()

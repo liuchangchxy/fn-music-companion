@@ -1471,7 +1471,9 @@
   </div>
 
   <script>
-    // Internationalization (i18n)
+    // =========================================================================
+    // Comprehensive Internationalization (i18n) Framework
+    // =========================================================================
     const I18N = {
       zh: {
         langBtnText: "English",
@@ -1493,6 +1495,13 @@
         completedAll: "已全部完成 (100%)",
         pipelineCompleted: "流水线已完成",
         standby: "待机中",
+        statusLabels: {
+          phasePrefix: "当前阶段",
+          totalProgress: "总进度",
+          completed: "已全部完成 (100%)",
+          pipelineDone: "流水线已完成",
+          standby: "待机中"
+        },
         metrics: {
           scanned: "扫描总数",
           scannedHint: "原始源音频发现量",
@@ -1508,6 +1517,22 @@
           versionHint: "Live/Remaster 歧义保留",
           failed: "处理失败异常",
           failedHint: "损坏或拒绝文件"
+        },
+        metricsHints: {
+          scannedParts: {
+            newFiles: "新增",
+            modified: "改动",
+            stale: "重判",
+            retry: "回补",
+            orphans: "归档孤儿"
+          },
+          scannedDefault: "原始源音频发现量",
+          acousticPrefix: "声纹吻合（择最高音质）",
+          qualityUpgraded: "品质优化替换",
+          lyricsEmbedded: "新写入",
+          lyricsRetained: "原有保留",
+          coverEmbedded: "新嵌入",
+          coverRetained: "原有保留"
         },
         controls: {
           dirTitle: "目录配置",
@@ -1529,13 +1554,20 @@
           running: { text: "整理流水线正在运行中...", banner: "⚙️ <b>流水线运行中</b>：正在自动执行声纹波形比对去重与正版歌词封面刮削，已完成曲目已实时写入，请安心等待。" },
           init: { text: "增量整理 (新增 / 改动 / 重判 / 回补)", banner: "🎉 <b>曲库已整理就绪！</b> 后续新下载了歌曲，点击下方【增量整理】即可秒级补充入库；请在飞牛「音乐」App 中添加整理后目录享受流动歌词！", hint: "💡 <strong>增量整理</strong>：只处理 <b>真新增 / 源文件改动 / 旧规则重判 / 未完成回补</b> 四类，其余曲目跳过。判定口径升级后，旧规则做出的判定会自动重判。" },
           sampled: { text: "启动全量整理 (支持断点续跑)", banner: "✅ <b>样本测试已通过！</b> 刮削与环境验证一切正常，请点击下方【启动全量整理】开始正式对齐整理。", hint: "💡 <strong>智能幂等全量</strong>：支持断点续跑与缓存复用。已处理的文件将秒级复用，系统自动处理未完成和失败的文件。" },
-          first: { text: "开始验证样本 (抽样 10 首)", banner: "✨ <b>首次使用引导</b>：请先检查左侧目录，再点击下方【开始验证样本】安全试跑 10 首歌（沙盒模拟，不写物理文件）。", hint: "💡 <strong>安全保障</strong>：全量前必须先通过小样本校验。样本阶段不向整理后目录发布文件。" }
+          first: { text: "开始验证样本 (抽样 10 首)", banner: "✨ <b>极速上手提示</b>：请先检查左侧目录，再点击下方【开始验证样本】安全试跑 10 首歌（沙盒模拟，不写物理文件）。", hint: "💡 <strong>安全保障</strong>：全量前必须先通过小样本校验。样本阶段不向整理后目录发布文件。" }
         },
         terminal: {
           title: "实时运行流水线日志",
           clearTitle: "清空终端日志",
           copyTitle: "复制完整日志",
           getting: "正在获取日志..."
+        },
+        logs: {
+          waiting: "正在等待流水线实时日志...\n",
+          empty: "暂无日志记录\n",
+          cleared: "终端日志已清空\n",
+          starting: "正在启动流水线，请稍候...\n",
+          stopping: "正在终止整理流水线...\n"
         },
         history: {
           title: "执行历史记录",
@@ -1544,7 +1576,134 @@
           colStatus: "最终状态",
           colPhase: "当前阶段",
           colStart: "开始时间",
-          empty: "暂无记录"
+          empty: "暂无记录",
+          modes: {
+            sample: "样本测试",
+            full: "全量整理",
+            incremental: "增量对齐"
+          },
+          status: {
+            running: "运行中",
+            done: "已完成",
+            failed: "已失败"
+          },
+          phases: {
+            validate: "格式与探针校验",
+            ncm_decode: "NCM 隔离解密",
+            exact_dedupe: "哈希完全去重",
+            acoustic_dedupe: "跨格式声纹识别",
+            publish: "歌词/封面刮削与发布"
+          }
+        },
+        footer: {
+          desc: "飞牛音乐伴侣 (MusicFlow) · 专为飞牛 OS (fnOS) 打造的高保真音乐整理引擎",
+          sponsor: "☕ 赞助支持",
+          features: "🌟 架构亮点",
+          about: "ℹ️ 关于与开源",
+          report: "报告 JSON",
+          recentLogs: "近500条日志",
+          downloadLogs: "下载日志",
+          statusApi: "状态 API"
+        },
+        dialogs: {
+          confirmFull: "启动全量整理流水线。已处理的文件会自动秒级复用，是否开始？",
+          confirmStop: "确定要停止当前运行的整理流水线吗？已处理文件已安全归档。",
+          confirmRerun: "重新执行全量对齐流水线。已处理的文件会自动秒级复用，系统将自动查漏补缺，是否开始？",
+          logCopied: "终端日志已复制到剪贴板",
+          pipelineStarting: "正在启动流水线，请稍候...",
+          pipelineRunningWait: "流水线正在运行中，请等待完成或先点击停止！",
+          selectOneReset: "请至少勾选一项要重置的项目！",
+          confirmReset: "⚠️ 确定要清空所选的数据吗？此操作无法撤销！",
+          resetSuccess: "重置成功，系统已回到初始状态！",
+          resetFailed: "重置失败: ",
+          saveConfigSuccess: "目录配置已保存！",
+          saveConfigFailed: "保存失败，请检查网络或日志。"
+        },
+        modals: {
+          aboutTitle: "飞牛音乐伴侣",
+          aboutSub: "High-Fidelity Music Rebuild Engine for fnOS",
+          closeBtn: "关闭",
+          tabs: {
+            guide: "📖 极速上手 & FAQ",
+            features: "🌟 架构设计与优势",
+            sponsor: "☕ 赞助打赏",
+            about: "ℹ️ 关于与 GitHub"
+          },
+          guide: {
+            banner: "💡 飞牛音乐伴侣只需 3 步，即可打造属于你的完美私人曲库：",
+            step1Title: "确认目录（原始音乐与整理后曲库）",
+            step1Desc: "• <b>原始文件夹</b>：你的音乐下载目录。系统会以底层只读（:ro）保护，<b>绝对不会修改、删除或破坏你的原文件</b>。<br>• <b>整理后文件夹</b>：用于存放标准化分类（歌手/专辑/曲目）后的正式曲库。<b>Btrfs 零拷贝机制不会占用额外硬盘空间</b>。<br>• <i>快捷提示：在飞牛桌面打开「文件管理」-> 右键文件夹「属性」-> 点击「位置」右侧复制图标即可粘贴真实路径。</i>",
+            step2Title: "首次试跑：点击【样本验证】",
+            step2Desc: "系统会自动抽取 10 首样本在内存沙盒中模拟探针、NCM解密、声纹识别与 QQ/网易云双引擎刮削。<br><b>样本验证阶段不会向整理后目录写入任何文件</b>，仅用于让你确认封面、歌词与网络连通性。验证通过后即可一键全量整理。",
+            step3Title: "联动收听：在飞牛自带「音乐」App 中添加媒体库",
+            step3Desc: "整理完成后，打开飞牛桌面或手机端的<b>「飞牛音乐」App</b>，进入设置 -> 媒体库，把刚才设置的<b>「整理后文件夹」</b>添加进去。<br>飞牛音乐会自动秒级索引，精美高清封面墙与双语流动歌词即可无缝呈现！",
+            faqTitle: "❓ 常见问题答疑 (FAQ)",
+            q1Title: "Q1: 会不会误删或改乱我原始下载目录里的歌曲？",
+            q1Desc: "<b>100% 绝对不会。</b>原始音乐目录在系统底层采用 Docker 物理只读挂载（<code>:ro</code>），代码层面彻底剥离了删除和重命名指令。无论发生断电或误操作，原始文件依然原封不动。",
+            q2Title: "Q2: 为什么整理后飞牛自带的「音乐」App 里没看到歌曲？",
+            q2Desc: "飞牛自带的「音乐」App 拥有独立的媒体库设置。请打开飞牛「音乐」App -> 点击「设置」-> 进入「媒体库设置」-> 点击「添加文件夹」，选中你设置的<b>整理后文件夹</b>，飞牛音乐就会立即自动收录！",
+            q3Title: "Q3: 后面我新下载了歌曲，该怎么整理？会重复处理老歌吗？",
+            q3Desc: "直接点击控制台的<b>【增量整理】</b>按钮即可！系统通过 SQLite 全生命周期账本精准追踪每个文件的哈希与修改时间，已整理完成的老歌直接纳秒级跳过，仅抓取新下载的文件，几秒钟即可完成补充。",
+            q4Title: "Q4: 所谓的 Btrfs 零物理空间占用是什么意思？",
+            q4Desc: "飞牛系统默认采用 Btrfs 文件系统。在发布歌曲时，本软件优先使用底层写时复制（Reflink CoW）。原文件和整理库文件共享同一块底层磁盘数据，即便整理出 100GB 的规范目录，新增的物理硬盘占用几乎为 0（仅写入标签与封面差异块）。",
+            q5Title: "Q5: 离线整理模式是什么时候使用的？",
+            q5Desc: "如果你的 NAS 处于纯局域网、无法访问外网，或者你已经对歌曲内嵌了完整的标签只想快速归档分目录，可以在配置中勾选「离线整理模式」。该模式完全不发起外网网络请求，纯靠本地内嵌标签整理，速度极快。"
+          },
+          features: {
+            f1Title: "Btrfs 写时复制 (Reflink CoW)",
+            f1Desc: "同存储卷整理时优先使用 Reflink 写时复制，数据块秒级指针复用，大幅降低物理写入与额外空间（跨卷自动安全回退为常规拷贝）。",
+            f2Title: "源目录只读保护",
+            f2Desc: "输入目录在容器层默认以只读 (:ro) 挂载，流水线严禁对源文件执行删除、改写或原地移动，确保原始收藏毫发无损。",
+            f3Title: "NCM 隔离解密与自动清理",
+            f3Desc: "加密文件在独立临时沙盒中完成解码、声纹提取与元数据补全，发布后即刻自动销毁临时文件，保持存储空间整洁干净。",
+            f4Title: "跨格式声纹辅助去重",
+            f4Desc: "基于开源 Chromaprint 提取音频波形特征指纹，识别不同格式的同一录音，并依据码率规则优先保留高品质版本。",
+            f5Title: "多源标签与歌词补全",
+            f5Desc: "整合 QQ 音乐、网易云与 LRCLIB 等多源数据，遵循接口限流规则防封禁，补齐高清封面与同步滚动歌词。",
+            f6Title: "契合飞牛原生规范",
+            f6Desc: "遵循飞牛应用商店 FPK 标准，输出规范的「歌手/专辑/曲目」目录层级，便于飞牛音乐（trim.music）即时扫描建库。"
+          },
+          sponsor: {
+            p1: "<strong>感谢支持开源！</strong> 本项目为 100% 独立全开源作品，永久免费，无任何收费解锁、功能限制或商业捆绑。",
+            p2: "如果您觉得它帮您理顺了混乱的海量曲库，或者利用 <b>Btrfs 零拷贝 (Reflink CoW)</b> 帮您省下了宝贵的 NAS 存储空间与排查时间，欢迎请作者喝一杯咖啡 ☕，鼓励更多功能迭代与官方应用商店维护！",
+            wechatBtn: "微信收款码",
+            alipayBtn: "支付宝收款码",
+            missing: "暂未找到收款码图片",
+            captionWechat: "微信扫一扫 · 请作者喝一杯咖啡 ☕",
+            captionAlipay: "支付宝扫一扫 · 请作者喝一杯咖啡 ☕"
+          },
+          about: {
+            title: "飞牛音乐伴侣 (MusicFlow for fnOS)",
+            subtitle: "专为飞牛私有云量身定制的高保真无损音乐整理引擎",
+            githubBtn: "访问 GitHub 仓库 · 欢迎 Star 支持",
+            upstreamTitle: "开源上游组件致谢：",
+            upstreams: [
+              "• <b>Rust / Dupsonic</b>：跨格式音频指纹索引与相似度聚类",
+              "• <b>TagLib (v2.1.1)</b>：高保真 ID3v2 / FLAC Vorbis 注释引擎",
+              "• <b>Chromaprint / fpcalc</b>：声学指纹抽取算法",
+              "• <b>taurusxin / ncmdump</b>：NCM 高保真格式还原",
+              "• <b>Beets & SACAD</b>：工业级音频元数据与原版超清封面抓取",
+              "• <b>fnOS Team</b>：飞牛私有云应用生态支持"
+            ]
+          },
+          reset: {
+            title: "清空缓存与从头开始",
+            badge: "系统维护",
+            subtitle: "按需重置历史记录、曲目状态清单或清空本地歌词知识库",
+            noticeTitle: "⚠️ 关于从头开始操作：",
+            noticeDesc: "重置操作仅清理系统运行账本与元数据，<b>原始音乐文件夹（只读）不受任何影响，系统也绝不在 SSD 留存任何音频文件</b>。你可以根据需求选择重置深度：",
+            presetLabel: "快捷方案：",
+            presetStandard: "标准重置 (保留歌词知识库)",
+            presetFull: "彻底清空 (从零全新开始)",
+            opt1Title: "清空历史运行记录与指标账本",
+            opt1Desc: "清空所有历史运行记录、处理指标统计（全部归零）并清空终端日志。",
+            opt2Title: "重置曲目状态清单与门禁",
+            opt2Desc: "清除曲目去重状态清单，解除门禁标记，允许重新验证样本或从零开始全新整理。",
+            opt3Title: "清空本地元数据与歌词知识库",
+            opt3Desc: "清除本地 SQLite 中已缓存的歌词与标签。下次整理时将重新向音乐源发起检索。",
+            btnCancel: "取消",
+            btnConfirm: "确认执行重置"
+          }
         }
       },
       en: {
@@ -1567,6 +1726,13 @@
         completedAll: "All Completed (100%)",
         pipelineCompleted: "Pipeline Completed",
         standby: "Standby",
+        statusLabels: {
+          phasePrefix: "Phase",
+          totalProgress: "Total",
+          completed: "All Completed (100%)",
+          pipelineDone: "Pipeline Completed",
+          standby: "Standby"
+        },
         metrics: {
           scanned: "Total Scanned",
           scannedHint: "Total raw files discovered",
@@ -1582,6 +1748,22 @@
           versionHint: "Preserved Live/Remaster variants",
           failed: "Failed Items",
           failedHint: "Corrupted or rejected files"
+        },
+        metricsHints: {
+          scannedParts: {
+            newFiles: "New",
+            modified: "Changed",
+            stale: "Rechecked",
+            retry: "Retried",
+            orphans: "Orphans Archived"
+          },
+          scannedDefault: "Total raw files discovered",
+          acousticPrefix: "Acoustic fingerprint match (best quality kept)",
+          qualityUpgraded: "Quality Upgrades",
+          lyricsEmbedded: "Embedded",
+          lyricsRetained: "Retained",
+          coverEmbedded: "Embedded",
+          coverRetained: "Retained"
         },
         controls: {
           dirTitle: "Directory Setup",
@@ -1601,15 +1783,22 @@
         },
         actionStates: {
           running: { text: "Pipeline is currently running...", banner: "⚙️ <b>Pipeline in progress</b>: Comparing acoustic fingerprints, scraping covers and lyrics. Published files are written in real-time." },
-          init: { text: "Incremental Run (New / Modified / Stale / Retry)", banner: "🎉 <b>Library is up to date!</b> When new tracks are downloaded, click Incremental Run to update in seconds.", hint: "💡 <strong>Incremental Run</strong>: Only processes new, changed, or failed files, skipping already verified tracks." },
+          init: { text: "Incremental Run (New / Modified / Stale / Retry)", banner: "🎉 <b>Library is up to date!</b> When new tracks are downloaded, click Incremental Run to update in seconds; add the organized folder to fnOS Music App to enjoy synced lyrics!", hint: "💡 <strong>Incremental Run</strong>: Only processes new, changed, or failed files, skipping already verified tracks." },
           sampled: { text: "Start Full Organization", banner: "✅ <b>Sample validation passed!</b> Environment and scraping verified. Click below to start full organization.", hint: "💡 <strong>Full Organization</strong>: Safe, idempotent processing with instant reuse of previously organized tracks." },
-          first: { text: "Start Sample Test (10 Tracks)", banner: "✨ <b>Quick Start</b>: Confirm directories on the left, then click below to test with 10 sample songs (no files written).", hint: "💡 <strong>Safety Gate</strong>: Sample validation is required before first full organization." }
+          first: { text: "Start Sample Test (10 Tracks)", banner: "✨ <b>Quick Start</b>: Confirm directories on the left, then click below to test with 10 sample songs (sandbox simulation, no files written).", hint: "💡 <strong>Safety Gate</strong>: Sample validation is required before first full organization." }
         },
         terminal: {
           title: "Live Pipeline Terminal Logs",
           clearTitle: "Clear Terminal Logs",
           copyTitle: "Copy Full Log",
           getting: "Loading logs..."
+        },
+        logs: {
+          waiting: "Waiting for live pipeline logs...\n",
+          empty: "No logs recorded yet\n",
+          cleared: "Terminal logs cleared\n",
+          starting: "Starting pipeline, please wait...\n",
+          stopping: "Stopping pipeline...\n"
         },
         history: {
           title: "Execution History",
@@ -1618,7 +1807,134 @@
           colStatus: "Status",
           colPhase: "Phase",
           colStart: "Started At",
-          empty: "No records yet"
+          empty: "No records yet",
+          modes: {
+            sample: "Sample Test",
+            full: "Full Run",
+            incremental: "Incremental"
+          },
+          status: {
+            running: "Running",
+            done: "Completed",
+            failed: "Failed"
+          },
+          phases: {
+            validate: "Format Probe",
+            ncm_decode: "NCM Decryption",
+            exact_dedupe: "Hash Deduplication",
+            acoustic_dedupe: "Audio Fingerprint",
+            publish: "Publishing"
+          }
+        },
+        footer: {
+          desc: "MusicFlow · High-Fidelity Music Reorganization Engine Tailored for fnOS",
+          sponsor: "☕ Sponsor",
+          features: "🌟 Architecture",
+          about: "ℹ️ About & Open Source",
+          report: "Report JSON",
+          recentLogs: "Recent 500 Logs",
+          downloadLogs: "Download Logs",
+          statusApi: "Status API"
+        },
+        dialogs: {
+          confirmFull: "Start full organization pipeline? Previously processed tracks will be reused instantly. Proceed?",
+          confirmStop: "Are you sure you want to stop the running pipeline? Organized files have been safely preserved.",
+          confirmRerun: "Re-run full pipeline? Previously processed tracks will be reused instantly and missing items reconciled. Proceed?",
+          logCopied: "Logs copied to clipboard",
+          pipelineStarting: "Starting pipeline, please wait...",
+          pipelineRunningWait: "Pipeline is currently running. Please wait for completion or stop it first!",
+          selectOneReset: "Please select at least one item to reset!",
+          confirmReset: "⚠️ Are you sure you want to execute the selected reset? This action cannot be undone!",
+          resetSuccess: "Reset successful! System has returned to initial state.",
+          resetFailed: "Reset failed: ",
+          saveConfigSuccess: "Directory configuration saved successfully!",
+          saveConfigFailed: "Save failed. Please check network connection or logs."
+        },
+        modals: {
+          aboutTitle: "MusicFlow",
+          aboutSub: "High-Fidelity Music Rebuild Engine for fnOS",
+          closeBtn: "Close",
+          tabs: {
+            guide: "📖 Quick Start & FAQ",
+            features: "🌟 Architecture & Highlights",
+            sponsor: "☕ Sponsor & Donate",
+            about: "ℹ️ About & GitHub"
+          },
+          guide: {
+            banner: "💡 Build your perfect private music library in just 3 steps with MusicFlow:",
+            step1Title: "Confirm Directories (Source & Library)",
+            step1Desc: "• <b>Source Folder</b>: Your raw download directory. Protected with OS-level read-only (:ro); <b>never modifies, deletes, or alters original files</b>.<br>• <b>Organized Folder</b>: Destination for standardized hierarchy (Artist/Album/Track). <b>Btrfs zero-copy creates no extra disk usage</b>.<br>• <i>Quick Tip: On fnOS desktop, open File Manager -> Right click folder -> Properties -> Click Copy icon next to Location to paste the true path.</i>",
+            step2Title: "First Run: Click [Start Sample Test]",
+            step2Desc: "The system samples 10 tracks into an in-memory sandbox to verify format probes, NCM decryption, acoustic fingerprints, and QQ/NetEase scraping.<br><b>No files are written to the organized folder during sample validation</b>, ensuring network and metadata connectivity before full processing.",
+            step3Title: "Enjoy Music: Add Library in fnOS Native Music App",
+            step3Desc: "Once complete, open fnOS native <b>Music App</b> on desktop or mobile, go to Settings -> Media Library, and add your <b>Organized Folder</b>.<br>fnOS will index instantly, displaying pristine cover art walls and scrolling bilingual lyrics!",
+            faqTitle: "❓ Frequently Asked Questions (FAQ)",
+            q1Title: "Q1: Will it delete or mess up tracks in my original download folder?",
+            q1Desc: "<b>100% NEVER.</b> The source directory is mounted read-only (<code>:ro</code>) at Docker container level, and file deletion/rename calls are removed from the pipeline. Even during power outages or unexpected events, source files remain completely untouched.",
+            q2Title: "Q2: Why doesn't fnOS native Music App show songs after organizing?",
+            q2Desc: "fnOS Music App maintains its own media library catalog. Open the fnOS Music App -> Settings -> Media Library -> Add Folder -> Select your <b>Organized Folder</b>, and fnOS will index all tracks immediately!",
+            q3Title: "Q3: When I download new songs later, how do I organize? Will old songs be reprocessed?",
+            q3Desc: "Simply click <b>[Incremental Run]</b>! The SQLite lifecycle ledger tracks file hashes and modification timestamps. Already verified tracks are skipped in nanoseconds, catching only new files in just seconds.",
+            q4Title: "Q4: What does 'Btrfs zero physical storage consumption' mean?",
+            q4Desc: "fnOS uses the Btrfs filesystem by default. When publishing files, MusicFlow uses Copy-on-Write (Reflink CoW). Organized files share identical data blocks with source files. Even a 100 GB organized library takes virtually zero additional storage on the drive.",
+            q5Title: "Q5: When should I use Offline Mode?",
+            q5Desc: "If your NAS is in an isolated LAN without internet access, or if your audio files already contain full embedded tags and you only need clean directory sorting, enable Offline Mode. It skips all cloud network calls and processes purely from local tags at lightning speed."
+          },
+          features: {
+            f1Title: "Btrfs Copy-on-Write (Reflink CoW)",
+            f1Desc: "Prioritizes pointer-level block sharing within the same volume. Near-instant reorganization with zero duplicate data footprint (gracefully falls back to standard copy across volumes).",
+            f2Title: "Strict Read-Only Source Protection",
+            f2Desc: "Source folders are mounted read-only (:ro) inside the container. Pipeline logic strictly prohibits delete, in-place rename, or modify operations on raw files.",
+            f3Title: "NCM Isolated Decryption & Auto-Purge",
+            f3Desc: "Encrypted tracks are decoded, fingerprinted, and enriched inside isolated temporary scratch storage, and automatically purged immediately upon publishing.",
+            f4Title: "Cross-Format Acoustic Fingerprinting",
+            f4Desc: "Extracts Chromaprint audio waveform fingerprints to recognize duplicate recordings across formats (e.g., FLAC vs MP3), retaining the highest quality copy.",
+            f5Title: "Multi-Source Metadata & Synced Lyrics",
+            f5Desc: "Integrates QQ Music, NetEase Cloud Music, and LRCLIB with polite rate-limiting, embedding high-res album covers and bilingual synced lyrics.",
+            f6Title: "Native fnOS Ecosystem Compliance",
+            f6Desc: "Adheres to fnOS application packaging standards (FPK) and organizes files into clean Artist/Album/Track structures optimized for fnOS Music indexing."
+          },
+          sponsor: {
+            p1: "<strong>Thank you for supporting open source!</strong> This project is 100% independent and open source, permanently free with no paywalls, feature limits, or commercial bundling.",
+            p2: "If MusicFlow helped you clean up your massive library, or saved valuable NAS storage space via <b>Btrfs Reflink CoW</b>, feel free to buy the author a coffee ☕ to support future updates and fnOS App Store maintenance!",
+            wechatBtn: "WeChat Pay",
+            alipayBtn: "Alipay",
+            missing: "QR Code image not found",
+            captionWechat: "Scan with WeChat · Buy the author a coffee ☕",
+            captionAlipay: "Scan with Alipay · Buy the author a coffee ☕"
+          },
+          about: {
+            title: "MusicFlow for fnOS",
+            subtitle: "High-Fidelity Lossless Music Reorganization Engine Tailored for fnOS",
+            githubBtn: "Visit GitHub Repository · Star to Support",
+            upstreamTitle: "Open-Source Upstream Acknowledgments:",
+            upstreams: [
+              "• <b>Rust / Dupsonic</b>: High-performance audio fingerprint clustering and deduplication",
+              "• <b>TagLib (v2.1.1)</b>: High-fidelity ID3v2 / FLAC Vorbis metadata tagging engine",
+              "• <b>Chromaprint / fpcalc</b>: Acoustic fingerprint extraction algorithm",
+              "• <b>taurusxin / ncmdump</b>: Lossless NCM container decryption",
+              "• <b>Beets & SACAD</b>: Industrial-grade music metadata and original high-res cover art fetcher",
+              "• <b>fnOS Team</b>: Exceptional private cloud application ecosystem and support"
+            ]
+          },
+          reset: {
+            title: "Reset Cache & Start Fresh",
+            badge: "System Maintenance",
+            subtitle: "Reset run history, track inventory gatekeeper, or clear cached lyrics database",
+            noticeTitle: "⚠️ About Resetting:",
+            noticeDesc: "Reset operations only clean internal ledgers and metadata cache. <b>Your read-only source folder is never touched, and no audio files remain on SSD</b>. Choose your reset depth below:",
+            presetLabel: "Presets:",
+            presetStandard: "Standard Reset (Keep Lyrics Cache)",
+            presetFull: "Full Reset (Start Completely Fresh)",
+            opt1Title: "Clear Execution History & KPI Metrics",
+            opt1Desc: "Purge all historical run records, reset metric counters to zero, and clear terminal logs.",
+            opt2Title: "Reset Track Inventory & Safety Gate",
+            opt2Desc: "Clear track deduplication state registry and remove safety gate lock, allowing re-sample or fresh full runs.",
+            opt3Title: "Flush Local Metadata & Lyrics Database",
+            opt3Desc: "Purge locally cached lyrics and tags in SQLite. Future runs will fetch fresh data from providers.",
+            btnCancel: "Cancel",
+            btnConfirm: "Confirm Reset"
+          }
         }
       }
     };
@@ -1642,6 +1958,9 @@
       renderStatus(stateCache);
       renderMetrics(stateCache.report ? (stateCache.report.metrics || {}) : {});
       updateActionButtons();
+      if (stateCache.report && stateCache.report.recent_runs) {
+        renderRuns(stateCache.report.recent_runs);
+      }
     }
 
     function applyLanguage() {
@@ -1733,16 +2052,159 @@
         ths[3].textContent = dict.history.colPhase;
         ths[4].textContent = dict.history.colStart;
       }
+
+      // Update Footer
+      const footerSpan = document.querySelector("footer span");
+      if (footerSpan) footerSpan.textContent = dict.footer.desc;
+      const footerLinks = document.querySelectorAll("footer div a");
+      if (footerLinks.length >= 7) {
+        footerLinks[0].textContent = dict.footer.sponsor;
+        footerLinks[1].textContent = dict.footer.features;
+        footerLinks[2].textContent = dict.footer.about;
+        footerLinks[3].textContent = dict.footer.report;
+        footerLinks[4].textContent = dict.footer.recentLogs;
+        footerLinks[5].textContent = dict.footer.downloadLogs;
+        footerLinks[6].textContent = dict.footer.statusApi;
+      }
+
+      // Update About Modal Header & Tabs
+      const aboutBrandName = document.querySelector("#aboutModal .modal-brand div span:first-child");
+      if (aboutBrandName) aboutBrandName.textContent = dict.modals.aboutTitle;
+      const tabGuide = document.getElementById("tabBtnGuide");
+      if (tabGuide) tabGuide.textContent = dict.modals.tabs.guide;
+      const tabFeatures = document.getElementById("tabBtnFeatures");
+      if (tabFeatures) tabFeatures.textContent = dict.modals.tabs.features;
+      const tabSponsor = document.getElementById("tabBtnSponsor");
+      if (tabSponsor) tabSponsor.textContent = dict.modals.tabs.sponsor;
+      const tabAbout = document.getElementById("tabBtnAbout");
+      if (tabAbout) tabAbout.textContent = dict.modals.tabs.about;
+
+      // Update Tab 0: Guide & FAQ
+      const guideBanner = document.querySelector("#paneGuide > div:first-child strong");
+      if (guideBanner) guideBanner.textContent = dict.modals.guide.banner;
+      
+      const stepItems = document.querySelectorAll("#paneGuide > div:nth-child(2) > div");
+      if (stepItems.length >= 3) {
+        stepItems[0].querySelector("div:last-child > div:first-child").textContent = dict.modals.guide.step1Title;
+        stepItems[0].querySelector("div:last-child > div:last-child").innerHTML = dict.modals.guide.step1Desc;
+        stepItems[1].querySelector("div:last-child > div:first-child").textContent = dict.modals.guide.step2Title;
+        stepItems[1].querySelector("div:last-child > div:last-child").innerHTML = dict.modals.guide.step2Desc;
+        stepItems[2].querySelector("div:last-child > div:first-child").textContent = dict.modals.guide.step3Title;
+        stepItems[2].querySelector("div:last-child > div:last-child").innerHTML = dict.modals.guide.step3Desc;
+      }
+
+      const faqTitleEl = document.querySelector("#paneGuide > div:nth-child(3) span");
+      if (faqTitleEl) faqTitleEl.textContent = dict.modals.guide.faqTitle;
+
+      const faqs = document.querySelectorAll("#paneGuide .faq-list details");
+      if (faqs.length >= 5) {
+        faqs[0].querySelector("summary").textContent = dict.modals.guide.q1Title;
+        faqs[0].querySelector("div").innerHTML = dict.modals.guide.q1Desc;
+        faqs[1].querySelector("summary").textContent = dict.modals.guide.q2Title;
+        faqs[1].querySelector("div").innerHTML = dict.modals.guide.q2Desc;
+        faqs[2].querySelector("summary").textContent = dict.modals.guide.q3Title;
+        faqs[2].querySelector("div").innerHTML = dict.modals.guide.q3Desc;
+        faqs[3].querySelector("summary").textContent = dict.modals.guide.q4Title;
+        faqs[3].querySelector("div").innerHTML = dict.modals.guide.q4Desc;
+        faqs[4].querySelector("summary").textContent = dict.modals.guide.q5Title;
+        faqs[4].querySelector("div").innerHTML = dict.modals.guide.q5Desc;
+      }
+
+      // Update Tab 1: Sponsor
+      const sponsorP1 = document.querySelector("#paneSponsor .sponsor-notice p:first-child");
+      if (sponsorP1) sponsorP1.innerHTML = dict.modals.sponsor.p1;
+      const sponsorP2 = document.querySelector("#paneSponsor .sponsor-notice p:last-child");
+      if (sponsorP2) sponsorP2.innerHTML = dict.modals.sponsor.p2;
+
+      const qrWechatBtn = document.querySelector("#qrBtnWechat span");
+      if (qrWechatBtn) qrWechatBtn.textContent = dict.modals.sponsor.wechatBtn;
+      const qrAlipayBtn = document.querySelector("#qrBtnAlipay span");
+      if (qrAlipayBtn) qrAlipayBtn.textContent = dict.modals.sponsor.alipayBtn;
+      const qrPlaceText = document.querySelector("#qrPlaceholderText");
+      if (qrPlaceText) qrPlaceText.textContent = (typeof currentQRType !== 'undefined' && currentQRType === 'alipay') ? dict.modals.sponsor.alipayBtn : dict.modals.sponsor.wechatBtn;
+      const qrMissingDesc = document.querySelector("#qrPlaceholder div:last-child");
+      if (qrMissingDesc) qrMissingDesc.textContent = dict.modals.sponsor.missing;
+      const qrCap = document.getElementById("qrCaption");
+      if (qrCap) qrCap.textContent = (typeof currentQRType !== 'undefined' && currentQRType === 'alipay') ? dict.modals.sponsor.captionAlipay : dict.modals.sponsor.captionWechat;
+
+      // Update Tab 2: Features & Architecture
+      const featItems = document.querySelectorAll("#paneFeatures .feat-item");
+      if (featItems.length >= 6) {
+        featItems[0].querySelector(".feat-title").textContent = dict.modals.features.f1Title;
+        featItems[0].querySelector(".feat-desc").textContent = dict.modals.features.f1Desc;
+        featItems[1].querySelector(".feat-title").textContent = dict.modals.features.f2Title;
+        featItems[1].querySelector(".feat-desc").textContent = dict.modals.features.f2Desc;
+        featItems[2].querySelector(".feat-title").textContent = dict.modals.features.f3Title;
+        featItems[2].querySelector(".feat-desc").textContent = dict.modals.features.f3Desc;
+        featItems[3].querySelector(".feat-title").textContent = dict.modals.features.f4Title;
+        featItems[3].querySelector(".feat-desc").textContent = dict.modals.features.f4Desc;
+        featItems[4].querySelector(".feat-title").textContent = dict.modals.features.f5Title;
+        featItems[4].querySelector(".feat-desc").textContent = dict.modals.features.f5Desc;
+        featItems[5].querySelector(".feat-title").textContent = dict.modals.features.f6Title;
+        featItems[5].querySelector(".feat-desc").textContent = dict.modals.features.f6Desc;
+      }
+
+      // Update Tab 3: About & GitHub
+      const aboutH3 = document.querySelector("#paneAbout .about-card h3");
+      if (aboutH3) aboutH3.textContent = dict.modals.about.title;
+      const aboutSub = document.querySelector("#paneAbout .about-card p");
+      if (aboutSub) aboutSub.textContent = dict.modals.about.subtitle;
+      const ghBtn = document.querySelector("#paneAbout .github-btn span");
+      if (ghBtn) ghBtn.textContent = dict.modals.about.githubBtn;
+      const upTitle = document.querySelector("#paneAbout .about-card > div:last-child > div:first-child");
+      if (upTitle) upTitle.textContent = dict.modals.about.upstreamTitle;
+      const upList = document.querySelectorAll("#paneAbout .about-card > div:last-child > div:not(:first-child)");
+      dict.modals.about.upstreams.forEach((text, i) => {
+        if (upList[i]) upList[i].innerHTML = text;
+      });
+
+      // Update Modal: Reset & Clear Cache
+      const resetBrand = document.querySelector("#resetModal .modal-brand div:last-child");
+      if (resetBrand) {
+        const titleSpan = resetBrand.querySelector("div:first-child span:first-child");
+        if (titleSpan) titleSpan.textContent = dict.modals.reset.title;
+        const badgeSpan = resetBrand.querySelector("div:first-child span:last-child");
+        if (badgeSpan) badgeSpan.textContent = dict.modals.reset.badge;
+        const subSpan = resetBrand.querySelector("div:last-child");
+        if (subSpan) subSpan.textContent = dict.modals.reset.subtitle;
+      }
+      const resetNoticeP1 = document.querySelector("#resetModal .sponsor-notice p:first-child");
+      if (resetNoticeP1) resetNoticeP1.textContent = dict.modals.reset.noticeTitle;
+      const resetNoticeP2 = document.querySelector("#resetModal .sponsor-notice p:last-child");
+      if (resetNoticeP2) resetNoticeP2.innerHTML = dict.modals.reset.noticeDesc;
+
+      const presetLabelSpan = document.querySelector(".reset-quick-presets span");
+      if (presetLabelSpan) presetLabelSpan.textContent = dict.modals.reset.presetLabel;
+      const presetBtns = document.querySelectorAll(".reset-quick-presets button");
+      if (presetBtns.length >= 2) {
+        presetBtns[0].textContent = dict.modals.reset.presetStandard;
+        presetBtns[1].textContent = dict.modals.reset.presetFull;
+      }
+
+      const resetOpts = document.querySelectorAll(".reset-option-list .reset-option-item");
+      if (resetOpts.length >= 3) {
+        resetOpts[0].querySelector(".opt-title").textContent = dict.modals.reset.opt1Title;
+        resetOpts[0].querySelector(".opt-desc").textContent = dict.modals.reset.opt1Desc;
+        resetOpts[1].querySelector(".opt-title").textContent = dict.modals.reset.opt2Title;
+        resetOpts[1].querySelector(".opt-desc").textContent = dict.modals.reset.opt2Desc;
+        resetOpts[2].querySelector(".opt-title").textContent = dict.modals.reset.opt3Title;
+        resetOpts[2].querySelector(".opt-desc").textContent = dict.modals.reset.opt3Desc;
+      }
+
+      const resetCancelBtn = document.querySelector(".reset-btn-group .btn-cancel");
+      if (resetCancelBtn) resetCancelBtn.textContent = dict.modals.reset.btnCancel;
+      const resetConfirmBtn = document.querySelector("#doResetBtn span");
+      if (resetConfirmBtn) resetConfirmBtn.textContent = dict.modals.reset.btnConfirm;
     }
 
     const phases = ["validate", "ncm_decode", "exact_dedupe", "acoustic_dedupe", "publish"];
     const phaseMap = { "ncm_fingerprint": "ncm_decode" };
     const phaseMeta = {
-      validate: { name: "格式与探针校验", base: 0, weight: 15 },
-      ncm_decode: { name: "NCM 隔离解密", base: 15, weight: 15 },
-      exact_dedupe: { name: "哈希完全去重", base: 30, weight: 10 },
-      acoustic_dedupe: { name: "跨格式声纹识别", base: 40, weight: 20 },
-      publish: { name: "歌词/封面刮削与发布", base: 60, weight: 40 }
+      validate: { base: 0, weight: 15 },
+      ncm_decode: { base: 15, weight: 15 },
+      exact_dedupe: { base: 30, weight: 10 },
+      acoustic_dedupe: { base: 40, weight: 20 },
+      publish: { base: 60, weight: 40 }
     };
     let stateCache = {};
     let configCache = {};
@@ -1784,292 +2246,333 @@
       });
       if (!res.ok) {
         const err = await res.text();
-        alert("操作失败: " + err);
+        alert(t("dialogs.resetFailed") + err);
         return false;
       }
       return true;
     }
 
-    // Refresh UI Loop
+    // Main Update Dashboard
     async function updateDashboard() {
-      const [status, config, rep, runs, logs] = await Promise.all([
-        fetchJSON("/api/status"),
-        fetchJSON("/api/config"),
-        fetchJSON("/api/report"),
-        fetchJSON("/api/runs"),
-        fetch("/api/log?tail=300").then(r => r.ok ? r.text() : "")
-      ]);
+      const st = await fetchJSON("/api/status");
+      if (st) {
+        stateCache = st;
+        renderStatus(st);
+        if (st.report && st.report.metrics) {
+          renderMetrics(st.report.metrics);
+        }
+        if (st.report && st.report.recent_runs) {
+          renderRuns(st.report.recent_runs);
+        }
+      }
 
-      if (status) renderStatus(status);
-      if (config) renderConfig(config);
-      if (rep && rep.metrics) renderMetrics(rep.metrics);
-      if (runs) renderRuns(runs);
-      if (logs) renderLogs(logs);
+      const cfg = await fetchJSON("/api/config");
+      if (cfg) {
+        configCache = cfg;
+        renderConfig(cfg);
+      }
+
+      const logs = await fetchJSON("/api/log?tail=120");
+      if (logs && logs.lines) {
+        renderLogs(logs.lines);
+      }
+
+      updateActionButtons();
     }
 
+    // Render Status and Stepper
     function renderStatus(st) {
-      stateCache = st;
+      if (!st) return;
       const dot = document.getElementById("pulseDot");
       const msg = document.getElementById("statusMessage");
       const desc = document.getElementById("statusDesc");
+      const quickBadge = document.getElementById("quickBadge");
       const fill = document.getElementById("progressFill");
-      const countLabel = document.getElementById("progressCountLabel");
       const phaseLabel = document.getElementById("progressPhaseLabel");
+      const countLabel = document.getElementById("progressCountLabel");
 
-      dot.className = "pulse-dot " + (st.state || "idle");
-      msg.textContent = st.message || "就绪";
-      desc.textContent = st.run_id ? ("批次: " + st.run_id) : "等待任务触发";
+      if (st.state === "running") {
+        dot.className = "pulse-dot active";
+        msg.textContent = st.message || t("actionStates.running.text");
+        desc.textContent = st.run_id ? (t("batchPrefix") + st.run_id) : t("actionStates.running.text");
+        quickBadge.innerHTML = `<span class="badge-pill badge-running">${escapeHTML(t("history.status.running"))}</span>`;
+      } else {
+        dot.className = "pulse-dot";
+        msg.textContent = st.message || t("statusDefault");
+        desc.textContent = st.run_id ? (t("batchPrefix") + st.run_id) : t("waitingTask");
+        quickBadge.innerHTML = st.status === "failed" 
+          ? `<span class="badge-pill badge-failed">${escapeHTML(t("history.status.failed"))}</span>` 
+          : `<span class="badge-pill badge-done">${escapeHTML(t("statusDefault"))}</span>`;
+      }
 
-      // Stepper highlight
       const currentPhase = phaseMap[st.phase] || st.phase;
-      const currentIndex = phases.indexOf(currentPhase);
-      phases.forEach(p => {
-        const el = document.getElementById("step-" + p);
-        if (!el) return;
-        el.className = "step-item";
-        const idx = phases.indexOf(p);
-        if (st.state === "done") {
-          el.classList.add("completed");
-        } else if (currentPhase === p && st.state === "running") {
-          el.classList.add("active");
-        } else if (idx !== -1 && currentIndex !== -1 && idx < currentIndex) {
-          el.classList.add("completed");
+      const phaseIdx = phases.indexOf(currentPhase);
+
+      phases.forEach((p, idx) => {
+        const stepEl = document.getElementById(`step-${p}`);
+        if (!stepEl) return;
+        stepEl.classList.remove("active", "completed");
+        if (st.state === "running") {
+          if (idx < phaseIdx) stepEl.classList.add("completed");
+          else if (idx === phaseIdx) stepEl.classList.add("active");
+        } else if (st.phase === "completed" || (st.report && st.report.status === "done")) {
+          stepEl.classList.add("completed");
         }
       });
 
-      // Smooth Progress bar calculation
-      if (st.state === "running") {
+      if (st.state === "running" && currentPhase && phaseMeta[currentPhase]) {
         const pm = phaseMeta[currentPhase];
-        if (pm) {
-          const fraction = (st.phase_total > 0) ? Math.min(1, Math.max(0, st.phase_done / st.phase_total)) : 0;
-          const globalPercent = Math.min(99, Math.round(pm.base + fraction * pm.weight));
-          fill.style.width = globalPercent + "%";
-          countLabel.textContent = `${st.phase_done} / ${st.phase_total} (${Math.round(fraction * 100)}%) · 总体 ~${globalPercent}%`;
-          phaseLabel.textContent = `阶段 [${pm.name}]`;
-        } else {
-          const percent = (st.phase_total > 0) ? Math.min(100, Math.round((st.phase_done / st.phase_total) * 100)) : 0;
-          fill.style.width = percent + "%";
-          countLabel.textContent = `${st.phase_done} / ${st.phase_total} (${percent}%)`;
-          phaseLabel.textContent = `阶段 [${st.phase || "运行中"}]`;
-        }
-      } else if (st.state === "done") {
+        const fraction = st.phase_total > 0 ? (st.phase_done / st.phase_total) : 0;
+        const globalPercent = Math.min(100, Math.round(pm.base + fraction * pm.weight));
+        fill.style.width = `${globalPercent}%`;
+        countLabel.textContent = `${st.phase_done} / ${st.phase_total} (${Math.round(fraction * 100)}%) · ${t("statusLabels.totalProgress")} ~${globalPercent}%`;
+        const pName = t("stepper." + currentPhase) || currentPhase;
+        phaseLabel.textContent = `${t("statusLabels.phasePrefix")} [${pName}]`;
+      } else if (st.state === "running") {
+        fill.style.width = "40%";
+        countLabel.textContent = `${st.phase_done || 0} / ${st.phase_total || 0}`;
+        const pName = t("stepper." + (st.phase || "")) || st.phase || "-";
+        phaseLabel.textContent = `${t("statusLabels.phasePrefix")} [${pName}]`;
+      } else if (st.phase === "completed" || (st.report && st.report.status === "done")) {
         fill.style.width = "100%";
-        countLabel.textContent = "已全部完成 (100%)";
-        phaseLabel.textContent = "流水线已完成";
+        countLabel.textContent = t("statusLabels.completed");
+        phaseLabel.textContent = t("statusLabels.pipelineDone");
       } else {
         fill.style.width = "0%";
-        countLabel.textContent = "-";
-        phaseLabel.textContent = "待机中";
-      }
-
-      // Storage limit (512MB)
-      if (st.state_bytes) {
-        const mib = (st.state_bytes / (1024 * 1024)).toFixed(1);
-        const barPct = Math.min(100, Math.round((st.state_bytes / (512 * 1024 * 1024)) * 100));
-        document.getElementById("storageLabel").textContent = `${mib} MiB / 512 MiB`;
-        document.getElementById("storageFill").style.width = barPct + "%";
-      }
-
-      updateActionButtons();
-    }
-
-    function renderConfig(cfg) {
-      configCache = cfg;
-      const sourceInput = document.getElementById("sourceInput");
-      const outputInput = document.getElementById("outputInput");
-      const proxyInput = document.getElementById("proxyInput");
-      const offlineModeInput = document.getElementById("offlineModeInput");
-      if (sourceInput && sourceInput.hasAttribute("readonly") && cfg.source_dir) {
-        sourceInput.value = cfg.source_dir;
-      }
-      if (outputInput && outputInput.hasAttribute("readonly") && cfg.output_dir) {
-        outputInput.value = cfg.output_dir;
-      }
-      if (proxyInput && proxyInput.hasAttribute("readonly")) {
-        proxyInput.value = cfg.proxy || "";
-      }
-      if (offlineModeInput && offlineModeInput.disabled) {
-        offlineModeInput.checked = !!cfg.offline_mode;
-      }
-      updateActionButtons();
-    }
-
-    function updateActionButtons() {
-      const btn = document.getElementById("actionBtn");
-      const btnText = document.getElementById("actionBtnText");
-      const hint = document.getElementById("actionHint");
-      const editDirBtn = document.getElementById("editDirBtn");
-
-      const isRunning = stateCache.state === "running";
-      const isInit = !!configCache.initialized;
-      const isSampled = !!(configCache.sample_verified && configCache.sample_verified.run_id);
-
-      btn.disabled = isRunning;
-      hint.style.display = "none";
-      const stopBtn = document.getElementById("stopBtn");
-      if (stopBtn) {
-        stopBtn.style.display = isRunning ? "block" : "none";
-      }
-      const fullRerunBtn = document.getElementById("fullRerunBtn");
-      if (fullRerunBtn) {
-        fullRerunBtn.style.display = (!isRunning && isInit) ? "block" : "none";
-      }
-      if (editDirBtn && !document.getElementById("cfgActionBox")?.style.display?.includes("flex")) {
-        editDirBtn.style.display = isRunning ? "none" : "inline-flex";
-      }
-
-      const ob = document.getElementById("onboardingBanner");
-
-      const actDict = I18N[currentLang].actionStates;
-      if (isRunning) {
-        btnText.textContent = actDict.running.text;
-        btn.style.background = "var(--primary)";
-        if (ob) {
-          ob.style.background = "rgba(47, 129, 247, 0.1)";
-          ob.style.borderColor = "var(--primary)";
-          ob.innerHTML = actDict.running.banner;
-        }
-      } else if (isInit) {
-        btnText.textContent = actDict.init.text;
-        btn.style.background = "var(--success)";
-        btn.dataset.mode = "incremental";
-        hint.style.display = "block";
-        hint.innerHTML = actDict.init.hint;
-        if (ob) {
-          ob.style.background = "rgba(46, 160, 67, 0.1)";
-          ob.style.borderColor = "var(--success)";
-          ob.innerHTML = actDict.init.banner;
-        }
-      } else if (isSampled) {
-        btnText.textContent = actDict.sampled.text;
-        btn.style.background = "var(--primary)";
-        btn.dataset.mode = "full";
-        hint.style.display = "block";
-        hint.innerHTML = actDict.sampled.hint;
-        if (ob) {
-          ob.style.background = "rgba(56, 189, 248, 0.1)";
-          ob.style.borderColor = "#38bdf8";
-          ob.innerHTML = actDict.sampled.banner;
-        }
-      } else {
-        btnText.textContent = actDict.first.text;
-        btn.style.background = "var(--primary)";
-        btn.dataset.mode = "sample";
-        hint.style.display = "block";
-        hint.innerHTML = actDict.first.hint;
-        if (ob) {
-          ob.style.background = "rgba(56, 189, 248, 0.1)";
-          ob.style.borderColor = "#38bdf8";
-          ob.innerHTML = actDict.first.banner;
-        }
+        countLabel.textContent = "0 / 0 (0%)";
+        phaseLabel.textContent = t("statusLabels.standby");
       }
     }
 
+    // Metric Cards Render
     function renderMetrics(m) {
-      document.getElementById("m-scanned").textContent = m.scanned_total || 0;
+      if (!m) m = {};
+      const elScanned = document.getElementById("m-scanned");
+      const elPublished = document.getElementById("m-published");
+      const elExact = document.getElementById("m-exact");
+      const elAcoustic = document.getElementById("m-acoustic");
+      const elLyrics = document.getElementById("m-lyrics");
+      const elCover = document.getElementById("m-cover");
+      const elVersion = document.getElementById("m-version");
+      const elFailed = document.getElementById("m-failed");
+
+      if (elScanned) elScanned.textContent = (m.scanned_total || 0).toLocaleString();
+      if (elPublished) elPublished.textContent = (m.published || 0).toLocaleString();
+      if (elExact) elExact.textContent = (m.exact_duplicates || 0).toLocaleString();
+      if (elAcoustic) elAcoustic.textContent = (m.acoustic_duplicates || 0).toLocaleString();
+
+      const lyrTotal = (m.lyrics_embedded || 0) + (m.lyrics_already_present || 0);
+      if (elLyrics) elLyrics.textContent = lyrTotal.toLocaleString();
+
+      const covTotal = (m.cover_art_embedded || 0) + (m.cover_art_already_present || 0);
+      if (elCover) elCover.textContent = covTotal.toLocaleString();
+
+      if (elVersion) elVersion.textContent = (m.version_groups || 0).toLocaleString();
+      if (elFailed) elFailed.textContent = (m.failed || 0).toLocaleString();
+
+      // Dynamic sub-hints
       const scannedHint = document.getElementById("m-scanned-hint");
       if (scannedHint) {
         const parts = [];
-        if (m.new_files !== undefined || m.modified_files !== undefined || m.stale_decisions !== undefined || m.retry_files !== undefined) {
-          parts.push(`本次：新增 ${m.new_files || 0} · 改动 ${m.modified_files || 0} · 重判 ${m.stale_decisions || 0} · 回补 ${m.retry_files || 0}`);
+        const pDict = I18N[currentLang].metricsHints.scannedParts;
+        if (m.new_files || m.modified_files || m.stale_decisions || m.retry_files) {
+          parts.push(`${pDict.newFiles}: ${m.new_files || 0} · ${pDict.modified}: ${m.modified_files || 0} · ${pDict.stale}: ${m.stale_decisions || 0} · ${pDict.retry}: ${m.retry_files || 0}`);
         }
-        if (m.orphans_archived) parts.push(`清理无主副本 ${m.orphans_archived}`);
-        scannedHint.textContent = parts.length ? parts.join(" ｜ ") : "原始源音频发现量";
+        if (m.orphans_archived) parts.push(`${pDict.orphans}: ${m.orphans_archived}`);
+        scannedHint.textContent = parts.length ? parts.join(" · ") : I18N[currentLang].metricsHints.scannedDefault;
       }
-      document.getElementById("m-published").textContent = m.published || 0;
-      document.getElementById("m-exact").textContent = m.exact_duplicate || 0;
-      document.getElementById("m-acoustic").textContent = m.same_recording_duplicate || 0;
+
       const acoustHint = document.getElementById("m-acoustic-hint");
-      if (acoustHint) acoustHint.textContent = `声纹吻合（择最高音质）· 品质升级置换 ${m.quality_upgraded || 0}`;
-
-      const lyrEmbedded = m.lyrics_embedded || 0;
-      const lyrPresent = m.lyrics_already_present || 0;
-      const lyrTotal = m.lyrics_total_with !== undefined ? m.lyrics_total_with : (lyrEmbedded + lyrPresent);
-      document.getElementById("m-lyrics").textContent = lyrTotal;
-      const lyrHint = document.getElementById("m-lyrics-hint");
-      if (lyrHint) lyrHint.textContent = `新写入 ${lyrEmbedded} · 原有保留 ${lyrPresent}`;
-
-      const covEmbedded = m.cover_embedded || 0;
-      const covPresent = m.cover_already_present || 0;
-      const covTotal = m.cover_total_with !== undefined ? m.cover_total_with : (covEmbedded + covPresent);
-      document.getElementById("m-cover").textContent = covTotal;
-      const covHint = document.getElementById("m-cover-hint");
-      if (covHint) covHint.textContent = `新嵌入 ${covEmbedded} · 原有保留 ${covPresent}`;
-
-      document.getElementById("m-version").textContent = m.possible_version_groups || 0;
-      document.getElementById("m-failed").textContent = m.failed || 0;
-    }
-
-    function formatLocalTime(utcStr) {
-      if (!utcStr) return "-";
-      let s = String(utcStr).trim();
-      let date;
-      if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(s)) {
-        date = new Date(s.replace(" ", "T") + "Z");
-      } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(s) && !s.endsWith("Z") && !/[+-]\d{2}:\d{2}$/.test(s)) {
-        date = new Date(s + "Z");
-      } else {
-        date = new Date(s);
+      if (acoustHint) {
+        const mH = I18N[currentLang].metricsHints;
+        acoustHint.textContent = `${mH.acousticPrefix} · ${mH.qualityUpgraded}: ${m.quality_upgraded || 0}`;
       }
-      if (isNaN(date.getTime())) return s;
-      const pad = (n) => String(n).padStart(2, "0");
-      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+
+      const lyrHint = document.getElementById("m-lyrics-hint");
+      if (lyrHint) {
+        const lyrEmbedded = (m.lyrics_embedded || 0).toLocaleString();
+        const lyrPresent = (m.lyrics_already_present || 0).toLocaleString();
+        const mH = I18N[currentLang].metricsHints;
+        lyrHint.textContent = `${mH.lyricsEmbedded}: ${lyrEmbedded} · ${mH.lyricsRetained}: ${lyrPresent}`;
+      }
+
+      const covHint = document.getElementById("m-cover-hint");
+      if (covHint) {
+        const covEmbedded = (m.cover_art_embedded || 0).toLocaleString();
+        const covPresent = (m.cover_art_already_present || 0).toLocaleString();
+        const mH = I18N[currentLang].metricsHints;
+        covHint.textContent = `${mH.coverEmbedded}: ${covEmbedded} · ${mH.coverRetained}: ${covPresent}`;
+      }
     }
 
+    // Config Panel Render
+    function renderConfig(cfg) {
+      if (!cfg) return;
+      const sInput = document.getElementById("sourceInput");
+      const oInput = document.getElementById("outputInput");
+      const pInput = document.getElementById("proxyInput");
+      const offInput = document.getElementById("offlineModeInput");
+      const sFill = document.getElementById("storageFill");
+      const sLabel = document.getElementById("storageLabel");
+
+      if (sInput && document.activeElement !== sInput && sInput.hasAttribute("readonly")) {
+        sInput.value = cfg.source_dir || "";
+      }
+      if (oInput && document.activeElement !== oInput && oInput.hasAttribute("readonly")) {
+        oInput.value = cfg.output_dir || "";
+      }
+      if (pInput && document.activeElement !== pInput && pInput.hasAttribute("readonly")) {
+        pInput.value = cfg.proxy || "";
+      }
+      if (offInput && offInput.hasAttribute("disabled")) {
+        offInput.checked = !!cfg.offline_mode;
+      }
+
+      if (Array.isArray(cfg.accessible_dirs)) {
+        const dl = document.getElementById("accessiblePathsList");
+        if (dl) {
+          dl.innerHTML = cfg.accessible_dirs.map(d => `<option value="${escapeHTML(d)}"></option>`).join("");
+        }
+      }
+
+      const used = cfg.storage_used_bytes || 0;
+      const limit = cfg.storage_limit_bytes || (512 * 1024 * 1024);
+      const mbUsed = (used / (1024 * 1024)).toFixed(1);
+      const mbLimit = Math.round(limit / (1024 * 1024));
+      const pct = Math.min(100, Math.round((used / limit) * 100));
+
+      if (sLabel) sLabel.textContent = `${mbUsed} MiB / ${mbLimit} MiB (${pct}%)`;
+      if (sFill) {
+        sFill.style.width = `${pct}%`;
+        sFill.style.background = pct > 85 ? "var(--danger)" : "var(--primary)";
+      }
+    }
+
+    // Runs Table Render
     function renderRuns(runs) {
       const tbody = document.getElementById("runsTbody");
       if (!runs || runs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">暂无记录</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">${t("history.empty")}</td></tr>`;
         return;
       }
-      tbody.innerHTML = runs.map(r => `
-        <tr>
-          <td><code>${escapeHTML(r.id)}</code></td>
-          <td><span class="badge-pill badge-${r.mode === 'full' ? 'primary' : 'done'}">${escapeHTML(r.mode)}</span></td>
-          <td><span class="badge-pill badge-${r.status}">${escapeHTML(r.status)}</span></td>
-          <td>${escapeHTML(r.phase || '-')}</td>
-          <td style="font-variant-numeric: tabular-nums;">${escapeHTML(formatLocalTime(r.started_at))}</td>
-        </tr>
-      `).join("");
+      tbody.innerHTML = runs.map(r => {
+        const modeText = t("history.modes." + r.mode) || r.mode;
+        const statusText = t("history.status." + r.status) || r.status;
+        const phaseKey = phaseMap[r.phase] || r.phase;
+        const phaseText = t("history.phases." + phaseKey) || phaseKey || "-";
+        const badgeClass = r.status === "done" ? "badge-done" : (r.status === "failed" ? "badge-failed" : "badge-running");
+        return `
+          <tr>
+            <td><code>${escapeHTML(r.id)}</code></td>
+            <td><span class="badge-pill badge-${r.mode === 'full' ? 'primary' : 'done'}">${escapeHTML(modeText)}</span></td>
+            <td><span class="badge-pill ${badgeClass}">${escapeHTML(statusText)}</span></td>
+            <td>${escapeHTML(phaseText)}</td>
+            <td style="font-variant-numeric: tabular-nums;">${escapeHTML(formatLocalTime(r.started_at))}</td>
+          </tr>
+        `;
+      }).join("");
     }
 
-    function renderLogs(logText) {
+    // Terminal Log Render
+    function renderLogs(lines) {
       const logBody = document.getElementById("logBody");
-      const isScrolledToBottom = logBody.scrollHeight - logBody.clientHeight <= logBody.scrollTop + 50;
-      const clean = (logText || "").trim();
-      if (!clean) {
-        logBody.textContent = (stateCache && stateCache.state === "running") ? "正在等待流水线输出实时日志...\n" : "暂无运行中日志记录\n";
-      } else {
-        logBody.textContent = logText;
+      if (!logBody) return;
+      if (!lines || lines.length === 0) {
+        logBody.textContent = (stateCache && stateCache.state === "running") ? t("logs.waiting") : t("logs.empty");
+        return;
       }
-      if (isScrolledToBottom) {
+      const isAtBottom = (logBody.scrollHeight - logBody.scrollTop - logBody.clientHeight) < 60;
+      logBody.textContent = lines.join("\n");
+      if (isAtBottom) {
         logBody.scrollTop = logBody.scrollHeight;
       }
     }
 
-    function escapeHTML(str) {
-      if (!str) return "";
-      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    // Button & Action Controller
+    function updateActionButtons() {
+      const btn = document.getElementById("actionBtn");
+      const btnText = document.getElementById("actionBtnText");
+      const stopBtn = document.getElementById("stopBtn");
+      const fullRerunBtn = document.getElementById("fullRerunBtn");
+      const hint = document.getElementById("actionHint");
+      const banner = document.getElementById("onboardingBanner");
+
+      const isRunning = stateCache && stateCache.state === "running";
+      const samplePassed = stateCache && stateCache.sample_gate_passed;
+      const hasInitRun = stateCache && stateCache.has_initial_full_run;
+
+      if (isRunning) {
+        btn.disabled = true;
+        btn.dataset.mode = "";
+        btnText.textContent = t("actionStates.running.text");
+        btn.style.background = "var(--bg-subtle)";
+        btn.style.borderColor = "var(--card-border)";
+        btn.style.color = "var(--text-muted)";
+        stopBtn.style.display = "inline-flex";
+        fullRerunBtn.style.display = "none";
+        hint.style.display = "none";
+        banner.style.display = "block";
+        banner.innerHTML = t("actionStates.running.banner");
+        banner.style.borderLeftColor = "var(--primary)";
+        return;
+      }
+
+      stopBtn.style.display = "none";
+      btn.disabled = false;
+
+      if (hasInitRun) {
+        btn.dataset.mode = "incremental";
+        btnText.textContent = t("actionStates.init.text");
+        btn.style.background = "linear-gradient(135deg, #10b981, #059669)";
+        btn.style.borderColor = "#059669";
+        btn.style.color = "#ffffff";
+        fullRerunBtn.style.display = "inline-flex";
+        fullRerunBtn.querySelector("span").textContent = t("controls.fullRerunBtn");
+        banner.style.display = "block";
+        banner.innerHTML = t("actionStates.init.banner");
+        banner.style.borderLeftColor = "#10b981";
+        hint.style.display = "block";
+        hint.innerHTML = t("actionStates.init.hint");
+      } else if (samplePassed) {
+        btn.dataset.mode = "full";
+        btnText.textContent = t("actionStates.sampled.text");
+        btn.style.background = "linear-gradient(135deg, #2563eb, #1d4ed8)";
+        btn.style.borderColor = "#1d4ed8";
+        btn.style.color = "#ffffff";
+        fullRerunBtn.style.display = "none";
+        banner.style.display = "block";
+        banner.innerHTML = t("actionStates.sampled.banner");
+        banner.style.borderLeftColor = "var(--primary)";
+        hint.style.display = "block";
+        hint.innerHTML = t("actionStates.sampled.hint");
+      } else {
+        btn.dataset.mode = "sample";
+        btnText.textContent = t("actionStates.first.text");
+        btn.style.background = "linear-gradient(135deg, #0284c7, #0369a1)";
+        btn.style.borderColor = "#0369a1";
+        btn.style.color = "#ffffff";
+        fullRerunBtn.style.display = "none";
+        banner.style.display = "block";
+        banner.innerHTML = t("actionStates.first.banner");
+        banner.style.borderLeftColor = "#38bdf8";
+        hint.style.display = "block";
+        hint.innerHTML = t("actionStates.first.hint");
+      }
     }
 
-    // Directory editing
-    const editDirBtn = document.getElementById("editDirBtn");
-    const cancelEditDirBtn = document.getElementById("cancelEditDirBtn");
-    const cfgActionBox = document.getElementById("cfgActionBox");
+    // Editable Directory Controller
     const sourceInput = document.getElementById("sourceInput");
     const outputInput = document.getElementById("outputInput");
     const proxyInput = document.getElementById("proxyInput");
     const offlineModeInput = document.getElementById("offlineModeInput");
-    const accessiblePathsList = document.getElementById("accessiblePathsList");
+    const editDirBtn = document.getElementById("editDirBtn");
+    const cancelEditDirBtn = document.getElementById("cancelEditDirBtn");
+    const cfgActionBox = document.getElementById("cfgActionBox");
 
-    async function enableDirEditing() {
-      if (stateCache.state === "running") {
-        alert("整理任务运行中，不能更改目录与配置");
+    function enableDirEditing() {
+      if (stateCache && stateCache.state === "running") {
+        alert(t("dialogs.pipelineRunningWait"));
         return;
-      }
-      const paths = await fetchJSON("/api/accessible-paths") || [];
-      if (accessiblePathsList) {
-        accessiblePathsList.innerHTML = paths.map(p => `<option value="${escapeHTML(p)}"></option>`).join("");
       }
       sourceInput.removeAttribute("readonly");
       outputInput.removeAttribute("readonly");
@@ -2077,6 +2580,7 @@
       if (offlineModeInput) offlineModeInput.removeAttribute("disabled");
       cfgActionBox.style.display = "flex";
       editDirBtn.style.display = "none";
+      sourceInput.focus();
     }
 
     function cancelDirEditing() {
@@ -2110,10 +2614,8 @@
         if (offlineModeInput) offlineModeInput.setAttribute("disabled", true);
         cfgActionBox.style.display = "none";
         editDirBtn.style.display = "inline-flex";
-        await 
-    applyLanguage();
-    updateDashboard();
-
+        alert(t("dialogs.saveConfigSuccess"));
+        await updateDashboard();
       }
     });
 
@@ -2121,11 +2623,11 @@
     document.getElementById("actionBtn").addEventListener("click", async () => {
       const mode = document.getElementById("actionBtn").dataset.mode;
       if (!mode) return;
-      if (mode === "full" && !confirm("即将启动全量整理流水线。已处理完成的文件将自动复用，是否立即开始？")) {
+      if (mode === "full" && !confirm(t("dialogs.confirmFull"))) {
         return;
       }
       const logBody = document.getElementById("logBody");
-      if (logBody) logBody.textContent = `[${new Date().toLocaleTimeString()}] 正在启动整理流水线，请稍候...\n`;
+      if (logBody) logBody.textContent = `[${new Date().toLocaleTimeString()}] ${t("logs.starting")}`;
       const ok = await postJSON("/api/run", { mode });
       if (ok) {
         await updateDashboard();
@@ -2135,7 +2637,9 @@
 
     // Stop button click
     document.getElementById("stopBtn").addEventListener("click", async () => {
-      if (!confirm("确定要停止当前正在运行的整理任务吗？已处理的文件成果将被安全保留。")) return;
+      if (!confirm(t("dialogs.confirmStop"))) return;
+      const logBody = document.getElementById("logBody");
+      if (logBody) logBody.textContent = `[${new Date().toLocaleTimeString()}] ${t("logs.stopping")}`;
       const ok = await postJSON("/api/stop", {});
       if (ok) {
         await updateDashboard();
@@ -2147,9 +2651,9 @@
     const fullRerunBtn = document.getElementById("fullRerunBtn");
     if (fullRerunBtn) {
       fullRerunBtn.addEventListener("click", async () => {
-        if (!confirm("即将启动全量对齐整理。已处理完成的文件将自动秒级复用，系统自动查漏补缺，是否开始？")) return;
+        if (!confirm(t("dialogs.confirmRerun"))) return;
         const logBody = document.getElementById("logBody");
-        if (logBody) logBody.textContent = `[${new Date().toLocaleTimeString()}] 正在启动全量整理流水线，请稍候...\n`;
+        if (logBody) logBody.textContent = `[${new Date().toLocaleTimeString()}] ${t("logs.starting")}`;
         const ok = await postJSON("/api/run", { mode: "full" });
         if (ok) {
           await updateDashboard();
@@ -2164,14 +2668,14 @@
       clearLogBtn.addEventListener("click", async () => {
         await postJSON("/api/log/clear", {});
         const logBody = document.getElementById("logBody");
-        if (logBody) logBody.textContent = "暂无运行中日志记录\n";
+        if (logBody) logBody.textContent = t("logs.cleared");
       });
     }
 
     // Copy Log
     document.getElementById("copyLogBtn").addEventListener("click", () => {
       const text = document.getElementById("logBody").textContent;
-      navigator.clipboard.writeText(text).then(() => alert("日志已复制到剪贴板"));
+      navigator.clipboard.writeText(text).then(() => alert(t("dialogs.logCopied")));
     });
 
     document.getElementById("refreshBtn").addEventListener("click", () => {
@@ -2245,24 +2749,25 @@
         qrImg.style.display = "block";
         qrImg.src = "/api/sponsor-qr?type=" + type + "&t=" + Date.now();
       }
-      if (qrPlaceholderText) qrPlaceholderText.textContent = isWechat ? "微信收款码" : "支付宝收款码";
-      if (qrCaption) qrCaption.textContent = isWechat ? "微信扫一扫 · 请作者喝一杯咖啡 ☕" : "支付宝扫一扫 · 支持作者持续维护 ☕";
+      if (qrPlaceholderText) qrPlaceholderText.textContent = isWechat ? t("modals.sponsor.wechatBtn") : t("modals.sponsor.alipayBtn");
+      if (qrCaption) qrCaption.textContent = isWechat ? t("modals.sponsor.captionWechat") : t("modals.sponsor.captionAlipay");
     }
 
     function handleQRError(img) {
       img.style.display = "none";
-      const ph = document.getElementById("qrPlaceholder");
-      if (ph) ph.style.display = "flex";
+      const placeholder = document.getElementById("qrPlaceholder");
+      if (placeholder) placeholder.style.display = "flex";
     }
 
     // Reset Modal Logic
     function openResetModal() {
       if (stateCache && stateCache.state === "running") {
-        alert("整理流水线运行中，不能执行重置操作。请先等待完成或点击停止。");
+        alert(t("dialogs.pipelineRunningWait"));
         return;
       }
       const modal = document.getElementById("resetModal");
       if (!modal) return;
+      applyResetPreset("standard");
       modal.classList.add("active");
       document.body.style.overflow = "hidden";
     }
@@ -2279,10 +2784,19 @@
     }
 
     function applyResetPreset(type) {
-      const isFull = (type === "full");
-      document.getElementById("chkClearHistory").checked = true;
-      document.getElementById("chkClearInventory").checked = true;
-      document.getElementById("chkClearKB").checked = isFull;
+      const chkHistory = document.getElementById("chkClearHistory");
+      const chkInventory = document.getElementById("chkClearInventory");
+      const chkKB = document.getElementById("chkClearKB");
+
+      if (type === "standard") {
+        if (chkHistory) chkHistory.checked = true;
+        if (chkInventory) chkInventory.checked = true;
+        if (chkKB) chkKB.checked = false;
+      } else if (type === "full") {
+        if (chkHistory) chkHistory.checked = true;
+        if (chkInventory) chkInventory.checked = true;
+        if (chkKB) chkKB.checked = true;
+      }
     }
 
     async function executeReset() {
@@ -2291,20 +2805,16 @@
       const clearKB = document.getElementById("chkClearKB").checked;
 
       if (!clearHistory && !clearInventory && !clearKB) {
-        alert("请至少勾选一项需要清理的项目");
+        alert(t("dialogs.selectOneReset"));
         return;
       }
 
-      let warning = "确定要重置所选项目吗？\n";
-      if (clearKB) warning += "• ⚠️ 本地元数据与歌词知识库将被清空，下次整理将重新向音乐源检索歌词。\n";
-      if (clearInventory || clearHistory) warning += "• 系统历史记录与曲目状态清单将被清空，回到初始从头开始状态。\n";
-      warning += "\n是否确认继续？";
-
-      if (!confirm(warning)) return;
+      if (!confirm(t("dialogs.confirmReset"))) return;
 
       const btn = document.getElementById("doResetBtn");
+      const oldHtml = btn.innerHTML;
       btn.disabled = true;
-      btn.innerHTML = "<span>正在重置...</span>";
+      btn.innerHTML = `<span>${escapeHTML(t("dialogs.pipelineStarting"))}</span>`;
 
       try {
         const res = await fetch("/api/reset", {
@@ -2313,28 +2823,59 @@
           body: JSON.stringify({
             clear_history: clearHistory,
             clear_inventory: clearInventory,
-            clear_knowledge_base: clearKB,
-            clear_ncm_cache: false
+            clear_kb: clearKB
           })
         });
         const data = await res.json();
-        if (res.ok) {
-          alert(data.message || "重置成功！系统已回到初始就绪状态。");
+        if (res.ok && data.ok) {
+          alert(data.message || t("dialogs.resetSuccess"));
           closeResetModal();
-          location.reload();
+          await updateDashboard();
         } else {
-          alert("重置失败：" + (data.error || "未知错误"));
+          alert(t("dialogs.resetFailed") + (data.error || "unknown"));
         }
       } catch (err) {
-        alert("网络请求失败：" + err.message);
+        alert(t("dialogs.resetFailed") + err.message);
       } finally {
         btn.disabled = false;
-        btn.innerHTML = "<span>确认执行重置</span>";
+        btn.innerHTML = oldHtml;
       }
     }
 
-    // Initial Load & Schedule
-    updateDashboard().then(schedulePoll);
+    // Utility
+    function escapeHTML(str) {
+      if (str === null || str === undefined) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function formatLocalTime(isoStr) {
+      if (!isoStr) return "-";
+      try {
+        const d = new Date(isoStr);
+        if (isNaN(d.getTime())) return isoStr;
+        const pad = (n) => String(n).padStart(2, "0");
+        const yr = d.getFullYear();
+        const mo = pad(d.getMonth() + 1);
+        const dy = pad(d.getDate());
+        const hr = pad(d.getHours());
+        const mi = pad(d.getMinutes());
+        const sc = pad(d.getSeconds());
+        return `${yr}-${mo}-${dy} ${hr}:${mi}:${sc}`;
+      } catch (e) {
+        return isoStr;
+      }
+    }
+
+    // Initialize Language & Dashboard
+    applyLanguage();
+    updateDashboard();
+    schedulePoll();
+
   </script>
 </body>
 </html>

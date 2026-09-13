@@ -690,11 +690,11 @@
       text-align: center;
     }
     .qr-image-wrapper {
-      width: 200px;
-      height: 200px;
-      background: white;
-      border-radius: 12px;
-      padding: 12px;
+      width: 220px;
+      height: 300px;
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -706,7 +706,7 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
-      border-radius: 6px;
+      border-radius: 8px;
     }
     .qr-placeholder {
       display: flex;
@@ -1302,7 +1302,7 @@
           <div class="qr-switch-bar">
             <button class="qr-tab-btn active" id="qrBtnWechat" onclick="switchQR('wechat')">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8.5 4.5C4.36 4.5 1 7.3 1 10.75c0 1.95 1.07 3.68 2.75 4.79-.12.43-.45 1.63-.52 1.88-.08.31.11.31.24.22.1-.06 1.4-1 1.96-1.4.67.2 1.38.31 2.12.31.25 0 .5-.01.74-.04-.2-.58-.31-1.21-.31-1.86 0-3.31 3.13-6 7-6 .18 0 .36.01.54.02C14.71 6.13 11.85 4.5 8.5 4.5zm-2.25 4a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm4.5 0a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm5.75 3.25c-3.45 0-6.25 2.35-6.25 5.25s2.8 5.25 6.25 5.25c.62 0 1.22-.09 1.77-.26.47.33 1.55 1.11 1.64 1.16.1.07.27.07.2-.18-.06-.2-.33-1.2-.42-1.57 1.41-.93 2.31-2.38 2.31-4.02 0-2.9-2.8-5.25-6.25-5.25zm-2 3.75a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm4 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
-              <span>微信赞赏码</span>
+              <span>微信收款码</span>
             </button>
             <button class="qr-tab-btn" id="qrBtnAlipay" onclick="switchQR('alipay')">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19.8 12.3c-.6-.4-1.3-.7-2.1-.9.6-1.5 1-3.2 1.2-5h-4.3V4.9h-2.5V6.4H6.8V8.6h5.3c-.2 1.3-.5 2.6-1 3.7-1.4-.4-3-.6-4.7-.6-3.6 0-5.7 1.9-5.7 4.5 0 2.8 2.4 4.7 6.1 4.7 3.9 0 7-2.3 8.3-5.7 1.5.5 3 .9 4.3 1.2l1.4-4.4zM6.5 18.5c-2.3 0-3.7-1.1-3.7-2.7 0-1.5 1.2-2.6 3.4-2.6 1.3 0 2.5.2 3.6.5-.8 2.9-2.2 4.8-3.3 4.8z"/></svg>
@@ -1315,11 +1315,11 @@
               <img id="qrImg" src="/api/sponsor-qr?type=wechat" alt="赞赏收款码" onerror="handleQRError(this)" />
               <div class="qr-placeholder" id="qrPlaceholder" style="display:none;">
                 <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><path d="M7 17h.01"></path><path d="M17 17h.01"></path><path d="M7 7h.01"></path><path d="M17 7h.01"></path></svg>
-                <div style="margin-top:8px;font-weight:600;font-size:13px;" id="qrPlaceholderText">微信赞赏</div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">点击下方按钮上传收款码图片</div>
+                <div style="margin-top:8px;font-weight:600;font-size:13px;" id="qrPlaceholderText">微信收款码</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">暂未找到收款码图片</div>
               </div>
             </div>
-            <div class="qr-caption" id="qrCaption">扫一扫请作者喝一杯咖啡 ☕</div>
+            <div class="qr-caption" id="qrCaption">微信扫一扫 · 请作者喝一杯咖啡 ☕</div>
           </div>
         </div>
 
@@ -1973,15 +1973,11 @@
         qrImg.style.display = "block";
         qrImg.src = "/api/sponsor-qr?type=" + type + "&t=" + Date.now();
       }
-      if (qrPlaceholderText) qrPlaceholderText.textContent = isWechat ? "微信赞赏码" : "支付宝收款码";
+      if (qrPlaceholderText) qrPlaceholderText.textContent = isWechat ? "微信收款码" : "支付宝收款码";
       if (qrCaption) qrCaption.textContent = isWechat ? "微信扫一扫 · 请作者喝一杯咖啡 ☕" : "支付宝扫一扫 · 支持作者持续维护 ☕";
     }
 
     function handleQRError(img) {
-      if (currentQRType === "wechat") {
-        switchQR("alipay");
-        return;
-      }
       img.style.display = "none";
       const ph = document.getElementById("qrPlaceholder");
       if (ph) ph.style.display = "flex";

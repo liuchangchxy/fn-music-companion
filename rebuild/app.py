@@ -520,6 +520,13 @@ class Handler(BaseHTTPRequestHandler):
                 alt = STATE / (filename.rsplit(".", 1)[0] + ".jpg")
                 if alt.is_file():
                     qr_file = alt
+            if not qr_file.is_file():
+                app_dir = Path(__file__).parent
+                qr_file = app_dir / filename
+                if not qr_file.is_file():
+                    alt = app_dir / (filename.rsplit(".", 1)[0] + ".jpg")
+                    if alt.is_file():
+                        qr_file = alt
             if qr_file.is_file():
                 content_type = "image/png" if qr_file.suffix.lower() == ".png" else "image/jpeg"
                 data = qr_file.read_bytes()

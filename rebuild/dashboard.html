@@ -1329,43 +1329,43 @@
             <div class="feat-item">
               <div class="feat-icon" style="color:#38bdf8;">🚀</div>
               <div>
-                <div class="feat-title">Btrfs 零物理拷贝 (Reflink CoW)</div>
-                <div class="feat-desc">借助 Linux/Btrfs 写时复制技术，原曲库与整理库共享物理底层 Extent。秒级对齐 80GB 曲库，零额外物理磁盘空间开销。</div>
+                <div class="feat-title">Btrfs 写时复制 (Reflink CoW)</div>
+                <div class="feat-desc">同存储卷整理时优先使用 Reflink 写时复制，数据块秒级指针复用，大幅降低物理写入与额外空间（跨卷自动安全回退为常规拷贝）。</div>
               </div>
             </div>
             <div class="feat-item">
               <div class="feat-icon" style="color:#22c55e;">🛡️</div>
               <div>
-                <div class="feat-title">源目录绝对只读安全保护</div>
-                <div class="feat-desc">输入目录容器层以物理只读 (:ro) 挂载。绝不破坏、原地修改或删除原始文件，免除由于崩溃或断电导致的意外丢歌。</div>
+                <div class="feat-title">源目录只读保护</div>
+                <div class="feat-desc">输入目录在容器层默认以只读 (:ro) 挂载，流水线严禁对源文件执行删除、改写或原地移动，确保原始收藏毫发无损。</div>
               </div>
             </div>
             <div class="feat-item">
               <div class="feat-icon" style="color:#eab308;">⚡</div>
               <div>
-                <div class="feat-title">零冗余解密隔离流水线</div>
-                <div class="feat-desc">首轮在沙盒临时区解密一次并完成声纹识别，发布阶段无缝继承解密流，杜绝传统工具解密两遍消耗数十 GB IO 的严重浪费。</div>
+                <div class="feat-title">NCM 隔离解密与自动清理</div>
+                <div class="feat-desc">加密文件在独立临时沙盒中完成解码、声纹提取与元数据补全，发布后即刻自动销毁临时文件，保持存储空间整洁干净。</div>
               </div>
             </div>
             <div class="feat-item">
               <div class="feat-icon" style="color:#a855f7;">🧬</div>
               <div>
-                <div class="feat-title">跨格式声纹智能去重</div>
-                <div class="feat-desc">使用 Chromaprint 提取真实声学波形特征，智能对齐 FLAC 与 MP3 相同曲目，自动优选最高无损音质并归档低质副本。</div>
+                <div class="feat-title">跨格式声纹辅助去重</div>
+                <div class="feat-desc">基于开源 Chromaprint 提取音频波形特征指纹，识别不同格式的同一录音，并依据码率规则优先保留高品质版本。</div>
               </div>
             </div>
             <div class="feat-item">
               <div class="feat-icon" style="color:#ec4899;">🌐</div>
               <div>
-                <div class="feat-title">工业级元数据与双语歌词</div>
-                <div class="feat-desc">内置 MusicBrainz 严格速率控制（1 req/s）与 LRCLIB 同步双语歌词，SACAD 抓取最高分辨率原版封面并嵌入音频。</div>
+                <div class="feat-title">多源标签与歌词补全</div>
+                <div class="feat-desc">整合 QQ 音乐、网易云与 LRCLIB 等多源数据，遵循接口限流规则防封禁，补齐高清封面与同步滚动歌词。</div>
               </div>
             </div>
             <div class="feat-item">
               <div class="feat-icon" style="color:#f97316;">🖥️</div>
               <div>
-                <div class="feat-title">飞牛原生应用规范直连</div>
-                <div class="feat-desc">原生兼容飞牛应用商店 FPK 标准与 trim.music，规范格式自动触发飞牛音乐无感重载，享受精美海报墙与流动歌词。</div>
+                <div class="feat-title">契合飞牛原生规范</div>
+                <div class="feat-desc">遵循飞牛应用商店 FPK 标准，输出规范的「歌手/专辑/曲目」目录层级，便于飞牛音乐（trim.music）即时扫描建库。</div>
               </div>
             </div>
           </div>

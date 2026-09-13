@@ -47,7 +47,11 @@ def build_fpk(output_path: Path | None = None) -> Path:
 
     app_tgz_bytes = make_app_tgz(APP_DIR)
 
-    with tarfile.open(output_path, mode="w") as fpk:
+    # Calculate checksum from app_tgz_bytes
+    import hashlib
+    checksum = hashlib.md5(app_tgz_bytes).hexdigest()
+
+    with tarfile.open(output_path, mode="w:gz") as fpk:
         # 1. Add app.tgz
         tinfo = tarfile.TarInfo(name="app.tgz")
         tinfo.size = len(app_tgz_bytes)

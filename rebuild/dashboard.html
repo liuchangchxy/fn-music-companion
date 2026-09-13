@@ -1,0 +1,1961 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>飞牛音乐伴侣 · MusicFlow</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --bg-subtle: #161b22;
+      --card-bg: rgba(22, 27, 34, 0.85);
+      --card-border: rgba(240, 246, 252, 0.1);
+      --text: #f0f6fc;
+      --text-muted: #8b949e;
+      --text-secondary: #c9d1d9;
+      --primary: #2f81f7;
+      --primary-hover: #58a6ff;
+      --primary-glow: rgba(47, 129, 247, 0.25);
+      --success: #238636;
+      --success-light: #2ea043;
+      --success-glow: rgba(46, 160, 67, 0.25);
+      --warning: #d29922;
+      --warning-glow: rgba(210, 153, 34, 0.25);
+      --danger: #da3633;
+      --danger-glow: rgba(218, 54, 51, 0.25);
+      --terminal-bg: #070a0e;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    [data-theme="light"] {
+      --bg: #f6f8fa;
+      --bg-subtle: #ffffff;
+      --card-bg: rgba(255, 255, 255, 0.9);
+      --card-border: rgba(31, 35, 40, 0.12);
+      --text: #1f2328;
+      --text-muted: #656d76;
+      --text-secondary: #424a53;
+      --primary: #0969da;
+      --primary-hover: #1a7f37;
+      --primary-glow: rgba(9, 105, 218, 0.15);
+      --success: #1a7f37;
+      --success-light: #2da44e;
+      --success-glow: rgba(45, 164, 78, 0.15);
+      --warning: #bf8700;
+      --warning-glow: rgba(191, 135, 0, 0.15);
+      --danger: #cf222e;
+      --danger-glow: rgba(207, 34, 46, 0.15);
+      --terminal-bg: #1f2328;
+      --shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+      padding: 24px 16px 60px;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Top Navigation / Brand */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+    .brand-text h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    .brand-text .badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--primary);
+      background: var(--primary-glow);
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .theme-toggle, .btn-icon {
+      background: transparent;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      cursor: pointer;
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+    .theme-toggle:hover, .btn-icon:hover {
+      color: var(--text);
+      background: var(--bg-subtle);
+      border-color: var(--text-muted);
+    }
+
+    /* Status Banner / Card */
+    .status-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 24px;
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    .status-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), #a855f7);
+    }
+    .status-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .pulse-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #8b949e;
+      position: relative;
+    }
+    .pulse-dot.running {
+      background: var(--primary);
+      box-shadow: 0 0 12px var(--primary);
+    }
+    .pulse-dot.running::after {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: var(--primary);
+      animation: pulse 1.8s infinite;
+    }
+    .pulse-dot.done { background: var(--success); }
+    .pulse-dot.failed { background: var(--danger); }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.8; }
+      100% { transform: scale(2.6); opacity: 0; }
+    }
+    .status-title {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .status-desc {
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    /* Phase Stepper */
+    .stepper {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin: 20px 0 16px;
+    }
+    @media (max-width: 680px) {
+      .stepper { grid-template-columns: 1fr; }
+    }
+    .step-item {
+      background: var(--bg-subtle);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: var(--transition);
+    }
+    .step-item.active {
+      border-color: var(--primary);
+      background: var(--primary-glow);
+    }
+    .step-item.completed {
+      border-color: var(--success);
+      color: var(--success-light);
+    }
+    .step-num {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .step-item.active .step-num { color: var(--primary); }
+    .step-name {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Progress Bar */
+    .progress-wrap {
+      margin-top: 14px;
+    }
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+    .progress-bar {
+      height: 8px;
+      background: var(--bg-subtle);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), #a855f7);
+      border-radius: 4px;
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+
+    /* KPI Metrics Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 820px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: var(--transition);
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(240, 246, 252, 0.2);
+    }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .card b {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.5px;
+      margin: 8px 0 2px;
+      font-variant-numeric: tabular-nums;
+    }
+    .card span.hint {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Controls & Directory Panel */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 820px) {
+      .controls-grid { grid-template-columns: 1fr; }
+    }
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 20px;
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+    }
+    .panel-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      margin-top: 12px;
+    }
+    label:first-of-type { margin-top: 0; }
+    input, select {
+      width: 100%;
+      background: var(--bg-subtle);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      outline: none;
+      transition: var(--transition);
+      font-family: inherit;
+    }
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+    .btn-main {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px var(--primary-glow);
+      margin-top: 16px;
+    }
+    .btn-main:hover:not(:disabled) {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+    .btn-main:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .notice {
+      background: rgba(210, 153, 34, 0.12);
+      border: 1px solid rgba(210, 153, 34, 0.3);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--warning);
+      margin-top: 14px;
+      line-height: 1.45;
+    }
+    .storage-bar-box {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--card-border);
+    }
+
+    /* Terminal Logs */
+    .terminal {
+      background: var(--terminal-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .terminal-bar {
+      background: var(--bg-subtle);
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .terminal-title {
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-secondary);
+    }
+    .terminal-body {
+      font-family: "JetBrains Mono", Consolas, Monaco, "Courier New", monospace;
+      font-size: 12.5px;
+      padding: 16px;
+      max-height: 320px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: #9ece6a;
+      line-height: 1.6;
+    }
+
+    /* History Table */
+    .table-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 20px;
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      margin-top: 10px;
+    }
+    th {
+      color: var(--text-muted);
+      font-weight: 600;
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    td {
+      padding: 12px;
+      border-bottom: 1px solid var(--card-border);
+      color: var(--text-secondary);
+    }
+    tr:hover td {
+      background: var(--bg-subtle);
+    }
+    .badge-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge-done { background: var(--success-glow); color: var(--success-light); }
+    .badge-running { background: var(--primary-glow); color: var(--primary); }
+    .badge-failed { background: var(--danger-glow); color: var(--danger); }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      margin-top: 24px;
+    }
+    footer a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      margin: 0 8px;
+    }
+    footer a:hover {
+      color: var(--primary);
+    }
+
+    /* Sponsor Button in Header */
+    .btn-sponsor {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 13px;
+      background: linear-gradient(135deg, rgba(244, 63, 94, 0.16), rgba(239, 68, 68, 0.22));
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      border-radius: var(--radius-sm);
+      color: #fb7185;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .btn-sponsor:hover {
+      background: linear-gradient(135deg, rgba(244, 63, 94, 0.28), rgba(239, 68, 68, 0.38));
+      border-color: #f43f5e;
+      color: #fff;
+      box-shadow: 0 0 16px rgba(244, 63, 94, 0.35);
+      transform: translateY(-1px);
+    }
+    [data-theme="light"] .btn-sponsor {
+      background: #ffe4e6;
+      border-color: #fca5a5;
+      color: #e11d48;
+    }
+    [data-theme="light"] .btn-sponsor:hover {
+      background: #fecdd3;
+      border-color: #f43f5e;
+      color: #be123c;
+    }
+
+    /* Modal Backdrop & Container */
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .modal-backdrop.active {
+      display: flex;
+      opacity: 1;
+    }
+    .modal {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 650px;
+      max-height: 88vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      transform: translateY(18px) scale(0.97);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-backdrop.active .modal {
+      transform: translateY(0) scale(1);
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--card-border);
+      position: sticky;
+      top: 0;
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      z-index: 5;
+    }
+    .modal-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .modal-close {
+      background: transparent;
+      border: none;
+      font-size: 24px;
+      line-height: 1;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: var(--transition);
+    }
+    .modal-close:hover {
+      color: var(--text);
+      background: var(--bg-subtle);
+    }
+    .modal-tabs {
+      display: flex;
+      gap: 12px;
+      padding: 12px 24px 0;
+      border-bottom: 1px solid var(--card-border);
+      background: var(--card-bg);
+    }
+    .modal-tab-btn {
+      padding: 8px 14px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .modal-tab-btn:hover {
+      color: var(--text);
+    }
+    .modal-tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    .modal-body {
+      padding: 24px;
+      overflow-y: auto;
+    }
+    .sponsor-notice {
+      background: var(--bg-subtle);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .qr-switch-bar {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .qr-tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 18px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .qr-tab-btn.active {
+      background: var(--primary-glow);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+    .qr-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      text-align: center;
+    }
+    .qr-image-wrapper {
+      width: 200px;
+      height: 200px;
+      background: white;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .qr-image-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 6px;
+    }
+    .qr-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #64748b;
+    }
+    .qr-caption {
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+    .qr-upload-hint {
+      margin-top: 6px;
+    }
+    .qr-upload-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 5px 12px;
+      border-radius: 6px;
+      border: 1px dashed var(--card-border);
+      transition: var(--transition);
+      background: var(--card-bg);
+    }
+    .qr-upload-btn:hover {
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+    /* Features Grid */
+    .feat-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .feat-item {
+      display: flex;
+      gap: 14px;
+      padding: 14px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+    }
+    .feat-icon {
+      font-size: 24px;
+      line-height: 1;
+      padding-top: 2px;
+    }
+    .feat-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .feat-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .about-card {
+      padding: 8px;
+    }
+    .about-links {
+      display: flex;
+      justify-content: center;
+    }
+    .github-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: #24292e;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      transition: var(--transition);
+    }
+    .github-btn:hover {
+      background: #333;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    [data-theme="light"] .github-btn {
+      background: #24292f;
+      color: #fff;
+    }
+
+    /* Reset Modal Styles */
+    .reset-option-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 16px 0 20px;
+    }
+    .reset-option-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .reset-option-item:hover {
+      border-color: var(--primary);
+    }
+    .reset-option-item input[type="checkbox"] {
+      margin-top: 3px;
+      cursor: pointer;
+      width: 17px;
+      height: 17px;
+      accent-color: var(--primary);
+    }
+    .reset-option-text {
+      flex: 1;
+    }
+    .reset-option-text .opt-title {
+      font-weight: 600;
+      font-size: 13.5px;
+      color: var(--text);
+    }
+    .reset-option-text .opt-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+    .reset-quick-presets {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .preset-btn {
+      background: var(--bg-subtle);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 5px 11px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .preset-btn:hover {
+      color: var(--text);
+      border-color: var(--primary);
+    }
+    .reset-btn-group {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid var(--card-border);
+    }
+    .btn-danger-confirm {
+      background: var(--danger);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 9px 18px;
+      font-weight: 600;
+      font-size: 13.5px;
+      cursor: pointer;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-danger-confirm:hover {
+      filter: brightness(1.1);
+      box-shadow: 0 0 12px var(--danger-glow);
+    }
+    .btn-cancel {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 9px 16px;
+      font-size: 13.5px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .btn-cancel:hover {
+      background: var(--bg-subtle);
+      color: var(--text);
+    }
+  </style>
+</head>
+<body data-theme="dark">
+  <div class="container">
+    
+    <!-- Top Bar -->
+    <header>
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+        </div>
+        <div class="brand-text">
+          <h1>飞牛音乐伴侣 <span class="badge">MusicFlow</span></h1>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-sponsor" id="sponsorBtn" title="赞助支持与关于应用" onclick="openAboutModal('sponsor')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          <span>赞助 / 关于</span>
+        </button>
+        <button class="theme-toggle" id="themeBtn" title="切换暗色/明亮模式">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="themeIcon"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+        </button>
+        <button class="btn-icon" id="headerResetBtn" title="清空缓存与历史记录 (从头开始)" onclick="openResetModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+        </button>
+        <button class="btn-icon" id="refreshBtn" title="刷新数据">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Live Progress & Status -->
+    <section class="status-card">
+      <div class="status-header">
+        <div class="status-indicator">
+          <div class="pulse-dot" id="pulseDot"></div>
+          <div>
+            <div class="status-title" id="statusMessage">正在连接...</div>
+            <div class="status-desc" id="statusDesc">准备就绪</div>
+          </div>
+        </div>
+        <div id="quickBadge"></div>
+      </div>
+
+      <!-- Pipeline Phase Stepper -->
+      <div class="stepper">
+        <div class="step-item" id="step-validate">
+          <span class="step-num">Step 1</span>
+          <span class="step-name">格式与探针校验</span>
+        </div>
+        <div class="step-item" id="step-ncm_decode">
+          <span class="step-num">Step 2</span>
+          <span class="step-name">NCM 隔离解密</span>
+        </div>
+        <div class="step-item" id="step-exact_dedupe">
+          <span class="step-num">Step 3</span>
+          <span class="step-name">哈希完全去重</span>
+        </div>
+        <div class="step-item" id="step-acoustic_dedupe">
+          <span class="step-num">Step 4</span>
+          <span class="step-name">跨格式声纹识别</span>
+        </div>
+        <div class="step-item" id="step-publish">
+          <span class="step-num">Step 5</span>
+          <span class="step-name">歌词/封面刮削与发布</span>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="progress-wrap">
+        <div class="progress-meta">
+          <span id="progressPhaseLabel">当前进度</span>
+          <span id="progressCountLabel">0 / 0 (0%)</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KPI Metric Cards -->
+    <div class="grid">
+      <div class="card">
+        <div class="card-top">
+          <span>扫描总数</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+        </div>
+        <b id="m-scanned">0</b>
+        <span class="hint" id="m-scanned-hint">原始源音频发现量</span>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span>成功发布</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2ea043" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        </div>
+        <b id="m-published" style="color: var(--success-light);">0</b>
+        <span class="hint">原子归档入整理后曲库</span>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span>完全哈希重复</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d29922" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+        </div>
+        <b id="m-exact">0</b>
+        <span class="hint">逐位一致相同文件剔除</span>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span>同录音跨格式重复</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2"><path d="M2 10s3-3 5-3 5 6 7 6 5-3 8-3"></path><path d="M2 14s3-3 5-3 5 6 7 6 5-3 8-3"></path></svg>
+        </div>
+        <b id="m-acoustic">0</b>
+        <span class="hint" id="m-acoustic-hint">声纹吻合（择最高音质）</span>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span>已含歌词总数</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+        </div>
+        <b id="m-lyrics">0</b>
+        <span class="hint" id="m-lyrics-hint">新写入 0 · 原有保留 0</span>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span>高清封面覆盖</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+        </div>
+        <b id="m-cover">0</b>
+        <span class="hint" id="m-cover-hint">新嵌入 0 · 原有保留 0</span>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span>疑似版本组</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+        </div>
+        <b id="m-version">0</b>
+        <span class="hint">Live/Remaster 歧义保留</span>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span>处理失败异常</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#cf222e" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        </div>
+        <b id="m-failed">0</b>
+        <span class="hint">损坏或拒绝文件</span>
+      </div>
+    </div>
+
+    <!-- Controls & Directory Panel -->
+    <div class="controls-grid">
+      <div class="panel">
+        <div class="panel-title" style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="display: flex; align-items: center; gap: 8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+            目录配置
+          </span>
+          <button type="button" class="btn-icon" id="editDirBtn" style="font-size: 12px; padding: 4px 10px; width: auto; border-radius: 6px; border: 1px solid var(--card-border); background: var(--bg-subtle); color: var(--text-secondary); cursor: pointer;" title="修改目录">
+            修改目录
+          </button>
+        </div>
+        <form id="cfgForm">
+          <label>原始文件夹（只读挂载）</label>
+          <input id="sourceInput" list="accessiblePathsList" required readonly>
+          <label>整理后文件夹（读写归档）</label>
+          <input id="outputInput" list="accessiblePathsList" required readonly>
+          <datalist id="accessiblePathsList"></datalist>
+          <label style="margin-top: 8px;">网络代理 (可选，留空则系统直连访问全网)</label>
+          <input id="proxyInput" placeholder="可选，例如 http://192.168.100.1:7890 (留空则设备直连 MusicBrainz 等全网源)" readonly>
+          <label style="margin-top: 8px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-primary); cursor: pointer;">
+            <input type="checkbox" id="offlineModeInput" disabled style="width: 16px; height: 16px; accent-color: var(--primary); margin: 0; cursor: pointer;">
+            <span>离线整理模式 (跳过联网刮削，仅根据已有内嵌标签整理与分轨)</span>
+          </label>
+          <div id="cfgActionBox" style="display: none; margin-top: 10px; gap: 8px;">
+            <button type="submit" class="btn-main" style="background: var(--primary); padding: 8px 14px; font-size: 13px;">保存目录配置</button>
+            <button type="button" id="cancelEditDirBtn" class="btn-main" style="background: var(--bg-subtle); border: 1px solid var(--card-border); padding: 8px 14px; font-size: 13px;">取消</button>
+          </div>
+          <div class="notice">
+            🔒 原始文件夹只读保护；音频临时文件仅在整理后目录本次运行期间流转，<strong>结束即清理</strong>。
+          </div>
+          <div class="storage-bar-box">
+            <div class="progress-meta">
+              <span>状态缓存硬限额 (512 MiB)</span>
+              <span id="storageLabel">0 MiB / 512 MiB</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="storageFill" style="background: var(--primary);"></div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          任务控制中心
+        </div>
+        <div id="actionArea">
+          <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 12px;">系统已锁定受控运行状态，请根据当前阶段执行操作：</p>
+          <button class="btn-main" id="actionBtn" disabled>
+            <span id="actionBtnText">加载中...</span>
+          </button>
+          <button class="btn-main" id="stopBtn" style="display: none; background: var(--danger); margin-top: 10px;">
+            <span>⏹️ 停止当前整理任务</span>
+          </button>
+          <button class="btn-main" id="fullRerunBtn" style="display: none; background: var(--bg-subtle); border: 1px solid var(--card-border); color: var(--text-secondary); margin-top: 8px; font-size: 13px;">
+            <span>🔄 重新执行全量对齐 (支持秒级复用)</span>
+          </button>
+          <button class="btn-main" id="openResetModalBtn" style="display: block; background: transparent; border: 1px dashed rgba(218, 54, 51, 0.4); color: var(--danger); margin-top: 10px; font-size: 13px;" onclick="openResetModal()">
+            <span>🧹 清空缓存与历史记录 (从头开始)</span>
+          </button>
+          <div id="actionHint" class="notice" style="display: none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Terminal Log Stream -->
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="terminal-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+          实时运行流水线日志
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-icon" id="clearLogBtn" title="清空终端日志">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          </button>
+          <button class="btn-icon" id="copyLogBtn" title="复制完整日志">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          </button>
+        </div>
+      </div>
+      <div class="terminal-body" id="logBody">正在获取日志...</div>
+    </div>
+
+    <!-- History Table -->
+    <div class="table-panel">
+      <div class="panel-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        执行历史记录
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>运行 ID</th>
+            <th>整理模式</th>
+            <th>最终状态</th>
+            <th>当前阶段</th>
+            <th>开始时间</th>
+          </tr>
+        </thead>
+        <tbody id="runsTbody">
+          <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">暂无记录</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <footer>
+      <span>飞牛音乐伴侣 (MusicFlow) · 专为飞牛 OS (fnOS) 打造的高保真音乐整理引擎</span>
+      <div>
+        <a href="javascript:void(0)" onclick="openAboutModal('sponsor')">☕ 赞助支持</a> ·
+        <a href="javascript:void(0)" onclick="openAboutModal('features')">🌟 架构亮点</a> ·
+        <a href="javascript:void(0)" onclick="openAboutModal('about')">ℹ️ 关于与开源</a> ·
+        <a href="/api/report" target="_blank">报告 JSON</a> ·
+        <a href="/api/log?tail=500" target="_blank">近500条日志</a> ·
+        <a href="/api/log/download" target="_blank">下载日志</a> ·
+        <a href="/api/status" target="_blank">状态 API</a>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Modal: About & Sponsor -->
+  <div class="modal-backdrop" id="aboutModal" onclick="handleBackdropClick(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-brand">
+          <div class="brand-icon" style="width:36px;height:36px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px;">
+              <span>飞牛音乐伴侣</span>
+              <span style="font-size:11px;padding:2px 7px;border-radius:10px;background:var(--primary-glow);color:var(--primary);font-weight:600;">MusicFlow v0.3.0</span>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">High-Fidelity Music Rebuild Engine for fnOS</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeAboutModal()" title="关闭">&times;</button>
+      </div>
+      
+      <div class="modal-tabs">
+        <button class="modal-tab-btn active" id="tabBtnSponsor" onclick="switchModalTab('sponsor')">☕ 赞助打赏</button>
+        <button class="modal-tab-btn" id="tabBtnFeatures" onclick="switchModalTab('features')">🌟 架构设计与优势</button>
+        <button class="modal-tab-btn" id="tabBtnAbout" onclick="switchModalTab('about')">ℹ️ 关于与 GitHub</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Tab 1: Sponsor -->
+        <div class="tab-pane" id="paneSponsor">
+          <div class="sponsor-notice">
+            <p><strong>感谢支持开源！</strong> 本项目为 100% 独立全开源作品，永久免费，无任何收费解锁、功能限制或商业捆绑。</p>
+            <p style="margin-top:6px;font-size:12px;color:var(--text-secondary);">如果您觉得它帮您理顺了混乱的海量曲库，或者利用 <b>Btrfs 零拷贝 (Reflink CoW)</b> 帮您省下了宝贵的 NAS 存储空间与排查时间，欢迎请作者喝一杯咖啡 ☕，鼓励更多功能迭代与官方应用商店维护！</p>
+          </div>
+
+          <div class="qr-switch-bar">
+            <button class="qr-tab-btn active" id="qrBtnWechat" onclick="switchQR('wechat')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8.5 4.5C4.36 4.5 1 7.3 1 10.75c0 1.95 1.07 3.68 2.75 4.79-.12.43-.45 1.63-.52 1.88-.08.31.11.31.24.22.1-.06 1.4-1 1.96-1.4.67.2 1.38.31 2.12.31.25 0 .5-.01.74-.04-.2-.58-.31-1.21-.31-1.86 0-3.31 3.13-6 7-6 .18 0 .36.01.54.02C14.71 6.13 11.85 4.5 8.5 4.5zm-2.25 4a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm4.5 0a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm5.75 3.25c-3.45 0-6.25 2.35-6.25 5.25s2.8 5.25 6.25 5.25c.62 0 1.22-.09 1.77-.26.47.33 1.55 1.11 1.64 1.16.1.07.27.07.2-.18-.06-.2-.33-1.2-.42-1.57 1.41-.93 2.31-2.38 2.31-4.02 0-2.9-2.8-5.25-6.25-5.25zm-2 3.75a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm4 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
+              <span>微信赞赏码</span>
+            </button>
+            <button class="qr-tab-btn" id="qrBtnAlipay" onclick="switchQR('alipay')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19.8 12.3c-.6-.4-1.3-.7-2.1-.9.6-1.5 1-3.2 1.2-5h-4.3V4.9h-2.5V6.4H6.8V8.6h5.3c-.2 1.3-.5 2.6-1 3.7-1.4-.4-3-.6-4.7-.6-3.6 0-5.7 1.9-5.7 4.5 0 2.8 2.4 4.7 6.1 4.7 3.9 0 7-2.3 8.3-5.7 1.5.5 3 .9 4.3 1.2l1.4-4.4zM6.5 18.5c-2.3 0-3.7-1.1-3.7-2.7 0-1.5 1.2-2.6 3.4-2.6 1.3 0 2.5.2 3.6.5-.8 2.9-2.2 4.8-3.3 4.8z"/></svg>
+              <span>支付宝收款码</span>
+            </button>
+          </div>
+
+          <div class="qr-card">
+            <div class="qr-image-wrapper">
+              <img id="qrImg" src="/api/sponsor-qr?type=wechat" alt="赞赏收款码" onerror="handleQRError(this)" />
+              <div class="qr-placeholder" id="qrPlaceholder" style="display:none;">
+                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><path d="M7 17h.01"></path><path d="M17 17h.01"></path><path d="M7 7h.01"></path><path d="M17 7h.01"></path></svg>
+                <div style="margin-top:8px;font-weight:600;font-size:13px;" id="qrPlaceholderText">微信赞赏</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">点击下方按钮上传收款码图片</div>
+              </div>
+            </div>
+            <div class="qr-caption" id="qrCaption">扫一扫请作者喝一杯咖啡 ☕</div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Features & Architecture -->
+        <div class="tab-pane" id="paneFeatures" style="display:none;">
+          <div class="feat-grid">
+            <div class="feat-item">
+              <div class="feat-icon" style="color:#38bdf8;">🚀</div>
+              <div>
+                <div class="feat-title">Btrfs 零物理拷贝 (Reflink CoW)</div>
+                <div class="feat-desc">借助 Linux/Btrfs 写时复制技术，原曲库与整理库共享物理底层 Extent。秒级对齐 80GB 曲库，零额外物理磁盘空间开销。</div>
+              </div>
+            </div>
+            <div class="feat-item">
+              <div class="feat-icon" style="color:#22c55e;">🛡️</div>
+              <div>
+                <div class="feat-title">源目录绝对只读安全保护</div>
+                <div class="feat-desc">输入目录容器层以物理只读 (:ro) 挂载。绝不破坏、原地修改或删除原始文件，免除由于崩溃或断电导致的意外丢歌。</div>
+              </div>
+            </div>
+            <div class="feat-item">
+              <div class="feat-icon" style="color:#eab308;">⚡</div>
+              <div>
+                <div class="feat-title">零冗余解密隔离流水线</div>
+                <div class="feat-desc">首轮在沙盒临时区解密一次并完成声纹识别，发布阶段无缝继承解密流，杜绝传统工具解密两遍消耗数十 GB IO 的严重浪费。</div>
+              </div>
+            </div>
+            <div class="feat-item">
+              <div class="feat-icon" style="color:#a855f7;">🧬</div>
+              <div>
+                <div class="feat-title">跨格式声纹智能去重</div>
+                <div class="feat-desc">使用 Chromaprint 提取真实声学波形特征，智能对齐 FLAC 与 MP3 相同曲目，自动优选最高无损音质并归档低质副本。</div>
+              </div>
+            </div>
+            <div class="feat-item">
+              <div class="feat-icon" style="color:#ec4899;">🌐</div>
+              <div>
+                <div class="feat-title">工业级元数据与双语歌词</div>
+                <div class="feat-desc">内置 MusicBrainz 严格速率控制（1 req/s）与 LRCLIB 同步双语歌词，SACAD 抓取最高分辨率原版封面并嵌入音频。</div>
+              </div>
+            </div>
+            <div class="feat-item">
+              <div class="feat-icon" style="color:#f97316;">🖥️</div>
+              <div>
+                <div class="feat-title">飞牛原生应用规范直连</div>
+                <div class="feat-desc">原生兼容飞牛应用商店 FPK 标准与 trim.music，规范格式自动触发飞牛音乐无感重载，享受精美海报墙与流动歌词。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: About & GitHub -->
+        <div class="tab-pane" id="paneAbout" style="display:none;">
+          <div class="about-card">
+            <div style="text-align:center;margin-bottom:18px;">
+              <h3 style="font-size:18px;margin-bottom:6px;">飞牛音乐伴侣 (MusicFlow for fnOS)</h3>
+              <p style="color:var(--text-muted);font-size:13px;">专为飞牛私有云量身定制的高保真无损音乐整理引擎</p>
+            </div>
+            <div class="about-links">
+              <a href="https://github.com/chang-nas/fn-music-flow" target="_blank" class="github-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                <span>访问 GitHub 仓库 · 欢迎 Star 支持</span>
+              </a>
+            </div>
+            <div style="margin-top:22px;font-size:12px;color:var(--text-muted);line-height:1.8;">
+              <div style="font-weight:600;color:var(--text-secondary);margin-bottom:4px;">开源上游组件致谢：</div>
+              <div>• <b>Rust / Dupsonic</b>：跨格式音频指纹索引与相似度聚类</div>
+              <div>• <b>TagLib (v2.1.1)</b>：高保真 ID3v2 / FLAC Vorbis 注释引擎</div>
+              <div>• <b>Chromaprint / fpcalc</b>：声学指纹抽取算法</div>
+              <div>• <b>taurusxin / ncmdump</b>：NCM 高保真格式还原</div>
+              <div>• <b>Beets & SACAD</b>：工业级音频元数据与原版超清封面抓取</div>
+              <div>• <b>fnOS Team</b>：飞牛私有云应用生态支持</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Reset & Clear Cache -->
+  <div class="modal-backdrop" id="resetModal" onclick="handleResetBackdropClick(event)">
+    <div class="modal" onclick="event.stopPropagation()" style="max-width: 540px;">
+      <div class="modal-header">
+        <div class="modal-brand">
+          <div class="brand-icon" style="width:36px;height:36px;background:linear-gradient(135deg, #ef4444, #f97316);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px;">
+              <span>清空缓存与从头开始</span>
+              <span style="font-size:11px;padding:2px 7px;border-radius:10px;background:var(--danger-glow);color:var(--danger);font-weight:600;">系统维护</span>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">按需重置历史记录、曲目状态清单或清空本地歌词知识库</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeResetModal()" title="关闭">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="sponsor-notice" style="border-left: 3px solid var(--warning); background: var(--bg-subtle);">
+          <p style="font-weight: 600; color: var(--warning);">⚠️ 关于从头开始操作：</p>
+          <p style="font-size: 12.5px; color: var(--text-secondary); margin-top: 4px;">重置操作仅清理系统运行账本与元数据，<b>原始音乐文件夹（只读）不受任何影响，系统也绝不在 SSD 留存任何音频文件</b>。你可以根据需求选择重置深度：</p>
+        </div>
+
+        <div class="reset-quick-presets">
+          <span style="font-size: 12px; color: var(--text-muted); align-self: center;">快捷方案：</span>
+          <button type="button" class="preset-btn" onclick="applyResetPreset('standard')">标准重置 (保留歌词知识库)</button>
+          <button type="button" class="preset-btn" onclick="applyResetPreset('full')">彻底清空 (从零全新开始)</button>
+        </div>
+
+        <div class="reset-option-list">
+          <label class="reset-option-item">
+            <input type="checkbox" id="chkClearHistory" checked>
+            <div class="reset-option-text">
+              <div class="opt-title">清空历史运行记录与指标账本</div>
+              <div class="opt-desc">清空所有历史运行记录、处理指标统计（全部归零）并清空终端日志。</div>
+            </div>
+          </label>
+
+          <label class="reset-option-item">
+            <input type="checkbox" id="chkClearInventory" checked>
+            <div class="reset-option-text">
+              <div class="opt-title">重置曲目状态清单与门禁</div>
+              <div class="opt-desc">清除曲目去重状态清单，解除门禁标记，允许重新验证样本或从零开始全新整理。</div>
+            </div>
+          </label>
+
+          <label class="reset-option-item">
+            <input type="checkbox" id="chkClearKB">
+            <div class="reset-option-text">
+              <div class="opt-title">清空本地元数据与歌词知识库</div>
+              <div class="opt-desc">清除本地 SQLite 中已缓存的歌词与标签。下次整理时将重新向音乐源发起检索。</div>
+            </div>
+          </label>
+        </div>
+
+        <div class="reset-btn-group">
+          <button type="button" class="btn-cancel" onclick="closeResetModal()">取消</button>
+          <button type="button" class="btn-danger-confirm" id="doResetBtn" onclick="executeReset()">
+            <span>确认执行重置</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const phases = ["validate", "ncm_decode", "exact_dedupe", "acoustic_dedupe", "publish"];
+    const phaseMap = { "ncm_fingerprint": "ncm_decode" };
+    const phaseMeta = {
+      validate: { name: "格式与探针校验", base: 0, weight: 15 },
+      ncm_decode: { name: "NCM 隔离解密", base: 15, weight: 15 },
+      exact_dedupe: { name: "哈希完全去重", base: 30, weight: 10 },
+      acoustic_dedupe: { name: "跨格式声纹识别", base: 40, weight: 20 },
+      publish: { name: "歌词/封面刮削与发布", base: 60, weight: 40 }
+    };
+    let stateCache = {};
+    let configCache = {};
+    let pollTimer = null;
+
+    // Theme Management
+    const themeBtn = document.getElementById("themeBtn");
+    const themeIcon = document.getElementById("themeIcon");
+    function toggleTheme() {
+      const current = document.body.getAttribute("data-theme");
+      const target = current === "light" ? "dark" : "light";
+      document.body.setAttribute("data-theme", target);
+      localStorage.setItem("fn-music-theme", target);
+      updateThemeIcon(target);
+    }
+    function updateThemeIcon(theme) {
+      themeIcon.innerHTML = theme === "light"
+        ? '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>'
+        : '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>';
+    }
+    const savedTheme = localStorage.getItem("fn-music-theme") || "dark";
+    document.body.setAttribute("data-theme", savedTheme);
+    updateThemeIcon(savedTheme);
+    themeBtn.addEventListener("click", toggleTheme);
+
+    // API Helpers
+    async function fetchJSON(url) {
+      try {
+        const res = await fetch(url);
+        return res.ok ? await res.json() : null;
+      } catch (e) { return null; }
+    }
+
+    async function postJSON(url, data) {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        alert("操作失败: " + err);
+        return false;
+      }
+      return true;
+    }
+
+    // Refresh UI Loop
+    async function updateDashboard() {
+      const [status, config, rep, runs, logs] = await Promise.all([
+        fetchJSON("/api/status"),
+        fetchJSON("/api/config"),
+        fetchJSON("/api/report"),
+        fetchJSON("/api/runs"),
+        fetch("/api/log?tail=300").then(r => r.ok ? r.text() : "")
+      ]);
+
+      if (status) renderStatus(status);
+      if (config) renderConfig(config);
+      if (rep && rep.metrics) renderMetrics(rep.metrics);
+      if (runs) renderRuns(runs);
+      if (logs) renderLogs(logs);
+    }
+
+    function renderStatus(st) {
+      stateCache = st;
+      const dot = document.getElementById("pulseDot");
+      const msg = document.getElementById("statusMessage");
+      const desc = document.getElementById("statusDesc");
+      const fill = document.getElementById("progressFill");
+      const countLabel = document.getElementById("progressCountLabel");
+      const phaseLabel = document.getElementById("progressPhaseLabel");
+
+      dot.className = "pulse-dot " + (st.state || "idle");
+      msg.textContent = st.message || "就绪";
+      desc.textContent = st.run_id ? ("批次: " + st.run_id) : "等待任务触发";
+
+      // Stepper highlight
+      const currentPhase = phaseMap[st.phase] || st.phase;
+      const currentIndex = phases.indexOf(currentPhase);
+      phases.forEach(p => {
+        const el = document.getElementById("step-" + p);
+        if (!el) return;
+        el.className = "step-item";
+        const idx = phases.indexOf(p);
+        if (st.state === "done") {
+          el.classList.add("completed");
+        } else if (currentPhase === p && st.state === "running") {
+          el.classList.add("active");
+        } else if (idx !== -1 && currentIndex !== -1 && idx < currentIndex) {
+          el.classList.add("completed");
+        }
+      });
+
+      // Smooth Progress bar calculation
+      if (st.state === "running") {
+        const pm = phaseMeta[currentPhase];
+        if (pm) {
+          const fraction = (st.phase_total > 0) ? Math.min(1, Math.max(0, st.phase_done / st.phase_total)) : 0;
+          const globalPercent = Math.min(99, Math.round(pm.base + fraction * pm.weight));
+          fill.style.width = globalPercent + "%";
+          countLabel.textContent = `${st.phase_done} / ${st.phase_total} (${Math.round(fraction * 100)}%) · 总体 ~${globalPercent}%`;
+          phaseLabel.textContent = `阶段 [${pm.name}]`;
+        } else {
+          const percent = (st.phase_total > 0) ? Math.min(100, Math.round((st.phase_done / st.phase_total) * 100)) : 0;
+          fill.style.width = percent + "%";
+          countLabel.textContent = `${st.phase_done} / ${st.phase_total} (${percent}%)`;
+          phaseLabel.textContent = `阶段 [${st.phase || "运行中"}]`;
+        }
+      } else if (st.state === "done") {
+        fill.style.width = "100%";
+        countLabel.textContent = "已全部完成 (100%)";
+        phaseLabel.textContent = "流水线已完成";
+      } else {
+        fill.style.width = "0%";
+        countLabel.textContent = "-";
+        phaseLabel.textContent = "待机中";
+      }
+
+      // Storage limit (512MB)
+      if (st.state_bytes) {
+        const mib = (st.state_bytes / (1024 * 1024)).toFixed(1);
+        const barPct = Math.min(100, Math.round((st.state_bytes / (512 * 1024 * 1024)) * 100));
+        document.getElementById("storageLabel").textContent = `${mib} MiB / 512 MiB`;
+        document.getElementById("storageFill").style.width = barPct + "%";
+      }
+
+      updateActionButtons();
+    }
+
+    function renderConfig(cfg) {
+      configCache = cfg;
+      const sourceInput = document.getElementById("sourceInput");
+      const outputInput = document.getElementById("outputInput");
+      const proxyInput = document.getElementById("proxyInput");
+      const offlineModeInput = document.getElementById("offlineModeInput");
+      if (sourceInput && sourceInput.hasAttribute("readonly") && cfg.source_dir) {
+        sourceInput.value = cfg.source_dir;
+      }
+      if (outputInput && outputInput.hasAttribute("readonly") && cfg.output_dir) {
+        outputInput.value = cfg.output_dir;
+      }
+      if (proxyInput && proxyInput.hasAttribute("readonly")) {
+        proxyInput.value = cfg.proxy || "";
+      }
+      if (offlineModeInput && offlineModeInput.disabled) {
+        offlineModeInput.checked = !!cfg.offline_mode;
+      }
+      updateActionButtons();
+    }
+
+    function updateActionButtons() {
+      const btn = document.getElementById("actionBtn");
+      const btnText = document.getElementById("actionBtnText");
+      const hint = document.getElementById("actionHint");
+      const editDirBtn = document.getElementById("editDirBtn");
+
+      const isRunning = stateCache.state === "running";
+      const isInit = !!configCache.initialized;
+      const isSampled = !!(configCache.sample_verified && configCache.sample_verified.run_id);
+
+      btn.disabled = isRunning;
+      hint.style.display = "none";
+      const stopBtn = document.getElementById("stopBtn");
+      if (stopBtn) {
+        stopBtn.style.display = isRunning ? "block" : "none";
+      }
+      const fullRerunBtn = document.getElementById("fullRerunBtn");
+      if (fullRerunBtn) {
+        fullRerunBtn.style.display = (!isRunning && isInit) ? "block" : "none";
+      }
+      if (editDirBtn && !document.getElementById("cfgActionBox")?.style.display?.includes("flex")) {
+        editDirBtn.style.display = isRunning ? "none" : "inline-flex";
+      }
+
+      if (isRunning) {
+        btnText.textContent = "整理流水线正在运行中...";
+        btn.style.background = "var(--primary)";
+      } else if (isInit) {
+        btnText.textContent = "增量整理 (新增 / 改动 / 重判 / 回补)";
+        btn.style.background = "var(--success)";
+        btn.dataset.mode = "incremental";
+        hint.style.display = "block";
+        hint.innerHTML = "💡 <strong>增量整理</strong>：只处理 <b>真新增 / 源文件改动 / 旧规则重判 / 未完成回补</b> 四类，其余曲目跳过。判定口径升级后，旧规则做出的判定会自动重判。";
+      } else if (isSampled) {
+        btnText.textContent = "启动全量整理 (支持断点续跑)";
+        btn.style.background = "var(--primary)";
+        btn.dataset.mode = "full";
+        hint.style.display = "block";
+        hint.innerHTML = "💡 <strong>智能幂等全量</strong>：支持断点续跑与缓存复用。已处理的文件将秒级复用，系统自动处理未完成和失败的文件。";
+      } else {
+        btnText.textContent = "开始验证样本 (抽样 10 首)";
+        btn.style.background = "var(--primary)";
+        btn.dataset.mode = "sample";
+        hint.style.display = "block";
+        hint.innerHTML = "💡 <strong>安全保障</strong>：全量前必须先通过小样本校验。样本阶段不向整理后目录发布文件。";
+      }
+    }
+
+    function renderMetrics(m) {
+      document.getElementById("m-scanned").textContent = m.scanned_total || 0;
+      const scannedHint = document.getElementById("m-scanned-hint");
+      if (scannedHint) {
+        const parts = [];
+        if (m.new_files !== undefined || m.modified_files !== undefined || m.stale_decisions !== undefined || m.retry_files !== undefined) {
+          parts.push(`本次：新增 ${m.new_files || 0} · 改动 ${m.modified_files || 0} · 重判 ${m.stale_decisions || 0} · 回补 ${m.retry_files || 0}`);
+        }
+        if (m.orphans_archived) parts.push(`清理无主副本 ${m.orphans_archived}`);
+        scannedHint.textContent = parts.length ? parts.join(" ｜ ") : "原始源音频发现量";
+      }
+      document.getElementById("m-published").textContent = m.published || 0;
+      document.getElementById("m-exact").textContent = m.exact_duplicate || 0;
+      document.getElementById("m-acoustic").textContent = m.same_recording_duplicate || 0;
+      const acoustHint = document.getElementById("m-acoustic-hint");
+      if (acoustHint) acoustHint.textContent = `声纹吻合（择最高音质）· 品质升级置换 ${m.quality_upgraded || 0}`;
+
+      const lyrEmbedded = m.lyrics_embedded || 0;
+      const lyrPresent = m.lyrics_already_present || 0;
+      const lyrTotal = m.lyrics_total_with !== undefined ? m.lyrics_total_with : (lyrEmbedded + lyrPresent);
+      document.getElementById("m-lyrics").textContent = lyrTotal;
+      const lyrHint = document.getElementById("m-lyrics-hint");
+      if (lyrHint) lyrHint.textContent = `新写入 ${lyrEmbedded} · 原有保留 ${lyrPresent}`;
+
+      const covEmbedded = m.cover_embedded || 0;
+      const covPresent = m.cover_already_present || 0;
+      const covTotal = m.cover_total_with !== undefined ? m.cover_total_with : (covEmbedded + covPresent);
+      document.getElementById("m-cover").textContent = covTotal;
+      const covHint = document.getElementById("m-cover-hint");
+      if (covHint) covHint.textContent = `新嵌入 ${covEmbedded} · 原有保留 ${covPresent}`;
+
+      document.getElementById("m-version").textContent = m.possible_version_groups || 0;
+      document.getElementById("m-failed").textContent = m.failed || 0;
+    }
+
+    function formatLocalTime(utcStr) {
+      if (!utcStr) return "-";
+      let s = String(utcStr).trim();
+      let date;
+      if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(s)) {
+        date = new Date(s.replace(" ", "T") + "Z");
+      } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(s) && !s.endsWith("Z") && !/[+-]\d{2}:\d{2}$/.test(s)) {
+        date = new Date(s + "Z");
+      } else {
+        date = new Date(s);
+      }
+      if (isNaN(date.getTime())) return s;
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    }
+
+    function renderRuns(runs) {
+      const tbody = document.getElementById("runsTbody");
+      if (!runs || runs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">暂无记录</td></tr>';
+        return;
+      }
+      tbody.innerHTML = runs.map(r => `
+        <tr>
+          <td><code>${escapeHTML(r.id)}</code></td>
+          <td><span class="badge-pill badge-${r.mode === 'full' ? 'primary' : 'done'}">${escapeHTML(r.mode)}</span></td>
+          <td><span class="badge-pill badge-${r.status}">${escapeHTML(r.status)}</span></td>
+          <td>${escapeHTML(r.phase || '-')}</td>
+          <td style="font-variant-numeric: tabular-nums;">${escapeHTML(formatLocalTime(r.started_at))}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderLogs(logText) {
+      const logBody = document.getElementById("logBody");
+      const isScrolledToBottom = logBody.scrollHeight - logBody.clientHeight <= logBody.scrollTop + 50;
+      const clean = (logText || "").trim();
+      if (!clean) {
+        logBody.textContent = (stateCache && stateCache.state === "running") ? "正在等待流水线输出实时日志...\n" : "暂无运行中日志记录\n";
+      } else {
+        logBody.textContent = logText;
+      }
+      if (isScrolledToBottom) {
+        logBody.scrollTop = logBody.scrollHeight;
+      }
+    }
+
+    function escapeHTML(str) {
+      if (!str) return "";
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    // Directory editing
+    const editDirBtn = document.getElementById("editDirBtn");
+    const cancelEditDirBtn = document.getElementById("cancelEditDirBtn");
+    const cfgActionBox = document.getElementById("cfgActionBox");
+    const sourceInput = document.getElementById("sourceInput");
+    const outputInput = document.getElementById("outputInput");
+    const proxyInput = document.getElementById("proxyInput");
+    const offlineModeInput = document.getElementById("offlineModeInput");
+    const accessiblePathsList = document.getElementById("accessiblePathsList");
+
+    async function enableDirEditing() {
+      if (stateCache.state === "running") {
+        alert("整理任务运行中，不能更改目录与配置");
+        return;
+      }
+      const paths = await fetchJSON("/api/accessible-paths") || [];
+      if (accessiblePathsList) {
+        accessiblePathsList.innerHTML = paths.map(p => `<option value="${escapeHTML(p)}"></option>`).join("");
+      }
+      sourceInput.removeAttribute("readonly");
+      outputInput.removeAttribute("readonly");
+      if (proxyInput) proxyInput.removeAttribute("readonly");
+      if (offlineModeInput) offlineModeInput.removeAttribute("disabled");
+      cfgActionBox.style.display = "flex";
+      editDirBtn.style.display = "none";
+    }
+
+    function cancelDirEditing() {
+      sourceInput.value = configCache.source_dir || "";
+      outputInput.value = configCache.output_dir || "";
+      if (proxyInput) proxyInput.value = configCache.proxy || "";
+      if (offlineModeInput) offlineModeInput.checked = !!configCache.offline_mode;
+      sourceInput.setAttribute("readonly", true);
+      outputInput.setAttribute("readonly", true);
+      if (proxyInput) proxyInput.setAttribute("readonly", true);
+      if (offlineModeInput) offlineModeInput.setAttribute("disabled", true);
+      cfgActionBox.style.display = "none";
+      editDirBtn.style.display = "inline-flex";
+    }
+
+    if (editDirBtn) editDirBtn.addEventListener("click", enableDirEditing);
+    if (cancelEditDirBtn) cancelEditDirBtn.addEventListener("click", cancelDirEditing);
+
+    document.getElementById("cfgForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const s = sourceInput.value.trim();
+      const o = outputInput.value.trim();
+      const p = proxyInput ? proxyInput.value.trim() : "";
+      const off = offlineModeInput ? !!offlineModeInput.checked : false;
+      if (!s || !o) return;
+      const ok = await postJSON("/api/config", { source_dir: s, output_dir: o, proxy: p, offline_mode: off });
+      if (ok) {
+        sourceInput.setAttribute("readonly", true);
+        outputInput.setAttribute("readonly", true);
+        if (proxyInput) proxyInput.setAttribute("readonly", true);
+        if (offlineModeInput) offlineModeInput.setAttribute("disabled", true);
+        cfgActionBox.style.display = "none";
+        editDirBtn.style.display = "inline-flex";
+        await updateDashboard();
+      }
+    });
+
+    // Action button click
+    document.getElementById("actionBtn").addEventListener("click", async () => {
+      const mode = document.getElementById("actionBtn").dataset.mode;
+      if (!mode) return;
+      if (mode === "full" && !confirm("即将启动全量整理流水线。已处理完成的文件将自动复用，是否立即开始？")) {
+        return;
+      }
+      const logBody = document.getElementById("logBody");
+      if (logBody) logBody.textContent = `[${new Date().toLocaleTimeString()}] 正在启动整理流水线，请稍候...\n`;
+      const ok = await postJSON("/api/run", { mode });
+      if (ok) {
+        await updateDashboard();
+        schedulePoll();
+      }
+    });
+
+    // Stop button click
+    document.getElementById("stopBtn").addEventListener("click", async () => {
+      if (!confirm("确定要停止当前正在运行的整理任务吗？已处理的文件成果将被安全保留。")) return;
+      const ok = await postJSON("/api/stop", {});
+      if (ok) {
+        await updateDashboard();
+        schedulePoll();
+      }
+    });
+
+    // Full rerun button click
+    const fullRerunBtn = document.getElementById("fullRerunBtn");
+    if (fullRerunBtn) {
+      fullRerunBtn.addEventListener("click", async () => {
+        if (!confirm("即将启动全量对齐整理。已处理完成的文件将自动秒级复用，系统自动查漏补缺，是否开始？")) return;
+        const logBody = document.getElementById("logBody");
+        if (logBody) logBody.textContent = `[${new Date().toLocaleTimeString()}] 正在启动全量整理流水线，请稍候...\n`;
+        const ok = await postJSON("/api/run", { mode: "full" });
+        if (ok) {
+          await updateDashboard();
+          schedulePoll();
+        }
+      });
+    }
+
+    // Clear Log
+    const clearLogBtn = document.getElementById("clearLogBtn");
+    if (clearLogBtn) {
+      clearLogBtn.addEventListener("click", async () => {
+        await postJSON("/api/log/clear", {});
+        const logBody = document.getElementById("logBody");
+        if (logBody) logBody.textContent = "暂无运行中日志记录\n";
+      });
+    }
+
+    // Copy Log
+    document.getElementById("copyLogBtn").addEventListener("click", () => {
+      const text = document.getElementById("logBody").textContent;
+      navigator.clipboard.writeText(text).then(() => alert("日志已复制到剪贴板"));
+    });
+
+    document.getElementById("refreshBtn").addEventListener("click", () => {
+      updateDashboard();
+      schedulePoll();
+    });
+
+    // Adaptive Polling
+    function schedulePoll() {
+      if (pollTimer) clearTimeout(pollTimer);
+      const interval = (stateCache && stateCache.state === "running") ? 3000 : 8000;
+      pollTimer = setTimeout(async () => {
+        await updateDashboard();
+        schedulePoll();
+      }, interval);
+    }
+
+    // About & Sponsor Modal Logic
+    let currentQRType = "alipay";
+
+    function openAboutModal(tab = "sponsor") {
+      const modal = document.getElementById("aboutModal");
+      if (!modal) return;
+      switchModalTab(tab);
+      modal.classList.add("active");
+      document.body.style.overflow = "hidden";
+      if (tab === "sponsor") {
+        switchQR(currentQRType);
+      }
+    }
+
+    function closeAboutModal() {
+      const modal = document.getElementById("aboutModal");
+      if (!modal) return;
+      modal.classList.remove("active");
+      document.body.style.overflow = "";
+    }
+
+    function handleBackdropClick(e) {
+      if (e.target.id === "aboutModal") closeAboutModal();
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        closeAboutModal();
+        closeResetModal();
+      }
+    });
+
+    function switchModalTab(tabName) {
+      ["sponsor", "features", "about"].forEach(tab => {
+        const btn = document.getElementById("tabBtn" + tab.charAt(0).toUpperCase() + tab.slice(1));
+        const pane = document.getElementById("pane" + tab.charAt(0).toUpperCase() + tab.slice(1));
+        if (btn) btn.classList.toggle("active", tab === tabName);
+        if (pane) pane.style.display = (tab === tabName) ? "block" : "none";
+      });
+    }
+
+    function switchQR(type) {
+      currentQRType = type;
+      const isWechat = type === "wechat";
+      document.getElementById("qrBtnWechat").classList.toggle("active", isWechat);
+      document.getElementById("qrBtnAlipay").classList.toggle("active", !isWechat);
+      
+      const qrImg = document.getElementById("qrImg");
+      const qrPlaceholder = document.getElementById("qrPlaceholder");
+      const qrPlaceholderText = document.getElementById("qrPlaceholderText");
+      const qrCaption = document.getElementById("qrCaption");
+      if (qrPlaceholder) qrPlaceholder.style.display = "none";
+      if (qrImg) {
+        qrImg.style.display = "block";
+        qrImg.src = "/api/sponsor-qr?type=" + type + "&t=" + Date.now();
+      }
+      if (qrPlaceholderText) qrPlaceholderText.textContent = isWechat ? "微信赞赏码" : "支付宝收款码";
+      if (qrCaption) qrCaption.textContent = isWechat ? "微信扫一扫 · 请作者喝一杯咖啡 ☕" : "支付宝扫一扫 · 支持作者持续维护 ☕";
+    }
+
+    function handleQRError(img) {
+      if (currentQRType === "wechat") {
+        switchQR("alipay");
+        return;
+      }
+      img.style.display = "none";
+      const ph = document.getElementById("qrPlaceholder");
+      if (ph) ph.style.display = "flex";
+    }
+
+    // Reset Modal Logic
+    function openResetModal() {
+      if (stateCache && stateCache.state === "running") {
+        alert("整理流水线运行中，不能执行重置操作。请先等待完成或点击停止。");
+        return;
+      }
+      const modal = document.getElementById("resetModal");
+      if (!modal) return;
+      modal.classList.add("active");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeResetModal() {
+      const modal = document.getElementById("resetModal");
+      if (!modal) return;
+      modal.classList.remove("active");
+      document.body.style.overflow = "";
+    }
+
+    function handleResetBackdropClick(e) {
+      if (e.target.id === "resetModal") closeResetModal();
+    }
+
+    function applyResetPreset(type) {
+      const isFull = (type === "full");
+      document.getElementById("chkClearHistory").checked = true;
+      document.getElementById("chkClearInventory").checked = true;
+      document.getElementById("chkClearKB").checked = isFull;
+    }
+
+    async function executeReset() {
+      const clearHistory = document.getElementById("chkClearHistory").checked;
+      const clearInventory = document.getElementById("chkClearInventory").checked;
+      const clearKB = document.getElementById("chkClearKB").checked;
+
+      if (!clearHistory && !clearInventory && !clearKB) {
+        alert("请至少勾选一项需要清理的项目");
+        return;
+      }
+
+      let warning = "确定要重置所选项目吗？\n";
+      if (clearKB) warning += "• ⚠️ 本地元数据与歌词知识库将被清空，下次整理将重新向音乐源检索歌词。\n";
+      if (clearInventory || clearHistory) warning += "• 系统历史记录与曲目状态清单将被清空，回到初始从头开始状态。\n";
+      warning += "\n是否确认继续？";
+
+      if (!confirm(warning)) return;
+
+      const btn = document.getElementById("doResetBtn");
+      btn.disabled = true;
+      btn.innerHTML = "<span>正在重置...</span>";
+
+      try {
+        const res = await fetch("/api/reset", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            clear_history: clearHistory,
+            clear_inventory: clearInventory,
+            clear_knowledge_base: clearKB,
+            clear_ncm_cache: false
+          })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert(data.message || "重置成功！系统已回到初始就绪状态。");
+          closeResetModal();
+          location.reload();
+        } else {
+          alert("重置失败：" + (data.error || "未知错误"));
+        }
+      } catch (err) {
+        alert("网络请求失败：" + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "<span>确认执行重置</span>";
+      }
+    }
+
+    // Initial Load & Schedule
+    updateDashboard().then(schedulePoll);
+  </script>
+</body>
+</html>

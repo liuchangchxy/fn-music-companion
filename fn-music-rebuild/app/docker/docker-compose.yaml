@@ -1,0 +1,27 @@
+services:
+  organizer:
+    image: 
+    pull_policy: if_not_present
+    container_name: fn-music-rebuild-organizer
+    restart: unless-stopped
+    environment:
+      MUSIC_STATE: /appdata/v6-state
+      MUSIC_STATE_LIMIT_BYTES: "536870912"
+      MUSIC_UI_PORT: ""
+      TRIM_DATA_ACCESSIBLE_PATHS: ""
+      MUSIC_MOUNT_SOURCE: ""
+      MUSIC_MOUNT_OUTPUT: ""
+      MUSIC_SAFE_SIMILARITY: "0.997"
+      MUSIC_SAFE_DURATION_DELTA: "4.5"
+      MUSIC_METADATA_WORKERS: ""
+      TZ: ""
+    volumes:
+      # Wizard values are real fnOS paths and are the only user data mounts.
+      - ::ro
+      - ::rw
+      - :/appdata:rw
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - ":"
+    user: ":"
+    command: ["python3", "/opt/music-rebuild/app.py"]

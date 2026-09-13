@@ -1,0 +1,22 @@
+services:
+  music-pipeline:
+    build: .
+    container_name: music-pipeline
+    restart: unless-stopped
+    environment:
+      INCOMING: /music/incoming
+      LIBRARY: /music/library
+      DB: /data/music.db
+    volumes:
+      - /vol2/1000/Download/音乐/整理前:/music/incoming
+      - /vol2/1000/Download/音乐/整理后:/music/library
+      - /vol4/1000/docker/music-pipeline/data:/data
+    command: ["watch"]
+  music-tag-web:
+    image: xhongc/music_tag_web:2.7.8
+    container_name: music-tag-web
+    restart: unless-stopped
+    ports: ["8002:8002"]
+    volumes:
+      - /vol2/1000/Download/音乐/整理后:/app/media:rw
+      - /vol4/1000/docker/music-tag-web/data:/app/data

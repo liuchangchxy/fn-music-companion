@@ -1,0 +1,16 @@
+#!/bin/bash
+set -eu
+
+CONTAINER_NAME="fn-music-rebuild-organizer"
+case "${1:-}" in
+  start|stop)
+    # fnOS docker-project owns Compose lifecycle.
+    exit 0
+    ;;
+  status)
+    docker inspect --format '{{.State.Running}}' "$CONTAINER_NAME" 2>/dev/null | grep -qx true
+    ;;
+  *)
+    exit 1
+    ;;
+esac

@@ -1,0 +1,6 @@
+# Open-source component source revisions used by v4.
+dupsonic=3eedfa779a366dc429293af2386b7523d6fee9a7
+ncmdump=4ede4cee1bad35bbf28a7b5524feeca0422a4feb
+beets=cdfb8139102220986c0cd1c470b2444d406878a1
+sacad=f6a69f7b14b62089bcbd8bd9a61df96e28564a4c
+sacad_local_patch=sacad-max-concurrent.py (sets the native recursive command to two concurrent cover requests)

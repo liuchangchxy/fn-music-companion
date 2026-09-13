@@ -1,0 +1,9 @@
+[
+  {
+    "stepTitle": "音乐目录设置",
+    "items": [
+      {"type": "text", "field": "source_dir", "label": "原始文件夹（只读）", "initValue": "", "placeholder": "/vol1/1000/Music/Incoming", "rules": [{"required": true, "message": "请输入飞牛授权的真实存储卷路径"}]},
+      {"type": "text", "field": "output_dir", "label": "整理后曲库（可写）", "initValue": "", "placeholder": "/vol1/1000/Music/Library", "rules": [{"required": true, "message": "请输入飞牛授权的真实存储卷路径"}]}
+    ]
+  }
+]

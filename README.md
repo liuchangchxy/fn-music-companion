@@ -123,9 +123,9 @@ flowchart LR
 version: "3.8"
 
 services:
-  music-flow:
-    image: ghcr.io/chang-nas/fn-music-flow:v0.3.0
-    container_name: fn-music-flow
+  music-companion:
+    image: changchxy/fn-music-companion:1.0.0
+    container_name: fn-music-companion
     restart: unless-stopped
     environment:
       - MUSIC_UI_PORT=8091

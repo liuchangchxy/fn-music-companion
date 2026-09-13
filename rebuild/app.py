@@ -491,7 +491,16 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/api/config":
             self.send(200, json.dumps(read_json(CONFIG, {}), ensure_ascii=False), "application/json")
         elif parsed.path == "/api/status":
-            self.send(200, json.dumps(read_json(STATUS, {"state": "idle"}), ensure_ascii=False), "application/json")
+            st = read_json(STATUS, {"state": "idle"})
+            cfg = read_json(CONFIG, {})
+            st["sample_gate_passed"] = sample_ready(cfg)
+            st["has_initial_full_run"] = bool(cfg.get("initialized"))
+            rep = report()
+            if rep:
+                st["report"] = rep
+                if "recent_runs" not in st:
+                    st["recent_runs"] = latest_runs(10)
+            self.send(200, json.dumps(st, ensure_ascii=False), "application/json")
         elif parsed.path == "/api/report":
             self.send(200, json.dumps(report(parse_qs(parsed.query).get("run_id", [None])[0]), ensure_ascii=False), "application/json")
         elif parsed.path == "/api/runs":

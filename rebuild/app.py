@@ -68,8 +68,9 @@ def nested(first: Path, second: Path) -> bool:
 
 
 def config_valid(config: dict) -> tuple[bool, str]:
-    if set(config) - {"source_dir", "output_dir", "sample_verified", "initialized", "proxy"}:
-        return False, "配置只能包含原始文件夹、整理后文件夹及可选代理"
+    allowed_keys = {"source_dir", "output_dir", "sample_verified", "initialized", "proxy", "offline_mode", "admin_password"}
+    if set(config) - allowed_keys:
+        return False, "配置只能包含受支持的应用设置字段"
     source_raw, output_raw = config.get("source_dir"), config.get("output_dir")
     if not all(isinstance(value, str) and value.startswith("/vol") for value in (source_raw, output_raw)):
         return False, "只能使用飞牛授权返回的真实 /volN/... 路径"

@@ -1362,10 +1362,19 @@ WINDOWS_RESERVED = {
 }
 
 
-def clean(value: str, fallback: str) -> str:
+def truncate_utf8_bytes(s: str, max_bytes: int) -> str:
+    """Safely truncate string to at most max_bytes without splitting multi-byte UTF-8 characters."""
+    encoded = s.encode("utf-8")
+    if len(encoded) <= max_bytes:
+        return s
+    return encoded[:max_bytes].decode("utf-8", errors="ignore")
+
+
+def clean(value: str, fallback: str, max_bytes: int = 180) -> str:
     value = "".join(char for char in value.replace("/", "-").replace("\\", "-").strip() if char not in '<>:\\|?*\0')
     value = value.strip().rstrip(". ").lstrip(". ")
-    res = value[:120] or fallback
+    value = truncate_utf8_bytes(value, max_bytes)
+    res = value or fallback
     parts = res.split(".")
     if parts[0].casefold() in WINDOWS_RESERVED:
         res = f"{parts[0]}_{('.' + '.'.join(parts[1:])) if len(parts) > 1 else ''}"
@@ -1379,18 +1388,25 @@ def untagged_output(path: Path) -> bool:
 
 def destination(root: Path, source: Path, digest: str, fallback_stem: str | None = None) -> Path:
     _, _, tags, _ = probe(source)
-    artist = clean(tags.get("artist") or tags.get("album_artist", ""), UNKNOWN_ARTIST)
-    album = clean(tags.get("album", ""), UNKNOWN_ALBUM)
-    title = clean(tags.get("title", ""), fallback_stem or source.stem)
+    artist = clean(tags.get("artist") or tags.get("album_artist", ""), UNKNOWN_ARTIST, max_bytes=100)
+    album = clean(tags.get("album", ""), UNKNOWN_ALBUM, max_bytes=120)
+    title = clean(tags.get("title", ""), fallback_stem or source.stem, max_bytes=160)
     number = clean_track_number(tags.get("track") or tags.get("tracknumber", ""))
 
     disc_raw = str(tags.get("disc") or tags.get("discnumber") or "").split("/")[0].strip()
     disc = int(disc_raw) if disc_raw.isdigit() else 0
-    if disc > 1:
+    disctotal_raw = str(tags.get("disctotal") or tags.get("totaldiscs") or "").split("/")[0].strip()
+    disctotal = int(disctotal_raw) if disctotal_raw.isdigit() else 0
+    if disc > 0 and (disc > 1 or disctotal > 1):
         folder = root / artist / album / f"CD{disc}"
     else:
         folder = root / artist / album
-    return folder / f"{number + ' - ' if number else ''}{title}{source.suffix.lower()}"
+
+    prefix = f"{number} - " if number else ""
+    ext = source.suffix.lower()
+    max_title_bytes = max(20, 240 - len(prefix.encode("utf-8")) - len(ext.encode("utf-8")))
+    safe_title = truncate_utf8_bytes(title, max_title_bytes)
+    return folder / f"{prefix}{safe_title}{ext}"
 
 
 def find_cached_publish(source: Path, output: Path) -> tuple[Path, tuple[str, str, str], str] | None:

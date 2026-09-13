@@ -1436,7 +1436,47 @@ class AppTests(unittest.TestCase):
         with patch.dict(os.environ, {}, clear=True), patch.object(pipeline, "cfg", return_value={"offline_mode": True}):
             self.assertTrue(pipeline.is_offline_mode())
 
+    def test_truncate_utf8_bytes(self) -> None:
+        # Chinese char is 3 bytes. 10 chars = 30 bytes.
+        chinese = "一二三四五六七八九十"
+        self.assertEqual(len(chinese.encode("utf-8")), 30)
+        # Truncate at 10 bytes -> should fit exactly 3 chars (9 bytes), dropping 4th without error
+        truncated = pipeline.truncate_utf8_bytes(chinese, 10)
+        self.assertEqual(truncated, "一二三")
+        self.assertLessEqual(len(truncated.encode("utf-8")), 10)
+
+        # Truncate at 29 bytes -> fits 9 chars (27 bytes)
+        self.assertEqual(pipeline.truncate_utf8_bytes(chinese, 29), "一二三四五六七八九")
+
+        # clean() with 300-char string should not exceed max_bytes
+        huge_str = "超长音乐名称" * 50
+        cleaned = pipeline.clean(huge_str, "fallback", max_bytes=180)
+        self.assertLessEqual(len(cleaned.encode("utf-8")), 180)
+
+    def test_destination_multi_disc(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            src = root / "song.mp3"
+            src.write_bytes(b"dummy")
+
+            # Single disc
+            with patch.object(pipeline, "probe", return_value=("mp3", 0, {"artist": "周杰伦", "album": "范特西", "title": "爱在西元前", "disc": "1", "disctotal": "1"}, {})):
+                out = pipeline.destination(root / "out", src, "dummy")
+                self.assertNotIn("CD", str(out))
+                self.assertIn("范特西", str(out))
+
+            # Multi-disc CD 2
+            with patch.object(pipeline, "probe", return_value=("mp3", 0, {"artist": "周杰伦", "album": "经典合辑", "title": "以父之名", "disc": "2", "disctotal": "2"}, {})):
+                out = pipeline.destination(root / "out", src, "dummy")
+                self.assertIn("CD2", str(out))
+
+            # Multi-disc CD 1 of 2
+            with patch.object(pipeline, "probe", return_value=("mp3", 0, {"artist": "周杰伦", "album": "经典合辑", "title": "可爱女人", "disc": "1", "disctotal": "2"}, {})):
+                out = pipeline.destination(root / "out", src, "dummy")
+                self.assertIn("CD1", str(out))
+
 
 if __name__ == "__main__":
     unittest.main()
+
 

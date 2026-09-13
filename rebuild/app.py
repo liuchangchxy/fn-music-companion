@@ -657,8 +657,21 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     STATE.mkdir(parents=True, exist_ok=True)
-    if not LOCK.exists():
-        curr_status = read_json(STATUS, {})
-        if curr_status.get("state") == "running":
-            write_json(STATUS, {"state": "idle", "message": "服务已就绪，随时可以开始整理"})
+    # Startup disaster recovery: clear stale lock files from abnormal restart/kill
+    try:
+        LOCK.unlink(missing_ok=True)
+    except OSError:
+        pass
+    curr_status = read_json(STATUS, {})
+    if curr_status.get("state") == "running":
+        write_json(STATUS, {
+            "state": "idle",
+            "message": "服务已启动就绪（上次整理因服务重启已自动释放锁，可继续整理）"
+        })
+        try:
+            with connection() as db_conn:
+                db_conn.execute("UPDATE runs SET status='stopped',finished_at=CURRENT_TIMESTAMP WHERE status='running'")
+                db_conn.commit()
+        except Exception:
+            pass
     ThreadingHTTPServer(("0.0.0.0", PORT), Handler).serve_forever()

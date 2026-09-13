@@ -1489,8 +1489,43 @@ class AppTests(unittest.TestCase):
                 out = pipeline.destination(root / "out", src, "dummy")
                 self.assertIn("CD1", str(out))
 
+    def test_validate_settings_allows_arbitrary_future_keys(self) -> None:
+        cfg = {
+            "source_dir": "/vol1/src",
+            "output_dir": "/vol1/out",
+            "some_future_key": 123,
+            "custom_feature_flag": True,
+        }
+        with patch.object(Path, "is_dir", return_value=True), patch.object(os, "access", return_value=True):
+            s, o = pipeline.validate_settings(cfg)
+            self.assertEqual(str(s).replace("\\", "/"), "/vol1/src")
+            self.assertEqual(str(o).replace("\\", "/"), "/vol1/out")
+
+    def test_get_run_root_uses_output_directory_and_never_touches_state(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            out = root / "output"
+            out.mkdir()
+            run_root = pipeline.get_run_root("test-run-123", out)
+            self.assertTrue(str(run_root).startswith(str(out)))
+            self.assertFalse(str(run_root).startswith(str(pipeline.STATE)))
+            pipeline.cleanup_run_root(run_root)
+            self.assertFalse(run_root.exists())
+
+    def test_assert_state_budget_auto_cleans_legacy_runs(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            state_dir = Path(d)
+            with patch.object(pipeline, "STATE", state_dir):
+                legacy_runs = state_dir / "runs"
+                legacy_runs.mkdir(parents=True, exist_ok=True)
+                (legacy_runs / "dummy.flac").write_bytes(b"flac dummy")
+                # Calling assert_state_budget should auto-clean legacy_runs and not raise
+                pipeline.assert_state_budget()
+                self.assertFalse(legacy_runs.exists())
+
 
 if __name__ == "__main__":
     unittest.main()
+
 
 

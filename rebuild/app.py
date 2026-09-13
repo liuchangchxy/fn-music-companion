@@ -389,6 +389,8 @@ def run_pipeline(mode: str) -> None:
         cfg_val = read_json(CONFIG, {})
         proxy = str(cfg_val.get("proxy", "")).strip()
         env = os.environ.copy()
+        env["PYTHONIOENCODING"] = "utf-8"
+        env["PYTHONUTF8"] = "1"
         if proxy:
             env["HTTP_PROXY"] = proxy
             env["HTTPS_PROXY"] = proxy

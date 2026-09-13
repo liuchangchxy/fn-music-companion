@@ -18,6 +18,13 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 
 def _sigterm_handler(signum, frame):
     log("收到终止信号 (SIGTERM)，正在安全退出并触发沙箱清理...")
@@ -107,6 +114,8 @@ def directory_size(root: Path) -> int:
     total = 0
     if root.exists():
         for path in root.rglob("*"):
+            if "runs" in path.parts:
+                continue
             try:
                 if path.is_file():
                     total += path.stat().st_size
@@ -117,12 +126,25 @@ def directory_size(root: Path) -> int:
 
 def assert_state_budget() -> None:
     STATE.mkdir(parents=True, exist_ok=True)
-    forbidden = [path for path in STATE.rglob("*") if path.is_file() and path.suffix.lower() in AUDIO | {".ncm", ".jpg", ".jpeg", ".png", ".webp"}]
+    runs_dir = STATE / "runs"
+    if runs_dir.is_dir():
+        try:
+            shutil.rmtree(runs_dir, ignore_errors=True)
+        except Exception:
+            pass
+
+    forbidden = [
+        path for path in STATE.rglob("*")
+        if path.is_file()
+        and "runs" not in path.parts
+        and path.suffix.lower() in AUDIO | {".ncm", ".jpg", ".jpeg", ".png", ".webp"}
+    ]
     if forbidden:
         raise RuntimeError(f"应用状态目录不得保存音频或图片：{forbidden[0]}")
     used = directory_size(STATE)
     if used > STATE_LIMIT:
         raise RuntimeError(f"应用状态缓存超过上限：{used / 1024**2:.1f} MiB / {STATE_LIMIT / 1024**2:.0f} MiB")
+
 
 
 def update_state(message: str, **details: object) -> None:
@@ -459,17 +481,14 @@ def update_phase(run_id: str, phase: str, done: int, total: int, message: str) -
 
 
 def validate_settings(settings: dict) -> tuple[Path, Path]:
-    allowed_keys = {"source_dir", "output_dir", "sample_verified", "initialized", "proxy", "offline_mode", "admin_password"}
-    if set(settings) - allowed_keys:
-        raise RuntimeError("配置只能包含原始文件夹、整理后文件夹及可选代理")
+    if not isinstance(settings, dict):
+        raise RuntimeError("配置格式无效")
+    if any(k in settings for k in ("seed_dir", "input_dir", "work_dir")):
+        raise RuntimeError("旧版配置已不再支持：配置只能包含原始文件夹、整理后文件夹及可选代理")
     proxy = str(settings.get("proxy", "")).strip()
     if proxy:
-        os.environ["HTTP_PROXY"] = proxy
-        os.environ["HTTPS_PROXY"] = proxy
-        os.environ["ALL_PROXY"] = proxy
-        os.environ["http_proxy"] = proxy
-        os.environ["https_proxy"] = proxy
-        os.environ["all_proxy"] = proxy
+        for k in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"):
+            os.environ[k] = proxy
     source_raw, output_raw = settings.get("source_dir"), settings.get("output_dir")
     if not all(isinstance(value, str) and value.startswith("/vol") for value in (source_raw, output_raw)):
         raise RuntimeError("只能使用真实 /volN/... 路径")
@@ -1675,10 +1694,11 @@ def publish_one(source: Path, run_root: Path, output: Path, real: bool, decoded_
         shutil.rmtree(song_sandbox, ignore_errors=True)
 
 
-def get_run_root(run_id: str) -> Path:
-    runs_dir = STATE / "runs"
-    runs_dir.mkdir(parents=True, exist_ok=True)
-    root = runs_dir / f"{RUN_PREFIX}{run_id}"
+def get_run_root(run_id: str, output: Path | None = None) -> Path:
+    if output and output.is_dir():
+        root = output / f"{RUN_PREFIX}{run_id}"
+    else:
+        root = Path("/tmp") / f"{RUN_PREFIX}{run_id}"
     root.mkdir(parents=True, exist_ok=True)
     return root
 
@@ -1696,12 +1716,18 @@ def cleanup_stale_runs(output: Path) -> None:
                 cleanup_run_root(path)
     except Exception:
         pass
+    tmp_dir = Path("/tmp")
+    if tmp_dir.is_dir():
+        try:
+            for path in tmp_dir.iterdir():
+                if path.is_dir() and path.name.startswith(RUN_PREFIX):
+                    cleanup_run_root(path)
+        except Exception:
+            pass
     runs_dir = STATE / "runs"
     if runs_dir.is_dir():
         try:
-            for path in runs_dir.iterdir():
-                if path.is_dir() and path.name.startswith(RUN_PREFIX):
-                    cleanup_run_root(path)
+            shutil.rmtree(runs_dir, ignore_errors=True)
         except Exception:
             pass
 
@@ -1802,7 +1828,7 @@ def report(run_id: str) -> dict:
 
 def run_batch(mode: str, source: Path, output: Path, paths: list[Path], real: bool, compare_library: bool, classification: dict[str, int] | None = None) -> dict:
     run_id = f"{mode}-{time.strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}"
-    run_root = get_run_root(run_id)
+    run_root = get_run_root(run_id, output)
     prune_dupsonic_ghosts()
     with db() as connection:
         connection.execute("INSERT INTO runs(id,mode,source_dir,output_dir,status) VALUES(?,?,?,?,?)", (run_id, mode, str(source), str(output), "running"))

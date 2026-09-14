@@ -2114,10 +2114,19 @@ def run(mode: str) -> None:
             result = run_full(settings)
             settings["initialized"] = True
             save_cfg(settings)
+            log("=" * 64)
+            log("【全量整理完成】曲库已成功发布并与物理磁盘对齐！")
+            log("💡 拾遗提示：若源目录中仍有少量遗留文件，通常是由于网络瞬时抖动或冷门歌曲初次未命中。推荐直接再次点击【增量整理】或【重新执行全量对齐】复跑一次，系统支持声纹缓存，耗时极短。")
+            log("⚠️ 顽固文件：若复跑后仍有极少数顽固文件（本地命名严重残缺、翻唱争议或重复冲突），本程序遵循安全审慎原则未强行挪动。程序并非万能，这类文件建议您在源目录手动核对或直接删除。")
+            log("=" * 64)
             message = "全量整理完成；临时音频已清理"
         else:
             result = run_incremental(settings)
             metrics = result.get("metrics", {})
+            log("=" * 64)
+            log("【增量整理完成】新增/改动/重判/回补曲目已成功同步！")
+            log("💡 提示：若源目录仍有极少数疑难顽固文件未被处理，程序秉承安全第一原则未强行猜测改写，建议您在源目录手动核对或清理。")
+            log("=" * 64)
             message = "增量整理完成：新增 {new} · 改动 {mod} · 重判 {stale} · 回补 {retry}；临时音频已清理".format(
                 new=metrics.get("new_files", 0), mod=metrics.get("modified_files", 0),
                 stale=metrics.get("stale_decisions", 0), retry=metrics.get("retry_files", 0),

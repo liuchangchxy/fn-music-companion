@@ -1542,6 +1542,19 @@
                 如果你的 NAS 处于纯局域网、无法访问外网，或者你已经对歌曲内嵌了完整的标签只想快速归档分目录，可以在配置中勾选「离线整理模式」。该模式完全不发起外网网络请求，纯靠本地内嵌标签整理，速度极快。
               </div>
             </details>
+
+            <details style="background: var(--bg-subtle); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--card-border);">
+              <summary style="font-weight: 600; cursor: pointer;">Q6: 首次全量整理后源目录还有一些文件未动，这是为什么？该怎么处理？</summary>
+              <div style="margin-top: 8px; color: var(--text-secondary); font-size: 12px; line-height: 1.6;">
+                <b>① 推荐再跑一次（二次拾遗补漏）</b>：<br/>
+                大批量整理海量歌曲时，难免会遇到公网网络瞬时抖动、或云端曲库接口防刷频控，导致极少数冷门歌曲未能在首轮即时命中。<br/>
+                因为本程序拥有完整的断点账本与声纹缓存，绝大部分已整理的歌曲会自动秒级跳过，<b>您只需直接点击控制台的【增量整理】或【重新执行全量对齐】再跑一遍</b>，流水线会快速专注对这部分遗留文件进行查漏补缺，通常几十秒即可完成。<br/><br/>
+                <b>② 极少数顽固文件建议手动审查或删除</b>：<br/>
+                如果复跑后源目录依然有极少数文件未被整理归档，这类通常属于“疑难杂症”顽固文件：例如文件名极度残缺（如只有 <code>Track 01.mp3</code> 且内嵌标签全空）、各大曲库均查无此曲、原唱/翻唱/伴奏存在语义逻辑争议、或是原盘抓轨重复度异常。<br/>
+                本程序恪守<b>「安全第一、宁缺毋滥」</b>的原则进行了谨慎保留，绝不在置信度不足时胡乱猜测改写或擅自删除原文件。<br/>
+                <b>程序和算法并非万能，无法做到 100% 毫无死角绝对精准</b>。对于这类极少数特殊或无保留价值的重复残留文件，建议您直接在源文件夹中手动审查、重命名或直接删除。
+              </div>
+            </details>
           </div>
         </div>
 
@@ -1801,7 +1814,11 @@
         },
         actionStates: {
           running: { text: "整理流水线正在运行中...", banner: "⚙️ <b>流水线运行中</b>：正在自动执行声纹波形比对去重与正版歌词封面刮削，已完成曲目已实时写入，请安心等待。" },
-          init: { text: "增量整理 (新增 / 改动 / 重判 / 回补)", banner: "🎉 <b>曲库已整理就绪！</b> 后续新下载了歌曲，点击下方【增量整理】即可秒级补充入库；请在飞牛「音乐」App 中添加整理后目录享受流动歌词！", hint: "💡 <strong>增量整理</strong>：只处理 <b>真新增 / 源文件改动 / 旧规则重判 / 未完成回补</b> 四类，其余曲目跳过。判定口径升级后，旧规则做出的判定会自动重判。" },
+          init: {
+            text: "增量整理 (新增 / 改动 / 重判 / 回补)",
+            banner: "🎉 <b>曲库首次整理已就绪！</b> 请在飞牛「音乐」App 中添加整理后目录享受精美封面与流动歌词！<br/>📌 <b>拾遗补漏建议</b>：若源目录中仍有少量未整理文件，通常是因公网瞬时网络超时或冷门歌曲初次未命中。<b>推荐直接再次点击下方【增量整理】或【重新执行全量对齐】复跑一次</b>（支持声纹秒级缓存，复跑极快，自动查漏补缺）。",
+            hint: "💡 <b>关于整理后源目录的遗留文件处理指引：</b><br/>• <b>推荐复跑一次（自动拾遗）</b>：批量整理海量歌曲时，难免因网络偶发抖动或云端曲库接口防刷频控，导致极少数冷门歌曲未能在首轮完成匹配。已整理歌曲会自动秒级跳过，<b>再次运行通常只需几十秒即可补齐漏网之鱼</b>。<br/>• <b>顽固文件建议手动清理</b>：若复跑后仍有极少数顽固文件（例如原文件名严重残缺乱码、翻唱/原唱/伴奏存在逻辑冲突争议、或原盘抓轨重复度异常），这是由于程序恪守<b>「安全第一、宁缺毋滥」</b>的原则进行了谨慎保留，并未强行猜测改写。<b>程序并非万能，无法做到 100% 毫无死角绝对精准</b>，对于这类极少数特殊或无保留价值的重复残留文件，建议您直接在源文件夹中手动审查或清理删除。"
+          },
           sampled: { text: "启动全量整理 (支持断点续跑)", banner: "✅ <b>样本测试已通过！</b> 刮削与环境验证一切正常，请点击下方【启动全量整理】开始正式对齐整理。", hint: "💡 <strong>智能幂等全量</strong>：支持断点续跑与缓存复用。已处理的文件将秒级复用，系统自动处理未完成和失败的文件。" },
           first: { text: "开始验证样本 (抽样 10 首)", banner: "✨ <b>极速上手提示</b>：请先检查左侧目录，再点击下方【开始验证样本】安全试跑 10 首歌（沙盒模拟，不写物理文件）。", hint: "💡 <strong>安全保障</strong>：全量前必须先通过小样本校验。样本阶段不向整理后目录发布文件。" }
         },
@@ -1897,7 +1914,9 @@
             q4Title: "Q4: 所谓的 Btrfs 零物理空间占用是什么意思？",
             q4Desc: "飞牛系统默认采用 Btrfs 文件系统。在发布歌曲时，本软件优先使用底层写时复制（Reflink CoW）。原文件和整理库文件共享同一块底层磁盘数据，即便整理出 100GB 的规范目录，新增的物理硬盘占用几乎为 0（仅写入标签与封面差异块）。",
             q5Title: "Q5: 离线整理模式是什么时候使用的？",
-            q5Desc: "如果你的 NAS 处于纯局域网、无法访问外网，或者你已经对歌曲内嵌了完整的标签只想快速归档分目录，可以在配置中勾选「离线整理模式」。该模式完全不发起外网网络请求，纯靠本地内嵌标签整理，速度极快。"
+            q5Desc: "如果你的 NAS 处于纯局域网、无法访问外网，或者你已经对歌曲内嵌了完整的标签只想快速归档分目录，可以在配置中勾选「离线整理模式」。该模式完全不发起外网网络请求，纯靠本地内嵌标签整理，速度极快。",
+            q6Title: "Q6: 首次全量整理后源目录还有一些文件未动，这是为什么？该怎么处理？",
+            q6Desc: "<b>① 推荐再跑一次（二次拾遗补漏）</b>：<br/>大批量整理海量歌曲时，难免会遇到公网网络瞬时抖动、或云端曲库接口防刷频控，导致极少数冷门歌曲未能在首轮即时命中。<br/>因为本程序拥有完整的断点账本与声纹缓存，绝大部分已整理的歌曲会自动秒级跳过，<b>您只需直接点击控制台的【增量整理】或【重新执行全量对齐】再跑一遍</b>，流水线会快速专注对这部分遗留文件进行查漏补缺，通常几十秒即可完成。<br/><br/><b>② 极少数顽固文件建议手动审查或删除</b>：<br/>如果复跑后源目录依然有极少数文件未被整理归档，这类通常属于“疑难杂症”顽固文件：例如文件名极度残缺（如只有 <code>Track 01.mp3</code> 且内嵌标签全空）、各大曲库均查无此曲、原唱/翻唱/伴奏存在语义逻辑争议、或是原盘抓轨重复度异常。<br/>本程序恪守<b>「安全第一、宁缺毋滥」</b>的原则进行了谨慎保留，绝不在置信度不足时胡乱猜测改写或擅自删除原文件。<br/><b>程序和算法并非万能，无法做到 100% 毫无死角绝对精准</b>。对于这类极少数特殊或无保留价值的重复残留文件，建议您直接在源文件夹中手动审查、重命名或直接删除。"
           },
           features: {
             f1Title: "Btrfs 写时复制 (Reflink CoW)",
@@ -2033,7 +2052,11 @@
         },
         actionStates: {
           running: { text: "Pipeline is currently running...", banner: "⚙️ <b>Pipeline in progress</b>: Comparing acoustic fingerprints, scraping covers and lyrics. Published files are written in real-time." },
-          init: { text: "Incremental Run (New / Modified / Stale / Retry)", banner: "🎉 <b>Library is up to date!</b> When new tracks are downloaded, click Incremental Run to update in seconds; add the organized folder to fnOS Music App to enjoy synced lyrics!", hint: "💡 <strong>Incremental Run</strong>: Only processes new, changed, or failed files, skipping already verified tracks." },
+          init: {
+            text: "Incremental Run (New / Modified / Stale / Retry)",
+            banner: "🎉 <b>Library organization completed!</b> Add the organized folder to fnOS Music App to enjoy synced lyrics and album art!<br/>📌 <b>Tip</b>: If a few files remain in your source folder, it is often due to transient network timeout or cold tracks. <b>We recommend clicking Incremental Run or Re-run Full Organization once more</b> (cached and very fast, automatically picking up missed tracks).",
+            hint: "💡 <b>Guide for remaining source files after organization:</b><br/>• <b>Run again to reconcile (Fast)</b>: During large-scale processing, occasional network timeout or API rate limits may leave a few tracks unorganized. Already processed tracks are skipped instantly in seconds, allowing the pipeline to focus on remaining tracks.<br/>• <b>Manually review / delete stubborn files</b>: If a few stubborn files remain after re-running (e.g. garbled/missing tags, ambiguous cover/variant logic, or conflicting rip duplicates), the engine deliberately preserves them under the 'safety-first' rule rather than guessing. <b>No automated algorithm is 100% omnipotent</b>; for these few stubborn or unwanted duplicate files, you are encouraged to manually review or safely delete them from the source folder."
+          },
           sampled: { text: "Start Full Organization", banner: "✅ <b>Sample validation passed!</b> Environment and scraping verified. Click below to start full organization.", hint: "💡 <strong>Full Organization</strong>: Safe, idempotent processing with instant reuse of previously organized tracks." },
           first: { text: "Start Sample Test (10 Tracks)", banner: "✨ <b>Quick Start</b>: Confirm directories on the left, then click below to test with 10 sample songs (sandbox simulation, no files written).", hint: "💡 <strong>Safety Gate</strong>: Sample validation is required before first full organization." }
         },
@@ -2129,7 +2152,9 @@
             q4Title: "Q4: What does 'Btrfs zero physical storage consumption' mean?",
             q4Desc: "fnOS uses the Btrfs filesystem by default. When publishing files, MusicFlow uses Copy-on-Write (Reflink CoW). Organized files share identical data blocks with source files. Even a 100 GB organized library takes virtually zero additional storage on the drive.",
             q5Title: "Q5: When should I use Offline Mode?",
-            q5Desc: "If your NAS is in an isolated LAN without internet access, or if your audio files already contain full embedded tags and you only need clean directory sorting, enable Offline Mode. It skips all cloud network calls and processes purely from local tags at lightning speed."
+            q5Desc: "If your NAS is in an isolated LAN without internet access, or if your audio files already contain full embedded tags and you only need clean directory sorting, enable Offline Mode. It skips all cloud network calls and processes purely from local tags at lightning speed.",
+            q6Title: "Q6: Why are there still some files remaining in the source folder after full organization?",
+            q6Desc: "<b>1. Recommended: Run once more to reconcile</b>:<br/>During large-scale batch organization, transient network timeouts or cloud API rate limits may occasionally cause a few cold tracks to miss on the first pass.<br/>Since MusicFlow features a persistent acoustic and hash ledger, previously organized tracks are skipped in seconds. <b>Simply click 'Incremental Run' or 'Re-run Full Organization' to run once more</b>; the pipeline will quickly focus on these remaining files and reconcile them in tens of seconds.<br/><br/><b>2. Manually review or delete stubborn files</b>:<br/>If a few files remain untouched after re-running, they are typically stubborn corner cases: completely missing metadata/filenames (e.g. bare <code>Track 01.mp3</code> with zero tags), tracks unindexed in any database, conflicting cover/instrumental/live variant logic, or corrupted rip duplicates.<br/>The engine strictly adheres to the <b>'Safety First / Better Retain Than Corrupt'</b> principle and will never guess or destroy your source files without sufficient confidence.<br/><b>No automated software is 100% omnipotent</b>. For these rare stubborn or duplicate remnants, we recommend manually reviewing, fixing, or safely deleting them directly in your source directory."
           },
           features: {
             f1Title: "Btrfs Copy-on-Write (Reflink CoW)",
@@ -2352,7 +2377,7 @@
       if (faqTitleEl) faqTitleEl.textContent = dict.modals.guide.faqTitle;
 
       const faqs = document.querySelectorAll("#paneGuide .faq-list details");
-      if (faqs.length >= 5) {
+      if (faqs.length >= 6) {
         faqs[0].querySelector("summary").textContent = dict.modals.guide.q1Title;
         faqs[0].querySelector("div").innerHTML = dict.modals.guide.q1Desc;
         faqs[1].querySelector("summary").textContent = dict.modals.guide.q2Title;
@@ -2363,6 +2388,8 @@
         faqs[3].querySelector("div").innerHTML = dict.modals.guide.q4Desc;
         faqs[4].querySelector("summary").textContent = dict.modals.guide.q5Title;
         faqs[4].querySelector("div").innerHTML = dict.modals.guide.q5Desc;
+        faqs[5].querySelector("summary").textContent = dict.modals.guide.q6Title;
+        faqs[5].querySelector("div").innerHTML = dict.modals.guide.q6Desc;
       }
 
       // Update Tab 1: Sponsor

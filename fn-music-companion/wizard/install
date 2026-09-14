@@ -12,7 +12,7 @@
       },
       {
         "type": "tips",
-        "helpText": "💡 存储与音乐文件夹授权说明 (Music Folder Permissions Guide)：\n1. 安装完成后，请打开飞牛桌面【应用中心】->【应用管理】-> 找到本应用点击【设置/权限】->【添加文件夹访问权限】。\n2. 授权您的音乐文件夹：推荐分别添加「整理前」和「整理后」两个文件夹；亦可直接添加上级大文件夹（请务必勾选【读写】权限）。\n3. 授权完成后打开本应用 Web 控制台，即可在下拉菜单中直接选择，无需手动输入物理路径！\n\n• Storage Permission: After installation, open fnOS App Center -> App Management -> find this app -> Settings/Permissions -> Add Folder Access.\n• Authorization: Grant access to your music folders (separate source/output folders or a parent folder with Read/Write permission).\n• Easy Selection: Once granted, you can select folders directly from dropdown lists in the Web UI without typing physical paths."
+        "helpText": "💡 存储与文件夹访问说明 (Storage Notice)：\n1. 安装完成后，请在飞牛系统（fnOS）中为本应用授予音乐文件夹的访问权限（整理后曲库所在文件夹必须具有读写权限）。\n2. 授权完成后打开本应用 Web 控制台，即可在下拉菜单中直接选择，无需手动输入物理路径。\n\n• Notice: Please grant music folder access permissions to this app in fnOS (the organized library folder must have Read/Write permission).\n• Selection: Once granted in fnOS, you can select folders directly from the dropdown lists in the Web UI."
       }
     ]
   }

@@ -1330,11 +1330,7 @@
             <span id="unauthTitle">尚未在飞牛系统授权音乐文件夹 / No Music Folders Authorized</span>
           </div>
           <div id="unauthDesc" style="font-size: 12px; color: var(--text-secondary); margin-top: 6px; line-height: 1.6;">
-            检测到本应用尚未在飞牛私有云中获取文件夹访问权限。请按以下步骤操作：<br/>
-            1. 打开飞牛桌面【<b>应用中心</b>】→【<b>应用管理</b>】；<br/>
-            2. 找到本应用，点击【<b>设置/权限</b>】→【<b>添加文件夹访问权限</b>】；<br/>
-            3. 勾选您的音乐目录（建议分别勾选整理前与整理后目录，或勾选上级大文件夹并给予读写权限）；<br/>
-            4. 授权完成后，<b>刷新本页面</b>即可在下方下拉菜单中直接选择！
+            检测到本应用尚未在飞牛私有云（fnOS）中获取文件夹访问权限。请在飞牛系统中为本应用授予所需音乐文件夹的访问权限（整理后曲库所在文件夹须具有读写权限）。授权完成后，<b>刷新本页面</b>即可在下方直接下拉选择，无需手动输入物理路径！
           </div>
         </div>
         <form id="cfgForm">
@@ -1371,7 +1367,7 @@
             <button type="button" id="cancelEditDirBtn" class="btn-main" style="background: var(--bg-subtle); border: 1px solid var(--card-border); padding: 8px 14px; font-size: 13px;">取消</button>
           </div>
           <div class="notice" style="margin-top: 12px; font-size: 12px; line-height: 1.5; color: var(--text-secondary); background: var(--bg-subtle); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--card-border);">
-            💡 <b>飞牛官方文件夹授权模式</b>：本应用严格接入飞牛官方权限中心（<code>trim.file.sharedAccess</code>）。请在飞牛【应用中心】->【应用管理】->【添加文件夹访问权限】中勾选您的音乐目录，本面板即可直接从下拉菜单中读取并一键选择，无需手敲底层物理路径。
+            💡 <b>飞牛文件夹权限说明</b>：本应用接入飞牛系统应用权限规范。请在飞牛系统（fnOS）中为本应用授予音乐文件夹访问权限，完成后刷新本面板即可直接从下拉菜单中一键选择，无需手敲底层物理路径。
           </div>
           <div class="storage-bar-box">
             <div class="progress-meta">
@@ -1587,15 +1583,13 @@
             </details>
 
             <details style="background: var(--bg-subtle); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--card-border);">
-              <summary style="font-weight: 600; cursor: pointer;">Q7: 如何在飞牛给应用添加文件夹访问权限？可以只授权上层大文件夹吗？</summary>
+              <summary style="font-weight: 600; cursor: pointer;">Q7: 文件夹权限该如何配置？可以只授权上层大文件夹吗？</summary>
               <div style="margin-top: 8px; color: var(--text-secondary); font-size: 12px; line-height: 1.6;">
-                <b>① 飞牛中添加文件夹权限的具体路径</b>：<br/>
-                打开飞牛桌面 -> 进入<b>「应用中心」</b> -> 点击顶部<b>「已安装」</b> -> 找到<b>「飞牛音乐伴侣」</b>卡片 -> 点击进入设置或详情 -> 在<b>「文件夹权限」</b>中点击<b>「添加文件夹」</b>。<br/><br/>
-                <b>② 应该分开添加两个子目录，还是只授权一个大文件夹？</b><br/>
-                • <b>推荐方式 A（最标准稳妥）</b>：分别添加「整理前」和「整理后」两个具体文件夹。原始文件夹设为只读或读写，整理后文件夹必须设为读写；<br/>
-                • <b>方式 B（授权上级大文件夹）</b>：如果两个文件夹都在同一个父级大目录（如 <code>/vol1/1000/Music</code>）下，也可以直接将这个大文件夹添加授权。<b>但请务必注意：该大文件夹必须勾选【读写】权限！</b>如果误选了只读，里面的整理后子目录会连带被锁死只读，导致程序无法生成曲库。<br/><br/>
-                <b>③ 两个文件夹摆放的核心红线</b>：<br/>
-                整理前文件夹与整理后文件夹可以是同级兄弟目录（在同一存储卷下还能触发 Btrfs 秒级写时复制大幅省盘），<b>但绝对不能互相嵌套（例如不能把整理后文件夹建在整理前文件夹里面）</b>，否则会导致流水线死循环扫描。
+                <b>① 应该分别授权两个子目录，还是只授权一个大文件夹？</b><br/>
+                • <b>分别授权（推荐）</b>：分别授权「整理前」和「整理后」两个文件夹。原始整理前文件夹设为只读或读写，整理后文件夹必须具有【读写】权限；<br/>
+                • <b>授权上级大文件夹</b>：如果两个文件夹都在同一个父级大目录下，也可以直接为该大文件夹授权。<b>但请务必注意：该大文件夹必须具有【读写】权限！</b>若误设为只读，其内的整理后子目录会被连带限制为只读，导致无法写入曲库。<br/><br/>
+                <b>② 两个文件夹摆放的核心红线</b>：<br/>
+                整理前文件夹与整理后文件夹可以是同级兄弟目录（在同一存储卷下还能触发 Btrfs 秒级写时复制大幅省盘），<b>但绝对不能互相嵌套（例如不能把整理后文件夹建在整理前文件夹内部）</b>，否则会导致流水线死循环扫描。
               </div>
             </details>
           </div>
@@ -1849,8 +1843,8 @@
           saveDirBtn: "保存目录配置",
           cancelBtn: "取消",
           unauthTitle: "尚未在飞牛系统授权音乐文件夹",
-          unauthDesc: "检测到本应用尚未在飞牛私有云中获取文件夹访问权限。请按以下步骤操作：<br/>1. 打开飞牛桌面【<b>应用中心</b>】→【<b>应用管理</b>】；<br/>2. 找到本应用，点击【<b>设置/权限</b>】→【<b>添加文件夹访问权限</b>】；<br/>3. 勾选您的音乐目录（建议分别勾选整理前与整理后目录，或勾选包含两者的上级大文件夹并赋予读写权限）；<br/>4. 授权完成后，<b>刷新本页面</b>即可在下方下拉菜单中直接选择！",
-          noticeSource: `🔒 <b>飞牛官方文件夹授权模式</b>：<br/>• <b>权限中心接入</b>：本应用已严格接入飞牛官方应用权限体系（<code>trim.file.sharedAccess</code>）。<br/>• <b>如何授权</b>：前往飞牛桌面【应用中心】->【应用管理】-> 找到本应用点击【设置/权限】->【添加文件夹访问权限】，勾选您的音乐目录；<br/>• <b>授权方案建议</b>：<br/>&nbsp;&nbsp;① <b>分别授权</b>：分别勾选「整理前」（只读/读写）与「整理后」（读写）；<br/>&nbsp;&nbsp;② <b>授权大文件夹</b>：亦可直接授权包含它们的大文件夹（<b>请务必勾选【读写】权限</b>）；<br/>• <b>便捷选择</b>：在飞牛后台添加授权后，刷新本页面，点击【修改目录】直接从下拉菜单中点选即可，无需手动输入真实路径！`,
+          unauthDesc: "检测到本应用尚未在飞牛私有云（fnOS）中获取文件夹访问权限。请在飞牛系统中为本应用授予所需音乐文件夹的访问权限（整理后曲库所在文件夹须具有读写权限）。授权完成后，<b>刷新本页面</b>即可在下方直接下拉选择，无需手动输入物理路径！",
+          noticeSource: `🔒 <b>文件夹权限说明</b>：<br/>• <b>权限规范</b>：本应用接入飞牛系统应用权限体系。<br/>• <b>授权说明</b>：请在飞牛系统中为本应用授予音乐文件夹访问权限（整理后文件夹须具有读写权限）；<br/>• <b>授权方案建议</b>：<br/>&nbsp;&nbsp;① <b>分别授权</b>：分别授权「整理前」（只读/读写）与「整理后」（读写）；<br/>&nbsp;&nbsp;② <b>授权大文件夹</b>：亦可直接授权包含两者的上级大文件夹（<b>大文件夹须具有读写权限</b>）；<br/>• <b>便捷选择</b>：在飞牛中完成授权后，刷新本页面，点击【修改目录】直接从下拉菜单中点选即可，无需手动输入真实路径！`,
           statusBadges: {
             unconfigured: "未配置",
             sourceOk: "🟢 只读就绪",
@@ -1971,8 +1965,8 @@
             q5Desc: "如果你的 NAS 处于纯局域网、无法访问外网，或者你已经对歌曲内嵌了完整的标签只想快速归档分目录，可以在配置中勾选「离线整理模式」。该模式完全不发起外网网络请求，纯靠本地内嵌标签整理，速度极快。",
             q6Title: "Q6: 首次全量整理后源目录还有一些文件未动，这是为什么？该怎么处理？",
             q6Desc: "<b>① 推荐再跑一次（二次拾遗补漏）</b>：<br/>大批量整理海量歌曲时，难免会遇到公网网络瞬时抖动、或云端曲库接口防刷频控，导致极少数冷门歌曲未能在首轮即时命中。<br/>因为本程序拥有完整的断点账本与声纹缓存，绝大部分已整理的歌曲会自动秒级跳过，<b>您只需直接点击控制台的【增量整理】或【重新执行全量对齐】再跑一遍</b>，流水线会快速专注对这部分遗留文件进行查漏补缺，通常几十秒即可完成。<br/><br/><b>② 极少数顽固文件建议手动审查或删除</b>：<br/>如果复跑后源目录依然有极少数文件未被整理归档，这类通常属于“疑难杂症”顽固文件：例如文件名极度残缺（如只有 <code>Track 01.mp3</code> 且内嵌标签全空）、各大曲库均查无此曲、原唱/翻唱/伴奏存在语义逻辑争议、或是原盘抓轨重复度异常。<br/>本程序恪守<b>「安全第一、宁缺毋滥」</b>的原则进行了谨慎保留，绝不在置信度不足时胡乱猜测改写或擅自删除原文件。<br/><b>算法与匹配规则并非万能，在部分元数据缺失或异常复杂的场景下无法保证完全准确</b>。对于这类极少数特殊或无保留价值的重复残留文件，建议您直接在源文件夹中手动审查、重命名或直接删除。",
-            q7Title: "Q7: 如何在飞牛给应用添加文件夹访问权限？可以只授权上层大文件夹吗？",
-            q7Desc: "<b>① 飞牛中添加文件夹权限的具体路径</b>：<br/>打开飞牛桌面 -> 进入<b>「应用中心」</b> -> 点击顶部<b>「已安装」</b> -> 找到<b>「飞牛音乐伴侣」</b>卡片 -> 点击进入设置或详情 -> 在<b>「文件夹权限」</b>中点击<b>「添加文件夹」</b>。<br/><br/><b>② 应该分开添加两个子目录，还是只授权一个大文件夹？</b><br/>• <b>推荐方式 A（最标准稳妥）</b>：分别添加「整理前」和「整理后」两个具体文件夹。原始文件夹设为只读或读写，整理后文件夹必须设为读写；<br/>• <b>方式 B（授权上级大文件夹）</b>：如果两个文件夹都在同一个父级大目录（如 <code>/vol1/1000/Music</code>）下，也可以直接将这个大文件夹添加授权。<b>但请务必注意：该大文件夹必须勾选【读写】权限！</b>如果误选了只读，里面的整理后子目录会连带被锁死只读，导致程序无法生成曲库。<br/><br/><b>③ 两个文件夹摆放的核心红线</b>：<br/>整理前文件夹与整理后文件夹可以是同级兄弟目录（在同一存储卷下还能触发 Btrfs 秒级写时复制大幅省盘），<b>但绝对不能互相嵌套（例如不能把整理后文件夹建在整理前文件夹里面）</b>，否则会导致流水线死循环扫描。"
+            q7Title: "Q7: 文件夹权限该如何配置？可以只授权上层大文件夹吗？",
+            q7Desc: "<b>① 应该分别授权两个子目录，还是只授权一个大文件夹？</b><br/>• <b>分别授权（推荐）</b>：分别授权「整理前」和「整理后」两个具体文件夹。原始整理前文件夹设为只读或读写，整理后曲库文件夹必须具有【读写】权限；<br/>• <b>授权上级大文件夹</b>：如果两个文件夹都在同一个父级大目录下，也可以直接为该大文件夹授权。<b>但请务必注意：该大文件夹必须具有【读写】权限！</b>若误设为只读，其内的整理后子目录会被连带限制为只读导致无法写入曲库。<br/><br/><b>② 两个文件夹摆放的核心红线</b>：<br/>整理前文件夹与整理后文件夹可以是同级兄弟目录（在同一存储卷下还能触发 Btrfs 秒级写时复制大幅省盘），<b>但绝对不能互相嵌套（例如不能把整理后文件夹建在整理前文件夹内部）</b>，否则会导致流水线死循环扫描。"
           },
           features: {
             f1Title: "Btrfs 写时复制 (Reflink CoW)",
@@ -2100,8 +2094,8 @@
           saveDirBtn: "Save Directories",
           cancelBtn: "Cancel",
           unauthTitle: "No Music Folders Authorized in fnOS",
-          unauthDesc: "This application has not been granted folder access permissions in fnOS yet. Please follow these steps:<br/>1. In fnOS Desktop, open <b>App Center</b> → <b>App Management</b>;<br/>2. Find this application, click <b>Settings / Permissions</b> → <b>Add Folder Access</b>;<br/>3. Select your music directories (separately for source and target, or their parent directory with Read/Write permission);<br/>4. Once granted, <b>refresh this page</b> to pick them directly from the dropdown lists below!",
-          noticeSource: `🔒 <b>fnOS Native Folder Permission Model</b>:<br/>• <b>Official Access Control</b>: This app strictly follows fnOS native permission framework (<code>trim.file.sharedAccess</code>).<br/>• <b>How to Grant Access</b>: In fnOS Desktop, open <b>App Center -> App Management -> find \"MusicFlow\" -> Settings/Permissions -> Add Folder Access</b> to grant music directories.<br/>• <b>Authorization Options</b>:<br/>&nbsp;&nbsp;① <b>Separate Folders</b>: Grant raw source folder and organized library folder separately;<br/>&nbsp;&nbsp;② <b>Parent Folder</b>: Or grant access to a shared parent folder (<b>MUST check [Read/Write]</b>).<br/>• <b>Easy Selection</b>: Once granted in fnOS, refresh this page and click [Edit Directories] to select directly from dropdowns without manual typing!`,
+          unauthDesc: "This application has not been granted folder access permissions in fnOS yet. Please grant music folder permissions to this application in fnOS (the organized library folder must have Read/Write permission). Once granted, <b>refresh this page</b> to pick them directly from the dropdown lists below without manual typing!",
+          noticeSource: `🔒 <b>Folder Permissions Guide</b>:<br/>• <b>Permissions</b>: This app integrates with fnOS folder permission management.<br/>• <b>Granting Access</b>: Please grant music folder access to this app in fnOS (organized library folder must have Read/Write permission);<br/>• <b>Options</b>:<br/>&nbsp;&nbsp;① <b>Separate Folders</b>: Grant source and output folders separately;<br/>&nbsp;&nbsp;② <b>Parent Folder</b>: Or grant access to a common parent folder (<b>must have Read/Write permission</b>);<br/>• <b>Easy Selection</b>: Once granted in fnOS, refresh this page and click [Edit Directories] to select directly from dropdowns without manual typing!`,
           statusBadges: {
             unconfigured: "Unconfigured",
             sourceOk: "🟢 Read-Ready",
@@ -2222,8 +2216,8 @@
             q5Desc: "If your NAS is in an isolated LAN without internet access, or if your audio files already contain full embedded tags and you only need clean directory sorting, enable Offline Mode. It skips all cloud network calls and processes purely from local tags at lightning speed.",
             q6Title: "Q6: Why are there still some files remaining in the source folder after full organization?",
             q6Desc: "<b>1. Recommended: Run once more to reconcile</b>:<br/>During large-scale batch organization, transient network timeouts or cloud API rate limits may occasionally cause a few cold tracks to miss on the first pass.<br/>Since MusicFlow features a persistent acoustic and hash ledger, previously organized tracks are skipped in seconds. <b>Simply click 'Incremental Run' or 'Re-run Full Organization' to run once more</b>; the pipeline will quickly focus on these remaining files and reconcile them in tens of seconds.<br/><br/><b>2. Manually review or delete stubborn files</b>:<br/>If a few files remain untouched after re-running, they are typically stubborn corner cases: completely missing metadata/filenames (e.g. bare <code>Track 01.mp3</code> with zero tags), tracks unindexed in any database, conflicting cover/instrumental/live variant logic, or corrupted rip duplicates.<br/>The engine strictly adheres to the <b>'Safety First / Better Retain Than Corrupt'</b> principle and will never guess or destroy your source files without sufficient confidence.<br/><b>Automated matching rules cannot guarantee 100% accuracy in complex corner cases</b>. For these rare stubborn or duplicate remnants, we recommend manually reviewing, fixing, or safely deleting them directly in your source directory.",
-            q7Title: "Q7: How to grant folder permissions in fnOS? Can I authorize just the parent folder?",
-            q7Desc: "<b>1. Exact path to grant folder permissions in fnOS</b>:<br/>Open fnOS Desktop -> Enter <b>App Center</b> -> Click <b>Installed</b> -> Locate <b>MusicFlow</b> card -> Open Details/Settings -> In <b>Folder Permissions</b>, click <b>Add Folder</b>.<br/><br/><b>2. Should I add the two subfolders separately or authorize a parent folder?</b><br/>• <b>Recommended Option A (Safest & Standard)</b>: Separately add the raw source folder and organized library folder. Raw folder can be Read-Only or Read/Write, but organized library folder MUST be Read/Write;<br/>• <b>Option B (Authorize Common Parent Folder)</b>: If both folders reside under the same parent directory (e.g. <code>/vol1/1000/Music</code>), you can authorize this parent folder directly. <b>Crucial: The parent folder MUST be granted [Read/Write] permission!</b> If set to Read-Only, the target subfolder inherits the read-only lock and fails to output tracks.<br/><br/><b>3. Hard Safety Boundary</b>:<br/>Source and target folders can be sibling subfolders (sharing same volume enables instant Btrfs Reflink CoW), <b>but must never be nested (e.g., target inside source)</b> to avoid infinite scanning loops."
+            q7Title: "Q7: How should folder permissions be configured? Can I authorize just the parent folder?",
+            q7Desc: "<b>1. Should I add subfolders separately or authorize a common parent folder?</b><br/>• <b>Separate Folders (Recommended)</b>: Authorize the raw source folder and organized library folder separately. Raw folder can be Read-Only or Read/Write, but organized library folder MUST have Read/Write permission;<br/>• <b>Common Parent Folder</b>: If both folders reside under the same parent directory, you can authorize the parent folder directly. <b>Crucial: The parent folder MUST have [Read/Write] permission!</b> If set to Read-Only, the target subfolder inherits the read-only lock and fails to output tracks.<br/><br/><b>2. Hard Safety Boundary</b>:<br/>Source and target folders can be sibling subfolders (sharing same volume enables instant Btrfs Reflink CoW), <b>but must never be nested (e.g., target inside source)</b> to avoid infinite scanning loops."
           },
           features: {
             f1Title: "Btrfs Copy-on-Write (Reflink CoW)",
@@ -2964,7 +2958,7 @@
         hint.style.display = "none";
         banner.style.display = "block";
         banner.innerHTML = (currentLang === "zh") 
-          ? "⚠️ <b>尚未选择音乐目录</b>：请在飞牛系统【应用管理】中添加文件夹访问权限，并在左侧完成目录选择。" 
+          ? "⚠️ <b>尚未选择音乐目录</b>：请在飞牛系统中为本应用授予文件夹访问权限，并在左侧完成目录选择。" 
           : "⚠️ <b>Directories Not Configured</b>: Please grant folder permissions in fnOS App Center and configure directories on the left.";
         banner.style.borderLeftColor = "#f59e0b";
         return;

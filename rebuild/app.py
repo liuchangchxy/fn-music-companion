@@ -129,12 +129,12 @@ def config_valid(config: dict) -> tuple[bool, str]:
         return False, "配置只能包含受支持的应用设置字段"
     source_raw, output_raw = config.get("source_dir"), config.get("output_dir")
     if not source_raw or not output_raw:
-        return False, "请先在飞牛「应用管理」中添加文件夹访问权限，并在下方选择整理前与整理后目录"
+        return False, "请先在飞牛系统中为本应用授予文件夹权限，并在下方选择整理前与整理后目录"
     if not all(isinstance(value, str) and value.startswith("/vol") for value in (source_raw, output_raw)):
         return False, "只能使用飞牛授权返回的真实 /volN/... 路径"
     source, output = Path(source_raw), Path(output_raw)
     if not authorized(source) or not authorized(output):
-        return False, "所选目录尚未在飞牛「应用中心 -> 应用管理 -> 文件夹访问权限」中授权（请先授权，刷新后直接下拉选择）"
+        return False, "所选目录尚未在飞牛系统中为本应用授权访问（请先在飞牛中授予权限，刷新后直接下拉选择）"
     if not source.is_dir() or not output.is_dir():
         return False, "原始文件夹和整理后文件夹都必须真实存在于 NAS 存储卷中"
     if not os.access(source, os.R_OK):

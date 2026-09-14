@@ -1324,6 +1324,19 @@
             修改目录
           </button>
         </div>
+        <div id="unauthorizedBanner" style="display: none; background: rgba(245, 158, 11, 0.12); border-left: 4px solid #f59e0b; padding: 12px 14px; border-radius: 8px; margin-bottom: 12px;">
+          <div style="font-weight: 600; color: #f59e0b; display: flex; align-items: center; gap: 6px; font-size: 13.5px;">
+            <span>⚠️</span>
+            <span id="unauthTitle">尚未在飞牛系统授权音乐文件夹 / No Music Folders Authorized</span>
+          </div>
+          <div id="unauthDesc" style="font-size: 12px; color: var(--text-secondary); margin-top: 6px; line-height: 1.6;">
+            检测到本应用尚未在飞牛私有云中获取文件夹访问权限。请按以下步骤操作：<br/>
+            1. 打开飞牛桌面【<b>应用中心</b>】→【<b>应用管理</b>】；<br/>
+            2. 找到本应用，点击【<b>设置/权限</b>】→【<b>添加文件夹访问权限</b>】；<br/>
+            3. 勾选您的音乐目录（建议分别勾选整理前与整理后目录，或勾选上级大文件夹并给予读写权限）；<br/>
+            4. 授权完成后，<b>刷新本页面</b>即可在下方下拉菜单中直接选择！
+          </div>
+        </div>
         <form id="cfgForm">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
             <label style="margin: 0; font-weight: 500;">原始文件夹（只读挂载）</label>
@@ -1358,7 +1371,7 @@
             <button type="button" id="cancelEditDirBtn" class="btn-main" style="background: var(--bg-subtle); border: 1px solid var(--card-border); padding: 8px 14px; font-size: 13px;">取消</button>
           </div>
           <div class="notice" style="margin-top: 12px; font-size: 12px; line-height: 1.5; color: var(--text-secondary); background: var(--bg-subtle); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--card-border);">
-            💡 <b>目录与权限说明</b>：安装向导填写的文件夹已自动预填并挂载。应用以飞牛当前用户身份运行，只要你在「文件管理」中拥有对该目录的读写权限即可正常整理，无需额外配置繁琐特权。
+            💡 <b>飞牛官方文件夹授权模式</b>：本应用严格接入飞牛官方权限中心（<code>trim.file.sharedAccess</code>）。请在飞牛【应用中心】->【应用管理】->【添加文件夹访问权限】中勾选您的音乐目录，本面板即可直接从下拉菜单中读取并一键选择，无需手敲底层物理路径。
           </div>
           <div class="storage-bar-box">
             <div class="progress-meta">
@@ -1569,6 +1582,10 @@
                 <b>② 极少数顽固文件建议手动审查或删除</b>：<br/>
                 如果复跑后源目录依然有极少数文件未被整理归档，这类通常属于“疑难杂症”顽固文件：例如文件名极度残缺（如只有 <code>Track 01.mp3</code> 且内嵌标签全空）、各大曲库均查无此曲、原唱/翻唱/伴奏存在语义逻辑争议、或是原盘抓轨重复度异常。<br/>
                 本程序恪守<b>「安全第一、宁缺毋滥」</b>的原则进行了谨慎保留，绝不在置信度不足时胡乱猜测改写或擅自删除原文件。<br/>
+                <b>算法与匹配规则并非万能，在部分元数据缺失或异常复杂的场景下无法保证完全准确</b>。对于这类极少数特殊或无保留价值的重复残留文件，建议您直接在源文件夹中手动审查、重命名或直接删除。
+              </div>
+            </details>
+
             <details style="background: var(--bg-subtle); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--card-border);">
               <summary style="font-weight: 600; cursor: pointer;">Q7: 如何在飞牛给应用添加文件夹访问权限？可以只授权上层大文件夹吗？</summary>
               <div style="margin-top: 8px; color: var(--text-secondary); font-size: 12px; line-height: 1.6;">
@@ -1831,7 +1848,9 @@
           offlineLabel: "离线整理模式 (跳过联网刮削，仅根据已有内嵌标签整理与分轨)",
           saveDirBtn: "保存目录配置",
           cancelBtn: "取消",
-          noticeSource: `🔒 <b>目录与权限说明</b>：<br/>• <b>安装预填</b>：安装向导中填写的两个文件夹已由飞牛系统自动挂载并预填。<br/>• <b>飞牛文件夹权限配置路径</b>：若要在飞牛系统修改访问权限，请在飞牛桌面打开<b>「应用中心」->「已安装」-> 找到「飞牛音乐伴侣」-> 点击卡片进入设置/详情 -> 在「文件夹权限」中点击「添加文件夹」</b>。<br/>• <b>子目录 vs 大文件夹授权规则</b>：<br/>&nbsp;&nbsp;① <b>推荐分别添加</b>：原始文件夹设为只读或读写，整理后文件夹必须设为读写；<br/>&nbsp;&nbsp;② <b>亦可直接授权上级大文件夹</b>：如果两个文件夹同属于一个大目录，可直接添加该大文件夹，<b>但大文件夹必须勾选【读写】权限</b>（否则其内的整理后子目录会连带被锁死只读导致无法生成曲库）；<br/>• <b>防死循环规则</b>：整理前与整理后必须为两个平级独立的目录，<b>严禁互相嵌套（如将整理后放在整理前内部）</b>。`,
+          unauthTitle: "尚未在飞牛系统授权音乐文件夹",
+          unauthDesc: "检测到本应用尚未在飞牛私有云中获取文件夹访问权限。请按以下步骤操作：<br/>1. 打开飞牛桌面【<b>应用中心</b>】→【<b>应用管理</b>】；<br/>2. 找到本应用，点击【<b>设置/权限</b>】→【<b>添加文件夹访问权限</b>】；<br/>3. 勾选您的音乐目录（建议分别勾选整理前与整理后目录，或勾选包含两者的上级大文件夹并赋予读写权限）；<br/>4. 授权完成后，<b>刷新本页面</b>即可在下方下拉菜单中直接选择！",
+          noticeSource: `🔒 <b>飞牛官方文件夹授权模式</b>：<br/>• <b>权限中心接入</b>：本应用已严格接入飞牛官方应用权限体系（<code>trim.file.sharedAccess</code>）。<br/>• <b>如何授权</b>：前往飞牛桌面【应用中心】->【应用管理】-> 找到本应用点击【设置/权限】->【添加文件夹访问权限】，勾选您的音乐目录；<br/>• <b>授权方案建议</b>：<br/>&nbsp;&nbsp;① <b>分别授权</b>：分别勾选「整理前」（只读/读写）与「整理后」（读写）；<br/>&nbsp;&nbsp;② <b>授权大文件夹</b>：亦可直接授权包含它们的大文件夹（<b>请务必勾选【读写】权限</b>）；<br/>• <b>便捷选择</b>：在飞牛后台添加授权后，刷新本页面，点击【修改目录】直接从下拉菜单中点选即可，无需手动输入真实路径！`,
           statusBadges: {
             unconfigured: "未配置",
             sourceOk: "🟢 只读就绪",
@@ -2080,7 +2099,9 @@
           offlineLabel: "Offline Mode (Skip cloud scraping, use local tags & fingerprints only)",
           saveDirBtn: "Save Directories",
           cancelBtn: "Cancel",
-          noticeSource: `🔒 <b>Directory Permissions & Setup Guide</b>:<br/>• <b>Auto-Pre-filled</b>: The two folders entered during installation wizard are mounted and pre-filled automatically.<br/>• <b>How to Grant Folder Permissions in fnOS</b>: In fnOS Desktop, open <b>App Center -> Installed -> Click "MusicFlow" -> Folder Permissions</b> to add folders.<br/>• <b>Separate Subfolders vs Parent Folder Authorization</b>:<br/>&nbsp;&nbsp;① <b>Recommended: Add separately</b>: Set raw source folder as Read-Only or Read/Write, and organized library folder as Read/Write;<br/>&nbsp;&nbsp;② <b>Or authorize common parent folder</b>: The parent folder <b>MUST be granted [Read/Write] permission</b>, otherwise the target subfolder inherits read-only lock and fails to output tracks;<br/>• <b>Anti-Recursion Rule</b>: Source and target must be separate sibling folders. <b>Never nest the output folder inside the source folder</b> to avoid infinite scanning loops.`,
+          unauthTitle: "No Music Folders Authorized in fnOS",
+          unauthDesc: "This application has not been granted folder access permissions in fnOS yet. Please follow these steps:<br/>1. In fnOS Desktop, open <b>App Center</b> → <b>App Management</b>;<br/>2. Find this application, click <b>Settings / Permissions</b> → <b>Add Folder Access</b>;<br/>3. Select your music directories (separately for source and target, or their parent directory with Read/Write permission);<br/>4. Once granted, <b>refresh this page</b> to pick them directly from the dropdown lists below!",
+          noticeSource: `🔒 <b>fnOS Native Folder Permission Model</b>:<br/>• <b>Official Access Control</b>: This app strictly follows fnOS native permission framework (<code>trim.file.sharedAccess</code>).<br/>• <b>How to Grant Access</b>: In fnOS Desktop, open <b>App Center -> App Management -> find \"MusicFlow\" -> Settings/Permissions -> Add Folder Access</b> to grant music directories.<br/>• <b>Authorization Options</b>:<br/>&nbsp;&nbsp;① <b>Separate Folders</b>: Grant raw source folder and organized library folder separately;<br/>&nbsp;&nbsp;② <b>Parent Folder</b>: Or grant access to a shared parent folder (<b>MUST check [Read/Write]</b>).<br/>• <b>Easy Selection</b>: Once granted in fnOS, refresh this page and click [Edit Directories] to select directly from dropdowns without manual typing!`,
           statusBadges: {
             unconfigured: "Unconfigured",
             sourceOk: "🟢 Read-Ready",
@@ -2345,6 +2366,11 @@
       const cancelDirBtn = document.getElementById("cancelEditDirBtn");
       if (cancelDirBtn) cancelDirBtn.textContent = dict.controls.cancelBtn;
 
+      const unauthTitleEl = document.getElementById("unauthTitle");
+      if (unauthTitleEl && dict.controls.unauthTitle) unauthTitleEl.textContent = dict.controls.unauthTitle;
+      const unauthDescEl = document.getElementById("unauthDesc");
+      if (unauthDescEl && dict.controls.unauthDesc) unauthDescEl.innerHTML = dict.controls.unauthDesc;
+
       const noticeEl = document.querySelector("#cfgForm .notice");
       if (noticeEl) noticeEl.innerHTML = dict.controls.noticeSource;
 
@@ -2425,7 +2451,7 @@
       if (faqTitleEl) faqTitleEl.textContent = dict.modals.guide.faqTitle;
 
       const faqs = document.querySelectorAll("#paneGuide .faq-list details");
-      if (faqs.length >= 6) {
+      if (faqs.length >= 7) {
         faqs[0].querySelector("summary").textContent = dict.modals.guide.q1Title;
         faqs[0].querySelector("div").innerHTML = dict.modals.guide.q1Desc;
         faqs[1].querySelector("summary").textContent = dict.modals.guide.q2Title;
@@ -2438,6 +2464,8 @@
         faqs[4].querySelector("div").innerHTML = dict.modals.guide.q5Desc;
         faqs[5].querySelector("summary").textContent = dict.modals.guide.q6Title;
         faqs[5].querySelector("div").innerHTML = dict.modals.guide.q6Desc;
+        faqs[6].querySelector("summary").textContent = dict.modals.guide.q7Title;
+        faqs[6].querySelector("div").innerHTML = dict.modals.guide.q7Desc;
       }
 
       // Update Tab 1: Sponsor
@@ -2743,6 +2771,14 @@
     // Config Panel Render
     function renderConfig(cfg) {
       if (!cfg) return;
+      const unauthBanner = document.getElementById("unauthorizedBanner");
+      if (unauthBanner) {
+        if (!cfg.accessible_dirs || cfg.accessible_dirs.length === 0) {
+          unauthBanner.style.display = "block";
+        } else {
+          unauthBanner.style.display = "none";
+        }
+      }
       const sInput = document.getElementById("sourceInput");
       const oInput = document.getElementById("outputInput");
       const pInput = document.getElementById("proxyInput");
@@ -2840,6 +2876,11 @@
         sFill.style.width = `${pct}%`;
         sFill.style.background = pct > 85 ? "var(--danger)" : "var(--primary)";
       }
+
+      // Auto-open editor if directories are not configured yet
+      if ((!cfg.source_dir || !cfg.output_dir) && typeof enableDirEditing === "function" && cfgActionBox && cfgActionBox.style.display === "none") {
+        enableDirEditing();
+      }
     }
 
     // Runs Table Render
@@ -2912,6 +2953,22 @@
       }
 
       stopBtn.style.display = "none";
+      if (!configCache || !configCache.source_dir || !configCache.output_dir) {
+        btn.disabled = true;
+        btn.dataset.mode = "";
+        btnText.textContent = (currentLang === "zh") ? "请先在飞牛授权并选择目录" : "Please authorize & select folders first";
+        btn.style.background = "var(--bg-subtle)";
+        btn.style.borderColor = "var(--card-border)";
+        btn.style.color = "var(--text-muted)";
+        fullRerunBtn.style.display = "none";
+        hint.style.display = "none";
+        banner.style.display = "block";
+        banner.innerHTML = (currentLang === "zh") 
+          ? "⚠️ <b>尚未选择音乐目录</b>：请在飞牛系统【应用管理】中添加文件夹访问权限，并在左侧完成目录选择。" 
+          : "⚠️ <b>Directories Not Configured</b>: Please grant folder permissions in fnOS App Center and configure directories on the left.";
+        banner.style.borderLeftColor = "#f59e0b";
+        return;
+      }
       btn.disabled = false;
 
       if (hasInitRun) {

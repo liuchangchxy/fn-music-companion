@@ -46,13 +46,18 @@ def write_json(path: Path, value: dict) -> None:
 
 def get_or_init_config() -> dict:
     cfg = read_json(CONFIG, {})
+    acc = accessible_paths()
     changed = False
     if not cfg.get("source_dir") and DEFAULT_SOURCE:
-        cfg["source_dir"] = DEFAULT_SOURCE
-        changed = True
+        p = Path(DEFAULT_SOURCE)
+        if any(p == a or a in p.parents for a in acc):
+            cfg["source_dir"] = DEFAULT_SOURCE
+            changed = True
     if not cfg.get("output_dir") and DEFAULT_OUTPUT:
-        cfg["output_dir"] = DEFAULT_OUTPUT
-        changed = True
+        p = Path(DEFAULT_OUTPUT)
+        if any(p == a or a in p.parents for a in acc):
+            cfg["output_dir"] = DEFAULT_OUTPUT
+            changed = True
     if changed:
         try:
             write_json(CONFIG, cfg)
@@ -62,26 +67,55 @@ def get_or_init_config() -> dict:
 
 
 def accessible_paths() -> list[Path]:
-    values = os.environ.get("TRIM_DATA_ACCESSIBLE_PATHS", "").split(":")
+    values: list[str] = []
+    # 1. From authorized-paths file written by fnOS callback
+    auth_file = Path("/appdata/authorized-paths")
+    if auth_file.is_file():
+        try:
+            for line in auth_file.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line:
+                    values.append(line)
+        except Exception:
+            pass
+
+    # 2. From TRIM_DATA_ACCESSIBLE_PATHS environment variable
+    env_paths = os.environ.get("TRIM_DATA_ACCESSIBLE_PATHS", "").split(":")
+    values.extend(env_paths)
+
+    # 3. From mounts in /proc/mounts starting with /vol
+    try:
+        proc_mounts = Path("/proc/mounts")
+        if proc_mounts.is_file():
+            for line in proc_mounts.read_text(encoding="utf-8", errors="replace").splitlines():
+                parts = line.split()
+                if len(parts) >= 2:
+                    target = parts[1]
+                    if target.startswith("/vol") and "@" not in target:
+                        values.append(target)
+    except Exception:
+        pass
+
+    # 4. Fallback from legacy env
     values.extend([os.environ.get("MUSIC_MOUNT_SOURCE", ""), os.environ.get("MUSIC_MOUNT_OUTPUT", "")])
-    cfg = read_json(CONFIG, {})
-    if cfg.get("source_dir"):
-        values.append(cfg["source_dir"])
-    if cfg.get("output_dir"):
-        values.append(cfg["output_dir"])
+
     result: list[Path] = []
     for value in values:
         if not value or not value.strip().startswith("/vol"):
             continue
-        path = Path(value.strip()).resolve(strict=False)
-        if path not in result:
-            result.append(path)
-    return result
+        try:
+            path = Path(value.strip()).resolve(strict=False)
+            if path.exists() and path.is_dir() and path not in result:
+                result.append(path)
+        except Exception:
+            pass
+    return sorted(result, key=lambda p: str(p))
 
 
 def authorized(path: Path) -> bool:
     candidate = path.resolve(strict=False)
-    return any(candidate == root or root in candidate.parents for root in accessible_paths())
+    acc = accessible_paths()
+    return any(candidate == root or root in candidate.parents for root in acc)
 
 
 def nested(first: Path, second: Path) -> bool:
@@ -94,11 +128,13 @@ def config_valid(config: dict) -> tuple[bool, str]:
     if set(config) - allowed_keys:
         return False, "配置只能包含受支持的应用设置字段"
     source_raw, output_raw = config.get("source_dir"), config.get("output_dir")
+    if not source_raw or not output_raw:
+        return False, "请先在飞牛「应用管理」中添加文件夹访问权限，并在下方选择整理前与整理后目录"
     if not all(isinstance(value, str) and value.startswith("/vol") for value in (source_raw, output_raw)):
         return False, "只能使用飞牛授权返回的真实 /volN/... 路径"
     source, output = Path(source_raw), Path(output_raw)
     if not authorized(source) or not authorized(output):
-        return False, "所选目录未挂载到本容器中（请在应用中心修改配置重新挂载，或在下拉框中选择已挂载的目录）"
+        return False, "所选目录尚未在飞牛「应用中心 -> 应用管理 -> 文件夹访问权限」中授权（请先授权，刷新后直接下拉选择）"
     if not source.is_dir() or not output.is_dir():
         return False, "原始文件夹和整理后文件夹都必须真实存在于 NAS 存储卷中"
     if not os.access(source, os.R_OK):

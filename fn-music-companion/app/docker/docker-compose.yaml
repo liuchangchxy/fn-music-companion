@@ -16,9 +16,6 @@ services:
       MUSIC_METADATA_WORKERS: "${MUSIC_METADATA_WORKERS:-auto}"
       TZ: "${TZ:-Asia/Shanghai}"
     volumes:
-      # Wizard values are real fnOS paths and are the only user data mounts.
-      - "${source_dir}:${source_dir}:ro"
-      - "${output_dir}:${output_dir}:rw"
       - "${TRIM_PKGVAR}:/appdata:rw"
       - /etc/localtime:/etc/localtime:ro
     ports:

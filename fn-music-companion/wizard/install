@@ -1,34 +1,18 @@
 [
   {
-    "stepTitle": "配置服务端口与音乐目录",
+    "stepTitle": "配置服务端口 / Configure Service Port",
     "items": [
       {
         "type": "text",
         "field": "service_port",
-        "label": "Web 服务端口（默认 8091，如被占用可随意修改）",
+        "label": "Web 服务端口 / Web Service Port（默认 8091）",
         "initValue": "8091",
         "placeholder": "8091",
         "rules": [{"required": true, "message": "请输入有效的端口号（如 8091）"}]
       },
       {
-        "type": "text",
-        "field": "source_dir",
-        "label": "原始音乐文件夹（只读挂载保护）",
-        "initValue": "",
-        "placeholder": "例：/vol1/1000/Download/音乐/整理前",
-        "rules": [{"required": true, "message": "请输入真实存储卷路径，可在文件管理右键属性中复制"}]
-      },
-      {
-        "type": "text",
-        "field": "output_dir",
-        "label": "整理后曲库文件夹（可写，供飞牛音乐扫描）",
-        "initValue": "",
-        "placeholder": "例：/vol1/1000/Music/整理后",
-        "rules": [{"required": true, "message": "请输入真实存储卷路径，可在文件管理右键属性中复制"}]
-      },
-      {
         "type": "tips",
-        "helpText": "💡 文件夹授权与配置说明 (Folder Permissions Guide)：\n1. 路径获取：在飞牛桌面「文件管理」右键文件夹「属性」-> 点击「位置」右侧复制图标粘贴即可（格式为 /vol1/1000/...）。\n2. 文件夹授权：若在飞牛应用中心给本应用配置文件夹访问权限，推荐分别添加「整理前」和「整理后」两个文件夹；亦可直接添加上级大文件夹，但大文件夹必须勾选【读写】权限（否则整理后子目录会连带变成只读）。\n3. 目录隔离：整理前与整理后必须为平级独立目录，严禁互相嵌套以防死循环。\n\n• Location: Right-click folder in File Manager -> Properties -> Copy Location (/vol1/1000/...). \n• Permissions: You can grant access to source and output folders separately, or grant their parent folder with [Read/Write] permission.\n• Rule: Never nest output folder inside source folder."
+        "helpText": "💡 存储与音乐文件夹授权说明 (Music Folder Permissions Guide)：\n1. 安装完成后，请打开飞牛桌面【应用中心】->【应用管理】-> 找到本应用点击【设置/权限】->【添加文件夹访问权限】。\n2. 授权您的音乐文件夹：推荐分别添加「整理前」和「整理后」两个文件夹；亦可直接添加上级大文件夹（请务必勾选【读写】权限）。\n3. 授权完成后打开本应用 Web 控制台，即可在下拉菜单中直接选择，无需手动输入物理路径！\n\n• Storage Permission: After installation, open fnOS App Center -> App Management -> find this app -> Settings/Permissions -> Add Folder Access.\n• Authorization: Grant access to your music folders (separate source/output folders or a parent folder with Read/Write permission).\n• Easy Selection: Once granted, you can select folders directly from dropdown lists in the Web UI without typing physical paths."
       }
     ]
   }

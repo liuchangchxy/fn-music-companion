@@ -79,6 +79,16 @@ def build_fpk(output_path: Path | None = None) -> Path:
             p = PKG_DIR / item
             if not p.exists():
                 continue
+            if item == "manifest":
+                manifest_text = p.read_text(encoding="utf-8")
+                lines = [l for l in manifest_text.splitlines() if not l.strip().startswith("checksum")]
+                lines.append(f"checksum              = {checksum}\n")
+                new_manifest_bytes = "\n".join(lines).encode("utf-8")
+                ti = tarfile.TarInfo(name="manifest")
+                ti.size = len(new_manifest_bytes)
+                ti.mode = 0o644
+                fpk.addfile(ti, io.BytesIO(new_manifest_bytes))
+                continue
             if p.is_file():
                 ti = fpk.gettarinfo(str(p), arcname=item)
                 ti.mode = 0o755 if "cmd" in item or item == "manifest" else 0o644

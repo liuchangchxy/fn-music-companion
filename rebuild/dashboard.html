@@ -1340,9 +1340,12 @@
           </div>
           <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px; margin-bottom: 8px;">
             <input id="sourceInput" list="accessiblePathsList" required readonly style="flex: 1; margin: 0;">
-            <select id="sourceSelect" class="quick-dir-select" style="display: none; width: auto; max-width: 150px; padding: 7px 8px; font-size: 12px; border-radius: 6px; border: 1px solid var(--card-border); background: var(--bg-subtle); color: var(--text-secondary); cursor: pointer;" onchange="if(this.value){document.getElementById('sourceInput').value=this.value;}">
-              <option value="">快捷选择目录...</option>
+            <select id="sourceSelect" class="quick-dir-select" style="display: none; width: auto; max-width: 150px; padding: 7px 8px; font-size: 12px; border-radius: 6px; border: 1px solid var(--card-border); background: var(--bg-subtle); color: var(--text-secondary); cursor: pointer;" onchange="if(this.value){const inp=document.getElementById('sourceInput');inp.value=this.value;inp.dispatchEvent(new Event('change'));}">
+              <option value="">快捷选择...</option>
             </select>
+            <button type="button" class="btn-browse" id="sourceBrowseBtn" style="display: none; width: auto; padding: 7px 12px; font-size: 12px; border-radius: 6px; border: 1px solid var(--card-border); background: var(--bg-subtle); color: var(--text); cursor: pointer; white-space: nowrap;" onclick="openFilePicker('source')">
+              📁 浏览...
+            </button>
           </div>
 
           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
@@ -1351,9 +1354,12 @@
           </div>
           <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px; margin-bottom: 8px;">
             <input id="outputInput" list="accessiblePathsList" required readonly style="flex: 1; margin: 0;">
-            <select id="outputSelect" class="quick-dir-select" style="display: none; width: auto; max-width: 150px; padding: 7px 8px; font-size: 12px; border-radius: 6px; border: 1px solid var(--card-border); background: var(--bg-subtle); color: var(--text-secondary); cursor: pointer;" onchange="if(this.value){document.getElementById('outputInput').value=this.value;}">
-              <option value="">快捷选择目录...</option>
+            <select id="outputSelect" class="quick-dir-select" style="display: none; width: auto; max-width: 150px; padding: 7px 8px; font-size: 12px; border-radius: 6px; border: 1px solid var(--card-border); background: var(--bg-subtle); color: var(--text-secondary); cursor: pointer;" onchange="if(this.value){const inp=document.getElementById('outputInput');inp.value=this.value;inp.dispatchEvent(new Event('change'));}">
+              <option value="">快捷选择...</option>
             </select>
+            <button type="button" class="btn-browse" id="outputBrowseBtn" style="display: none; width: auto; padding: 7px 12px; font-size: 12px; border-radius: 6px; border: 1px solid var(--card-border); background: var(--bg-subtle); color: var(--text); cursor: pointer; white-space: nowrap;" onclick="openFilePicker('output')">
+              📁 浏览...
+            </button>
           </div>
           <datalist id="accessiblePathsList"></datalist>
           <label style="margin-top: 8px;">网络代理 (可选，留空则系统直连访问全网)</label>
@@ -1764,6 +1770,60 @@
           <button type="button" class="btn-danger-confirm" id="doResetBtn" onclick="executeReset()">
             <span>确认执行重置</span>
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: File Picker -->
+  <div class="modal-backdrop" id="filePickerModal" onclick="handlePickerBackdropClick(event)">
+    <div class="modal" onclick="event.stopPropagation()" style="max-width: 680px;">
+      <div class="modal-header">
+        <div class="modal-brand">
+          <div class="brand-icon" style="width:36px;height:36px;background:linear-gradient(135deg, var(--primary), #a855f7);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px;">
+              <span id="pickerTitleText">选择文件夹</span>
+              <span id="pickerTargetBadge" style="font-size:11px;padding:2px 7px;border-radius:10px;background:var(--primary-glow);color:var(--primary);font-weight:600;">原始目录</span>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;" id="pickerDescText">在已授权的存储卷中点选任意层级文件夹</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeFilePicker()" title="关闭">&times;</button>
+      </div>
+
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;">
+        <!-- Breadcrumb & Navigation Bar -->
+        <div style="display:flex;align-items:center;gap:8px;background:var(--bg-subtle);padding:8px 12px;border-radius:8px;border:1px solid var(--card-border);font-size:13px;">
+          <button type="button" id="pickerUpBtn" class="btn-icon" style="width:auto;padding:4px 8px;font-size:12px;border-radius:6px;border:1px solid var(--card-border);background:var(--card-bg);color:var(--text);cursor:pointer;" onclick="pickerNavigateUp()" title="返回上一级">
+            ⬆️ 返回上一级
+          </button>
+          <div id="pickerCurrentPath" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:monospace;font-size:12.5px;color:var(--text-secondary);">
+            / (授权根目录)
+          </div>
+        </div>
+
+        <!-- Directory List Container -->
+        <div id="pickerListContainer" style="min-height:260px;max-height:360px;overflow-y:auto;border:1px solid var(--card-border);border-radius:8px;background:var(--card-bg);padding:6px;">
+          <div style="text-align:center;padding:40px 10px;color:var(--text-muted);font-size:13px;" id="pickerLoading">
+            ⏳ 正在加载目录...
+          </div>
+          <div id="pickerList" style="display:flex;flex-direction:column;gap:3px;"></div>
+        </div>
+
+        <!-- Selected Path Display & Actions -->
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;gap:12px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:240px;font-size:12px;color:var(--text-muted);">
+            当前选中：<code id="pickerSelectedDisplay" style="color:var(--primary);font-weight:600;font-size:12.5px;">-</code>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="btn-cancel" onclick="closeFilePicker()">取消</button>
+            <button type="button" class="btn-main" id="pickerConfirmBtn" style="width:auto;padding:8px 18px;font-size:13px;background:var(--primary);" onclick="confirmPickerSelection()">
+              选择此文件夹
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -2801,7 +2861,17 @@
         const sSel = document.getElementById("sourceSelect");
         const oSel = document.getElementById("outputSelect");
         if (sSel && oSel && cfg.accessible_dirs.length > 0) {
-          const opts = `<option value="">快捷选择目录...</option>` + cfg.accessible_dirs.map(d => `<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`).join("");
+          const formatPathLabel = (p) => {
+            const parts = p.split("/").filter(Boolean);
+            if (parts.length >= 2) {
+              return parts.slice(-2).join(" / ");
+            }
+            return parts[parts.length - 1] || p;
+          };
+          const opts = `<option value="">快捷选择目录...</option>` + cfg.accessible_dirs.map(d => {
+            const label = formatPathLabel(d);
+            return `<option value="${escapeHTML(d)}">${escapeHTML(label)} (${escapeHTML(d)})</option>`;
+          }).join("");
           sSel.innerHTML = opts;
           oSel.innerHTML = opts;
         }
@@ -3025,6 +3095,10 @@
       const oSel = document.getElementById("outputSelect");
       if (sSel && sSel.options.length > 1) sSel.style.display = "inline-block";
       if (oSel && oSel.options.length > 1) oSel.style.display = "inline-block";
+      const sBrowse = document.getElementById("sourceBrowseBtn");
+      const oBrowse = document.getElementById("outputBrowseBtn");
+      if (sBrowse) sBrowse.style.display = "inline-flex";
+      if (oBrowse) oBrowse.style.display = "inline-flex";
       if (proxyInput) proxyInput.removeAttribute("readonly");
       if (offlineModeInput) offlineModeInput.removeAttribute("disabled");
       cfgActionBox.style.display = "flex";
@@ -3039,6 +3113,10 @@
       const oSel = document.getElementById("outputSelect");
       if (sSel) sSel.style.display = "none";
       if (oSel) oSel.style.display = "none";
+      const sBrowse = document.getElementById("sourceBrowseBtn");
+      const oBrowse = document.getElementById("outputBrowseBtn");
+      if (sBrowse) sBrowse.style.display = "none";
+      if (oBrowse) oBrowse.style.display = "none";
       if (proxyInput) proxyInput.value = configCache.proxy || "";
       if (offlineModeInput) offlineModeInput.checked = !!configCache.offline_mode;
       sourceInput.setAttribute("readonly", true);
@@ -3067,6 +3145,10 @@
         const oSel = document.getElementById("outputSelect");
         if (sSel) sSel.style.display = "none";
         if (oSel) oSel.style.display = "none";
+        const sBrowse = document.getElementById("sourceBrowseBtn");
+        const oBrowse = document.getElementById("outputBrowseBtn");
+        if (sBrowse) sBrowse.style.display = "none";
+        if (oBrowse) oBrowse.style.display = "none";
         if (proxyInput) proxyInput.setAttribute("readonly", true);
         if (offlineModeInput) offlineModeInput.setAttribute("disabled", true);
         cfgActionBox.style.display = "none";
@@ -3327,6 +3409,173 @@
       } catch (e) {
         return isoStr;
       }
+    }
+
+    // =========================================================================
+    // Interactive File Picker Modal Logic
+    // =========================================================================
+    let pickerTarget = "source"; // 'source' or 'output'
+    let pickerCurrentDir = "";
+    let pickerParentDir = "";
+    let pickerSelectedDir = "";
+
+    function openFilePicker(target) {
+      if (stateCache && stateCache.state === "running") {
+        alert(t("dialogs.pipelineRunningWait"));
+        return;
+      }
+      pickerTarget = target;
+      const modal = document.getElementById("filePickerModal");
+      if (!modal) return;
+
+      const titleEl = document.getElementById("pickerTitleText");
+      const badgeEl = document.getElementById("pickerTargetBadge");
+      const descEl = document.getElementById("pickerDescText");
+
+      const isZh = currentLang === "zh";
+      if (target === "source") {
+        if (titleEl) titleEl.textContent = isZh ? "选择原始音乐文件夹（只读）" : "Select Source Music Folder (Read-Only)";
+        if (badgeEl) {
+          badgeEl.textContent = isZh ? "原始输入" : "Source Input";
+          badgeEl.style.background = "rgba(47, 129, 247, 0.25)";
+          badgeEl.style.color = "var(--primary)";
+        }
+        if (descEl) descEl.textContent = isZh ? "请点选存放待整理音乐的根目录或子文件夹" : "Select folder containing raw music files";
+      } else {
+        if (titleEl) titleEl.textContent = isZh ? "选择整理后曲库文件夹（读写）" : "Select Organized Library Folder (Read/Write)";
+        if (badgeEl) {
+          badgeEl.textContent = isZh ? "整理归档" : "Output Library";
+          badgeEl.style.background = "rgba(35, 134, 54, 0.25)";
+          badgeEl.style.color = "var(--success-light)";
+        }
+        if (descEl) descEl.textContent = isZh ? "请点选归档整理后曲库的目录（必须拥有读写权限）" : "Select folder to store organized library (must be writable)";
+      }
+
+      // Default start path: value from input or parent
+      const currentVal = target === "source" ? sourceInput.value.trim() : outputInput.value.trim();
+      modal.classList.add("active");
+      document.body.style.overflow = "hidden";
+      loadPickerPath(currentVal || "");
+    }
+
+    function closeFilePicker() {
+      const modal = document.getElementById("filePickerModal");
+      if (!modal) return;
+      modal.classList.remove("active");
+      document.body.style.overflow = "";
+    }
+
+    function handlePickerBackdropClick(e) {
+      if (e.target.id === "filePickerModal") closeFilePicker();
+    }
+
+    async function loadPickerPath(path) {
+      const loading = document.getElementById("pickerLoading");
+      const listEl = document.getElementById("pickerList");
+      const currentPathEl = document.getElementById("pickerCurrentPath");
+      const upBtn = document.getElementById("pickerUpBtn");
+      const selDisplay = document.getElementById("pickerSelectedDisplay");
+
+      if (loading) loading.style.display = "block";
+      if (listEl) listEl.innerHTML = "";
+
+      pickerSelectedDir = path;
+      if (selDisplay) selDisplay.textContent = path || "(尚未选中)";
+
+      try {
+        const query = path ? `?path=${encodeURIComponent(path)}` : "";
+        const res = await fetch(`/api/fs/ls${query}`);
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          if (listEl) {
+            listEl.innerHTML = `<div style="color:var(--danger);padding:24px;text-align:center;">⚠️ ${escapeHTML(data.error || "无法加载目录内容")}</div>`;
+          }
+          if (loading) loading.style.display = "none";
+          return;
+        }
+
+        pickerCurrentDir = data.current || "";
+        pickerParentDir = data.parent || "";
+
+        if (currentPathEl) {
+          currentPathEl.textContent = pickerCurrentDir || "/ (授权存储卷列表)";
+          currentPathEl.title = pickerCurrentDir;
+        }
+        if (upBtn) {
+          upBtn.disabled = !pickerParentDir;
+          upBtn.style.opacity = pickerParentDir ? "1" : "0.5";
+        }
+
+        if (loading) loading.style.display = "none";
+
+        const entries = data.entries || [];
+        if (entries.length === 0) {
+          listEl.innerHTML = `<div style="color:var(--text-muted);padding:32px;text-align:center;">此目录下无更多子文件夹</div>`;
+          return;
+        }
+
+        listEl.innerHTML = entries.map(item => {
+          const isSelected = item.path === pickerSelectedDir;
+          const writeBadge = item.writable 
+            ? `<span style="font-size:10.5px;padding:1px 5px;border-radius:4px;background:rgba(35,134,54,0.15);color:#2ea043;">读写</span>`
+            : `<span style="font-size:10.5px;padding:1px 5px;border-radius:4px;background:rgba(148,163,184,0.15);color:#94a3b8;">只读</span>`;
+          return `
+            <div class="picker-item" data-path="${escapeHTML(item.path)}" style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:6px;cursor:pointer;background:${isSelected ? 'var(--primary-glow)' : 'transparent'};border:1px solid ${isSelected ? 'var(--primary)' : 'transparent'};" onclick="selectPickerItem('${escapeHTML(item.path)}')">
+              <div style="display:flex;align-items:center;gap:8px;overflow:hidden;flex:1;">
+                <span style="font-size:16px;">📁</span>
+                <span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHTML(item.name)}</span>
+                ${writeBadge}
+              </div>
+              <button type="button" class="btn-icon" style="padding:3px 8px;font-size:11.5px;width:auto;border-radius:4px;border:1px solid var(--card-border);background:var(--bg-subtle);color:var(--text-secondary);" onclick="event.stopPropagation(); loadPickerPath('${escapeHTML(item.path)}')">
+                进入 ➡️
+              </button>
+            </div>
+          `;
+        }).join("");
+      } catch (err) {
+        if (loading) loading.style.display = "none";
+        if (listEl) {
+          listEl.innerHTML = `<div style="color:var(--danger);padding:24px;text-align:center;">网络错误: ${escapeHTML(err.message || String(err))}</div>`;
+        }
+      }
+    }
+
+    function selectPickerItem(path) {
+      pickerSelectedDir = path;
+      const selDisplay = document.getElementById("pickerSelectedDisplay");
+      if (selDisplay) selDisplay.textContent = path;
+
+      // Update active highlight
+      document.querySelectorAll("#pickerList .picker-item").forEach(el => {
+        const isTarget = el.dataset.path === path;
+        el.style.background = isTarget ? "var(--primary-glow)" : "transparent";
+        el.style.borderColor = isTarget ? "var(--primary)" : "transparent";
+      });
+    }
+
+    function pickerNavigateUp() {
+      if (pickerParentDir) {
+        loadPickerPath(pickerParentDir);
+      } else {
+        loadPickerPath("");
+      }
+    }
+
+    function confirmPickerSelection() {
+      const chosen = pickerSelectedDir || pickerCurrentDir;
+      if (!chosen) {
+        alert(currentLang === "zh" ? "请先点选一个文件夹" : "Please select a folder first");
+        return;
+      }
+      if (pickerTarget === "source") {
+        sourceInput.value = chosen;
+        sourceInput.dispatchEvent(new Event("change"));
+      } else {
+        outputInput.value = chosen;
+        outputInput.dispatchEvent(new Event("change"));
+      }
+      closeFilePicker();
     }
 
     // Initialize Language & Dashboard

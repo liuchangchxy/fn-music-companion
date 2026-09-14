@@ -48,16 +48,47 @@ def get_or_init_config() -> dict:
     cfg = read_json(CONFIG, {})
     acc = accessible_paths()
     changed = False
-    if not cfg.get("source_dir") and DEFAULT_SOURCE:
+
+    src_val = cfg.get("source_dir", "")
+    out_val = cfg.get("output_dir", "")
+
+    # If already configured, verify validity against current mounts
+    if src_val and not any(Path(src_val) == a or a in Path(src_val).parents for a in acc):
+        src_val = ""
+    if out_val and not any(Path(out_val) == a or a in Path(out_val).parents for a in acc):
+        out_val = ""
+
+    if not src_val and DEFAULT_SOURCE:
         p = Path(DEFAULT_SOURCE)
         if any(p == a or a in p.parents for a in acc):
-            cfg["source_dir"] = DEFAULT_SOURCE
-            changed = True
-    if not cfg.get("output_dir") and DEFAULT_OUTPUT:
+            src_val = DEFAULT_SOURCE
+
+    if not out_val and DEFAULT_OUTPUT:
         p = Path(DEFAULT_OUTPUT)
         if any(p == a or a in p.parents for a in acc):
-            cfg["output_dir"] = DEFAULT_OUTPUT
-            changed = True
+            out_val = DEFAULT_OUTPUT
+
+    # Smart auto-detection if still empty
+    if not src_val or not out_val:
+        source_keywords = ("整理前", "未整理", "raw", "source", "input", "download", "下载")
+        output_keywords = ("整理后", "已整理", "output", "library", "music", "曲库", "音乐库")
+
+        for p in acc:
+            name_lower = p.name.lower()
+            if not src_val and any(kw in name_lower for kw in source_keywords):
+                if p != Path(out_val) if out_val else True:
+                    src_val = str(p)
+            elif not out_val and any(kw in name_lower for kw in output_keywords):
+                if p != Path(src_val) if src_val else True:
+                    out_val = str(p)
+
+    if src_val and cfg.get("source_dir") != src_val:
+        cfg["source_dir"] = src_val
+        changed = True
+    if out_val and cfg.get("output_dir") != out_val:
+        cfg["output_dir"] = out_val
+        changed = True
+
     if changed:
         try:
             write_json(CONFIG, cfg)
@@ -99,16 +130,28 @@ def accessible_paths() -> list[Path]:
     # 4. Fallback from legacy env
     values.extend([os.environ.get("MUSIC_MOUNT_SOURCE", ""), os.environ.get("MUSIC_MOUNT_OUTPUT", "")])
 
-    result: list[Path] = []
+    roots: list[Path] = []
     for value in values:
         if not value or not value.strip().startswith("/vol"):
             continue
         try:
             path = Path(value.strip()).resolve(strict=False)
-            if path.exists() and path.is_dir() and path not in result:
-                result.append(path)
+            if path.exists() and path.is_dir() and path not in roots:
+                roots.append(path)
         except Exception:
             pass
+
+    result: list[Path] = list(roots)
+    # Automatically scan first-level subdirectories for each authorized root
+    for root in roots:
+        try:
+            for item in sorted(root.iterdir()):
+                if item.is_dir() and not item.name.startswith((".", "@")):
+                    if item not in result:
+                        result.append(item)
+        except Exception:
+            pass
+
     return sorted(result, key=lambda p: str(p))
 
 
@@ -592,6 +635,53 @@ class Handler(BaseHTTPRequestHandler):
         elif parsed.path == "/api/accessible-paths":
             paths = [str(p) for p in accessible_paths()]
             self.send(200, json.dumps(paths, ensure_ascii=False), "application/json")
+        elif parsed.path == "/api/fs/ls":
+            qs = parse_qs(parsed.query)
+            target_path_str = qs.get("path", [""])[0].strip()
+            acc = accessible_paths()
+            
+            # If no path specified, return the authorized roots
+            if not target_path_str:
+                roots_data = []
+                for p in acc:
+                    # Only top-level / authorized roots that don't have parents in acc
+                    if not any(parent in acc for parent in p.parents):
+                        roots_data.append({
+                            "name": p.name or str(p),
+                            "path": str(p),
+                            "readable": os.access(p, os.R_OK),
+                            "writable": os.access(p, os.W_OK),
+                        })
+                self.send(200, json.dumps({"current": "", "entries": roots_data}, ensure_ascii=False), "application/json")
+                return
+
+            target = Path(target_path_str).resolve(strict=False)
+            if not authorized(target) or not target.is_dir():
+                self.send(403, json.dumps({"error": "路径未授权或不存在", "entries": []}, ensure_ascii=False), "application/json")
+                return
+
+            entries = []
+            try:
+                for child in sorted(target.iterdir(), key=lambda c: c.name.lower()):
+                    if child.is_dir() and not child.name.startswith((".", "@")):
+                        entries.append({
+                            "name": child.name,
+                            "path": str(child),
+                            "readable": os.access(child, os.R_OK),
+                            "writable": os.access(child, os.W_OK),
+                        })
+            except Exception as exc:
+                self.send(500, json.dumps({"error": f"读取目录失败: {exc}", "entries": []}, ensure_ascii=False), "application/json")
+                return
+
+            parent_path = str(target.parent) if authorized(target.parent) else ""
+            self.send(200, json.dumps({
+                "current": str(target),
+                "parent": parent_path,
+                "readable": os.access(target, os.R_OK),
+                "writable": os.access(target, os.W_OK),
+                "entries": entries,
+            }, ensure_ascii=False), "application/json")
         elif parsed.path in ("/favicon.ico", "/favicon.png", "/icon.png"):
             icon_file = Path(__file__).with_name("favicon.ico" if parsed.path == "/favicon.ico" else "favicon.png")
             if not icon_file.is_file():

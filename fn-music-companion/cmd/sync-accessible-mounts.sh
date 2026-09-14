@@ -37,11 +37,11 @@ if [ -d "$DOCKER_DIR" ]; then
     echo "services:"
     echo "  organizer:"
     echo "    environment:"
-    echo "      TRIM_DATA_ACCESSIBLE_PATHS: "${TRIM_DATA_ACCESSIBLE_PATHS:-}""
+    echo "      TRIM_DATA_ACCESSIBLE_PATHS: \"${TRIM_DATA_ACCESSIBLE_PATHS:-}\""
     if [ "${#CLEAN_PATHS[@]}" -gt 0 ]; then
       echo "    volumes:"
       for p in "${CLEAN_PATHS[@]}"; do
-        echo "      - "${p}:${p}:rw""
+        echo "      - \"${p}:${p}:rw\""
       done
     fi
   } > "$TMP_OVERRIDE"
@@ -49,6 +49,7 @@ if [ -d "$DOCKER_DIR" ]; then
 
   # 4. Trigger docker compose up to apply mounts dynamically
   if [ -f "$COMPOSE_FILE" ] && command -v docker >/dev/null 2>&1; then
+    export TRIM_PKGVAR="${PKGVAR}"
     docker compose -p fn-music-companion -f "$COMPOSE_FILE" -f "$OVERRIDE_FILE" up -d --remove-orphans >/dev/null 2>&1 || true
   fi
 fi

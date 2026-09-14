@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
   <title>飞牛音乐伴侣 · MusicFlow</title>
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="apple-touch-icon" href="/favicon.png">
@@ -901,6 +901,252 @@
       background: var(--bg-subtle);
       color: var(--text);
     }
+
+    /* =========================================================================
+       Mobile & Tablet Responsive System (<= 680px)
+       ========================================================================= */
+    @media (max-width: 680px) {
+      body {
+        padding: 10px 10px 48px;
+      }
+      .container {
+        gap: 12px;
+      }
+
+      /* Header */
+      header {
+        padding: 10px 12px;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .brand {
+        gap: 8px;
+      }
+      .brand-text h1 {
+        font-size: 15px;
+      }
+      .brand-text .badge {
+        display: none;
+      }
+      .header-actions {
+        gap: 4px;
+        margin-left: auto;
+      }
+      .btn-sponsor {
+        padding: 6px 8px;
+        font-size: 12px;
+        gap: 0;
+      }
+      .btn-sponsor span {
+        display: none;
+      }
+      .theme-toggle, .btn-icon {
+        width: 32px;
+        height: 32px;
+      }
+
+      /* Status Banner */
+      .status-card {
+        padding: 14px 12px;
+      }
+      .status-header {
+        margin-bottom: 12px;
+        gap: 8px;
+      }
+      .status-title {
+        font-size: 16px;
+      }
+      .status-desc {
+        font-size: 12px;
+      }
+
+      /* Stepper */
+      .stepper {
+        grid-template-columns: 1fr;
+        gap: 5px;
+        margin: 12px 0 10px;
+      }
+      .step-item {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 7px 10px;
+      }
+      .step-num {
+        font-size: 11px;
+      }
+      .step-name {
+        font-size: 12px;
+      }
+
+      /* KPI Cards */
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      .card {
+        padding: 12px 10px;
+      }
+      .card-top {
+        font-size: 11.5px;
+      }
+      .card-top svg {
+        width: 15px;
+        height: 15px;
+      }
+      .card b {
+        font-size: 20px;
+        margin: 4px 0 2px;
+      }
+      .card span.hint {
+        font-size: 10.5px;
+        line-height: 1.25;
+      }
+
+      /* Control Panels */
+      .controls-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .panel {
+        padding: 14px;
+      }
+      .panel-title {
+        font-size: 15px;
+        margin-bottom: 10px;
+      }
+      input, select {
+        font-size: 16px !important; /* Prevents iOS auto-zoom on input focus */
+        padding: 8px 12px;
+      }
+      .btn-main {
+        padding: 11px 14px;
+        font-size: 14px;
+        min-height: 42px;
+      }
+      #cfgActionBox {
+        flex-direction: column;
+      }
+      #cfgActionBox button {
+        width: 100%;
+      }
+
+      /* Terminal */
+      .terminal-bar {
+        padding: 8px 12px;
+      }
+      .terminal-title {
+        font-size: 12px;
+      }
+      .terminal-body {
+        font-size: 11px;
+        padding: 10px;
+        max-height: 220px;
+      }
+
+      /* History Table */
+      .table-panel {
+        padding: 12px 10px;
+      }
+      table {
+        font-size: 11.5px;
+        min-width: 440px;
+      }
+      th, td {
+        padding: 8px 6px;
+      }
+
+      /* Modals */
+      .modal-backdrop {
+        padding: 8px;
+        align-items: flex-end;
+      }
+      .modal {
+        max-height: 92vh;
+        border-radius: 16px 16px 12px 12px;
+        width: 100%;
+      }
+      .modal-header {
+        padding: 12px 14px;
+      }
+      .modal-brand .brand-icon {
+        width: 32px;
+        height: 32px;
+      }
+      .modal-tabs {
+        padding: 6px 12px 0;
+        gap: 4px;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      .modal-tabs::-webkit-scrollbar {
+        display: none;
+      }
+      .modal-tab-btn {
+        padding: 6px 8px;
+        font-size: 12px;
+        flex-shrink: 0;
+      }
+      .modal-body {
+        padding: 14px;
+      }
+      .reset-quick-presets {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+      }
+      .reset-quick-presets span {
+        align-self: flex-start;
+      }
+      .preset-btn {
+        width: 100%;
+        text-align: center;
+        padding: 7px 10px;
+        font-size: 12px;
+      }
+      .reset-option-item {
+        padding: 10px;
+        gap: 8px;
+      }
+      .reset-option-text .opt-title {
+        font-size: 13px;
+      }
+      .reset-option-text .opt-desc {
+        font-size: 11.5px;
+      }
+      .reset-btn-group {
+        flex-direction: column-reverse;
+        gap: 8px;
+        margin-top: 14px;
+        padding-top: 12px;
+      }
+      .btn-danger-confirm, .btn-cancel {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 14px;
+        font-size: 14px;
+        box-sizing: border-box;
+      }
+
+      /* Footer */
+      footer {
+        font-size: 11px;
+        line-height: 1.8;
+        margin-top: 16px;
+      }
+      footer div {
+        margin-top: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 4px 8px;
+      }
+      footer a {
+        margin: 0;
+      }
+    }
   </style>
 </head>
 <body data-theme="dark">
@@ -1616,6 +1862,7 @@
           confirmReset: "⚠️ 确定要清空所选的数据吗？此操作无法撤销！",
           resetSuccess: "重置成功，系统已回到初始状态！",
           resetFailed: "重置失败: ",
+          resetInProgress: "正在清理数据，请稍候...",
           saveConfigSuccess: "目录配置已保存！",
           saveConfigFailed: "保存失败，请检查网络或日志。"
         },
@@ -1847,6 +2094,7 @@
           confirmReset: "⚠️ Are you sure you want to execute the selected reset? This action cannot be undone!",
           resetSuccess: "Reset successful! System has returned to initial state.",
           resetFailed: "Reset failed: ",
+          resetInProgress: "Resetting data, please wait...",
           saveConfigSuccess: "Directory configuration saved successfully!",
           saveConfigFailed: "Save failed. Please check network connection or logs."
         },
@@ -2823,7 +3071,7 @@
       const btn = document.getElementById("doResetBtn");
       const oldHtml = btn.innerHTML;
       btn.disabled = true;
-      btn.innerHTML = `<span>${escapeHTML(t("dialogs.pipelineStarting"))}</span>`;
+      btn.innerHTML = `<span>${escapeHTML(t("dialogs.resetInProgress") || "正在清理数据，请稍候...")}</span>`;
 
       try {
         const res = await fetch("/api/reset", {
@@ -2832,19 +3080,20 @@
           body: JSON.stringify({
             clear_history: clearHistory,
             clear_inventory: clearInventory,
-            clear_kb: clearKB
+            clear_kb: clearKB,
+            clear_knowledge_base: clearKB
           })
         });
-        const data = await res.json();
-        if (res.ok && data.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && (data.ok || data.success)) {
           alert(data.message || t("dialogs.resetSuccess"));
           closeResetModal();
           await updateDashboard();
         } else {
-          alert(t("dialogs.resetFailed") + (data.error || "unknown"));
+          alert(t("dialogs.resetFailed") + (data.error || data.detail || data.message || "未知异常"));
         }
       } catch (err) {
-        alert(t("dialogs.resetFailed") + err.message);
+        alert(t("dialogs.resetFailed") + (err && err.message ? err.message : String(err)));
       } finally {
         btn.disabled = false;
         btn.innerHTML = oldHtml;

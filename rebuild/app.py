@@ -374,6 +374,7 @@ def reset_system(clear_history: bool = True, clear_inventory: bool = True, clear
         write_json(CONFIG, cfg_val)
 
     return {
+        "ok": True,
         "success": True,
         "cleared_history": clear_history,
         "cleared_inventory": clear_inventory,
@@ -654,12 +655,12 @@ class Handler(BaseHTTPRequestHandler):
                 res = reset_system(
                     clear_history=bool(body.get("clear_history", True)),
                     clear_inventory=bool(body.get("clear_inventory", True)),
-                    clear_kb=bool(body.get("clear_knowledge_base", False)),
-                    clear_ncm=bool(body.get("clear_ncm_cache", False))
+                    clear_kb=bool(body.get("clear_kb", body.get("clear_knowledge_base", False))),
+                    clear_ncm=bool(body.get("clear_ncm", body.get("clear_ncm_cache", False)))
                 )
                 self.send(200, json.dumps(res, ensure_ascii=False), "application/json")
             except Exception as exc:
-                self.send(400, json.dumps({"error": str(exc)}, ensure_ascii=False), "application/json")
+                self.send(400, json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False), "application/json")
             return
         self.send(404, "不存在")
 

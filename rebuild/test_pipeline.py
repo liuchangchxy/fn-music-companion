@@ -5,6 +5,7 @@ from __future__ import annotations
 import atexit
 import base64
 import importlib.util
+import json
 import os
 import shutil
 import sqlite3
@@ -1615,6 +1616,58 @@ class AppTests(unittest.TestCase):
         # None or empty fallback
         self.assertEqual(domestic_provider.merge_bilingual_lrc(orig, None), orig)
         self.assertEqual(domestic_provider.merge_bilingual_lrc(None, trans), trans)
+
+    def test_reset_system_returns_ok_and_cleans_state(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            state_dir = root / "state"
+            state_dir.mkdir(parents=True)
+            status_file = state_dir / "status.json"
+            config_file = state_dir / "config.json"
+            log_file = state_dir / "pipeline.log"
+            db_file = state_dir / "ledger-v6.sqlite"
+
+            # Create dummy db
+            conn = sqlite3.connect(db_file)
+            conn.execute("CREATE TABLE runs (id INTEGER PRIMARY KEY)")
+            conn.execute("CREATE TABLE source_inventory (path TEXT)")
+            conn.execute("CREATE TABLE knowledge_base (key TEXT)")
+            conn.execute("INSERT INTO runs VALUES (1)")
+            conn.execute("INSERT INTO source_inventory VALUES ('song.mp3')")
+            conn.execute("INSERT INTO knowledge_base VALUES ('artist:song')")
+            conn.commit()
+            conn.close()
+
+            config_file.write_text(json.dumps({"sample_verified": True, "initialized": True, "source_dir": "/s", "output_dir": "/o"}), encoding="utf-8")
+            status_file.write_text(json.dumps({"state": "idle", "message": "done"}), encoding="utf-8")
+            log_file.write_text("sample log", encoding="utf-8")
+
+            with patch.object(app, "STATE", state_dir), \
+                 patch.object(app, "STATUS", status_file), \
+                 patch.object(app, "CONFIG", config_file), \
+                 patch.object(app, "LOG", log_file):
+                res = app.reset_system(clear_history=True, clear_inventory=True, clear_kb=True)
+                self.assertTrue(res.get("ok"))
+                self.assertTrue(res.get("success"))
+                self.assertEqual(res.get("cleared_history"), True)
+                self.assertEqual(res.get("cleared_inventory"), True)
+                self.assertEqual(res.get("cleared_knowledge_base"), True)
+
+                # Check DB was cleared
+                conn = sqlite3.connect(db_file)
+                self.assertEqual(conn.execute("SELECT COUNT(*) FROM runs").fetchone()[0], 0)
+                self.assertEqual(conn.execute("SELECT COUNT(*) FROM source_inventory").fetchone()[0], 0)
+                self.assertEqual(conn.execute("SELECT COUNT(*) FROM knowledge_base").fetchone()[0], 0)
+                conn.close()
+
+                # Check config flags cleared
+                cfg = json.loads(config_file.read_text(encoding="utf-8"))
+                self.assertNotIn("sample_verified", cfg)
+                self.assertNotIn("initialized", cfg)
+                self.assertEqual(cfg.get("source_dir"), "/s")
+
+                # Check log cleared
+                self.assertEqual(log_file.read_text(encoding="utf-8"), "")
 
 
 if __name__ == "__main__":

@@ -44,12 +44,34 @@ def write_json(path: Path, value: dict) -> None:
     os.replace(temporary, path)
 
 
+def get_or_init_config() -> dict:
+    cfg = read_json(CONFIG, {})
+    changed = False
+    if not cfg.get("source_dir") and DEFAULT_SOURCE:
+        cfg["source_dir"] = DEFAULT_SOURCE
+        changed = True
+    if not cfg.get("output_dir") and DEFAULT_OUTPUT:
+        cfg["output_dir"] = DEFAULT_OUTPUT
+        changed = True
+    if changed:
+        try:
+            write_json(CONFIG, cfg)
+        except Exception:
+            pass
+    return cfg
+
+
 def accessible_paths() -> list[Path]:
     values = os.environ.get("TRIM_DATA_ACCESSIBLE_PATHS", "").split(":")
     values.extend([os.environ.get("MUSIC_MOUNT_SOURCE", ""), os.environ.get("MUSIC_MOUNT_OUTPUT", "")])
+    cfg = read_json(CONFIG, {})
+    if cfg.get("source_dir"):
+        values.append(cfg["source_dir"])
+    if cfg.get("output_dir"):
+        values.append(cfg["output_dir"])
     result: list[Path] = []
     for value in values:
-        if not value.strip().startswith("/vol"):
+        if not value or not value.strip().startswith("/vol"):
             continue
         path = Path(value.strip()).resolve(strict=False)
         if path not in result:
@@ -76,13 +98,13 @@ def config_valid(config: dict) -> tuple[bool, str]:
         return False, "只能使用飞牛授权返回的真实 /volN/... 路径"
     source, output = Path(source_raw), Path(output_raw)
     if not authorized(source) or not authorized(output):
-        return False, "两个目录必须先在飞牛应用权限中授权"
+        return False, "所选目录未挂载到本容器中（请在应用中心修改配置重新挂载，或在下拉框中选择已挂载的目录）"
     if not source.is_dir() or not output.is_dir():
-        return False, "原始文件夹和整理后文件夹都必须存在"
+        return False, "原始文件夹和整理后文件夹都必须真实存在于 NAS 存储卷中"
     if not os.access(source, os.R_OK):
-        return False, "原始文件夹不可读"
+        return False, "原始文件夹不可读（请在飞牛「文件管理」中检查该目录读取权限）"
     if not os.access(output, os.R_OK | os.W_OK | os.X_OK):
-        return False, "整理后文件夹不可读写"
+        return False, "整理后文件夹不可写入（请在飞牛「文件管理」中检查该目录读写权限）"
     if nested(source, output):
         return False, "两个文件夹不能相同，也不能互相包含"
     return True, ""
@@ -501,10 +523,24 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         if parsed.path == "/api/config":
-            self.send(200, json.dumps(read_json(CONFIG, {}), ensure_ascii=False), "application/json")
+            cfg = get_or_init_config()
+            resp = dict(cfg)
+            resp["accessible_dirs"] = [str(p) for p in accessible_paths()]
+            resp["storage_used_bytes"] = state_size()
+            resp["storage_limit_bytes"] = 512 * 1024 * 1024
+            s_raw, o_raw = cfg.get("source_dir", ""), cfg.get("output_dir", "")
+            s_p = Path(s_raw) if s_raw else None
+            o_p = Path(o_raw) if o_raw else None
+            s_exists = bool(s_p and s_p.is_dir())
+            s_read = bool(s_exists and os.access(s_p, os.R_OK))
+            o_exists = bool(o_p and o_p.is_dir())
+            o_write = bool(o_exists and os.access(o_p, os.R_OK | os.W_OK | os.X_OK))
+            resp["source_status"] = {"exists": s_exists, "readable": s_read}
+            resp["output_status"] = {"exists": o_exists, "writable": o_write}
+            self.send(200, json.dumps(resp, ensure_ascii=False), "application/json")
         elif parsed.path == "/api/status":
             st = read_json(STATUS, {"state": "idle"})
-            cfg = read_json(CONFIG, {})
+            cfg = get_or_init_config()
             st["sample_gate_passed"] = sample_ready(cfg)
             st["has_initial_full_run"] = bool(cfg.get("initialized"))
             rep = report()

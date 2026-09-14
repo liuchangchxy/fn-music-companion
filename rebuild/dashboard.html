@@ -1325,10 +1325,27 @@
           </button>
         </div>
         <form id="cfgForm">
-          <label>原始文件夹（只读挂载）</label>
-          <input id="sourceInput" list="accessiblePathsList" required readonly>
-          <label>整理后文件夹（读写归档）</label>
-          <input id="outputInput" list="accessiblePathsList" required readonly>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+            <label style="margin: 0; font-weight: 500;">原始文件夹（只读挂载）</label>
+            <span id="sourceStatusBadge" style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: rgba(34,197,94,0.12); color: #22c55e;">检查中...</span>
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px; margin-bottom: 8px;">
+            <input id="sourceInput" list="accessiblePathsList" required readonly style="flex: 1; margin: 0;">
+            <select id="sourceSelect" class="quick-dir-select" style="display: none; width: auto; max-width: 150px; padding: 7px 8px; font-size: 12px; border-radius: 6px; border: 1px solid var(--card-border); background: var(--bg-subtle); color: var(--text-secondary); cursor: pointer;" onchange="if(this.value){document.getElementById('sourceInput').value=this.value;}">
+              <option value="">快捷选择目录...</option>
+            </select>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+            <label style="margin: 0; font-weight: 500;">整理后文件夹（读写归档）</label>
+            <span id="outputStatusBadge" style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: rgba(34,197,94,0.12); color: #22c55e;">检查中...</span>
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px; margin-bottom: 8px;">
+            <input id="outputInput" list="accessiblePathsList" required readonly style="flex: 1; margin: 0;">
+            <select id="outputSelect" class="quick-dir-select" style="display: none; width: auto; max-width: 150px; padding: 7px 8px; font-size: 12px; border-radius: 6px; border: 1px solid var(--card-border); background: var(--bg-subtle); color: var(--text-secondary); cursor: pointer;" onchange="if(this.value){document.getElementById('outputInput').value=this.value;}">
+              <option value="">快捷选择目录...</option>
+            </select>
+          </div>
           <datalist id="accessiblePathsList"></datalist>
           <label style="margin-top: 8px;">网络代理 (可选，留空则系统直连访问全网)</label>
           <input id="proxyInput" placeholder="可选，例如 http://192.168.100.1:7890 (留空则设备直连 MusicBrainz 等全网源)" readonly>
@@ -1340,8 +1357,8 @@
             <button type="submit" class="btn-main" style="background: var(--primary); padding: 8px 14px; font-size: 13px;">保存目录配置</button>
             <button type="button" id="cancelEditDirBtn" class="btn-main" style="background: var(--bg-subtle); border: 1px solid var(--card-border); padding: 8px 14px; font-size: 13px;">取消</button>
           </div>
-          <div class="notice">
-            🔒 原始文件夹只读保护；音频临时文件仅在整理后目录本次运行期间流转，<strong>结束即清理</strong>。
+          <div class="notice" style="margin-top: 12px; font-size: 12px; line-height: 1.5; color: var(--text-secondary); background: var(--bg-subtle); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--card-border);">
+            💡 <b>目录与权限说明</b>：安装向导填写的文件夹已自动预填并挂载。应用以飞牛当前用户身份运行，只要你在「文件管理」中拥有对该目录的读写权限即可正常整理，无需额外配置繁琐特权。
           </div>
           <div class="storage-bar-box">
             <div class="progress-meta">
@@ -2720,6 +2737,55 @@
         if (dl) {
           dl.innerHTML = cfg.accessible_dirs.map(d => `<option value="${escapeHTML(d)}"></option>`).join("");
         }
+        const sSel = document.getElementById("sourceSelect");
+        const oSel = document.getElementById("outputSelect");
+        if (sSel && oSel && cfg.accessible_dirs.length > 0) {
+          const opts = `<option value="">快捷选择目录...</option>` + cfg.accessible_dirs.map(d => `<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`).join("");
+          sSel.innerHTML = opts;
+          oSel.innerHTML = opts;
+        }
+      }
+
+      // Update directory badges
+      const sBadge = document.getElementById("sourceStatusBadge");
+      const oBadge = document.getElementById("outputStatusBadge");
+      if (sBadge) {
+        if (!cfg.source_dir) {
+          sBadge.textContent = "未配置";
+          sBadge.style.color = "#94a3b8";
+          sBadge.style.background = "rgba(148,163,184,0.12)";
+        } else if (cfg.source_status && cfg.source_status.readable) {
+          sBadge.textContent = "🟢 只读就绪";
+          sBadge.style.color = "#22c55e";
+          sBadge.style.background = "rgba(34,197,94,0.12)";
+        } else if (cfg.source_status && !cfg.source_status.exists) {
+          sBadge.textContent = "🔴 未挂载/不存在";
+          sBadge.style.color = "#ef4444";
+          sBadge.style.background = "rgba(239,68,68,0.12)";
+        } else {
+          sBadge.textContent = "⚠️ 不可读(无权限)";
+          sBadge.style.color = "#f59e0b";
+          sBadge.style.background = "rgba(245,158,11,0.12)";
+        }
+      }
+      if (oBadge) {
+        if (!cfg.output_dir) {
+          oBadge.textContent = "未配置";
+          oBadge.style.color = "#94a3b8";
+          oBadge.style.background = "rgba(148,163,184,0.12)";
+        } else if (cfg.output_status && cfg.output_status.writable) {
+          oBadge.textContent = "🟢 读写就绪";
+          oBadge.style.color = "#22c55e";
+          oBadge.style.background = "rgba(34,197,94,0.12)";
+        } else if (cfg.output_status && !cfg.output_status.exists) {
+          oBadge.textContent = "🔴 未挂载/不存在";
+          oBadge.style.color = "#ef4444";
+          oBadge.style.background = "rgba(239,68,68,0.12)";
+        } else {
+          oBadge.textContent = "⚠️ 不可写(无权限)";
+          oBadge.style.color = "#f59e0b";
+          oBadge.style.background = "rgba(245,158,11,0.12)";
+        }
       }
 
       const used = cfg.storage_used_bytes || 0;
@@ -2863,6 +2929,10 @@
       }
       sourceInput.removeAttribute("readonly");
       outputInput.removeAttribute("readonly");
+      const sSel = document.getElementById("sourceSelect");
+      const oSel = document.getElementById("outputSelect");
+      if (sSel && sSel.options.length > 1) sSel.style.display = "inline-block";
+      if (oSel && oSel.options.length > 1) oSel.style.display = "inline-block";
       if (proxyInput) proxyInput.removeAttribute("readonly");
       if (offlineModeInput) offlineModeInput.removeAttribute("disabled");
       cfgActionBox.style.display = "flex";
@@ -2873,6 +2943,10 @@
     function cancelDirEditing() {
       sourceInput.value = configCache.source_dir || "";
       outputInput.value = configCache.output_dir || "";
+      const sSel = document.getElementById("sourceSelect");
+      const oSel = document.getElementById("outputSelect");
+      if (sSel) sSel.style.display = "none";
+      if (oSel) oSel.style.display = "none";
       if (proxyInput) proxyInput.value = configCache.proxy || "";
       if (offlineModeInput) offlineModeInput.checked = !!configCache.offline_mode;
       sourceInput.setAttribute("readonly", true);
@@ -2897,6 +2971,10 @@
       if (ok) {
         sourceInput.setAttribute("readonly", true);
         outputInput.setAttribute("readonly", true);
+        const sSel = document.getElementById("sourceSelect");
+        const oSel = document.getElementById("outputSelect");
+        if (sSel) sSel.style.display = "none";
+        if (oSel) oSel.style.display = "none";
         if (proxyInput) proxyInput.setAttribute("readonly", true);
         if (offlineModeInput) offlineModeInput.setAttribute("disabled", true);
         cfgActionBox.style.display = "none";

@@ -6,7 +6,7 @@ import tarfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-PKG_DIR = ROOT / "fn-music-companion"
+PKG_DIR = ROOT / "package"
 APP_DIR = PKG_DIR / "app"
 MANIFEST = PKG_DIR / "manifest"
 

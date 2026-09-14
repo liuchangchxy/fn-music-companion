@@ -1,7 +1,7 @@
 # 飞牛音乐伴侣 (MusicFlow for fnOS)
 
 <p align="center">
-  <img src="fn-music-companion/ICON_256.PNG" width="128" height="128" alt="MusicFlow Icon" style="border-radius: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+  <img src="package/ICON_256.PNG" width="128" height="128" alt="MusicFlow Icon" style="border-radius: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
 </p>
 
 <p align="center">

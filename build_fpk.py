@@ -26,7 +26,7 @@ def make_app_tgz(app_dir: Path) -> bytes:
     buffer = io.BytesIO()
     with tarfile.open(fileobj=buffer, mode="w:gz") as tar:
         for path in sorted(app_dir.rglob("*")):
-            rel = path.relative_to(PKG_DIR).as_posix()
+            rel = path.relative_to(app_dir).as_posix()
             tarinfo = tar.gettarinfo(str(path), arcname=rel)
             if path.is_file():
                 tarinfo.mode = 0o644
@@ -35,6 +35,21 @@ def make_app_tgz(app_dir: Path) -> bytes:
             elif path.is_dir():
                 tarinfo.mode = 0o755
                 tar.addfile(tarinfo)
+        config_dir = PKG_DIR / "config"
+        if config_dir.is_dir():
+            ti = tar.gettarinfo(str(config_dir), arcname="config")
+            ti.mode = 0o755
+            tar.addfile(ti)
+            for path in sorted(config_dir.rglob("*")):
+                rel = ("config" / path.relative_to(config_dir)).as_posix()
+                ti = tar.gettarinfo(str(path), arcname=rel)
+                if path.is_file():
+                    ti.mode = 0o644
+                    with path.open("rb") as f:
+                        tar.addfile(ti, f)
+                elif path.is_dir():
+                    ti.mode = 0o755
+                    tar.addfile(ti)
     return buffer.getvalue()
 
 
@@ -85,6 +100,11 @@ def build_fpk(output_path: Path | None = None) -> Path:
                         fpk.addfile(sti)
 
     print(f"Package built successfully: {output_path.name} ({output_path.stat().st_size} bytes)")
+    import shutil
+    root_fpk = ROOT / "fn-music-rebuild.fpk"
+    if output_path != root_fpk:
+        shutil.copyfile(output_path, root_fpk)
+        print(f"Synced to: {root_fpk.name} ({root_fpk.stat().st_size} bytes)")
     return output_path
 
 

@@ -1569,7 +1569,16 @@
                 <b>② 极少数顽固文件建议手动审查或删除</b>：<br/>
                 如果复跑后源目录依然有极少数文件未被整理归档，这类通常属于“疑难杂症”顽固文件：例如文件名极度残缺（如只有 <code>Track 01.mp3</code> 且内嵌标签全空）、各大曲库均查无此曲、原唱/翻唱/伴奏存在语义逻辑争议、或是原盘抓轨重复度异常。<br/>
                 本程序恪守<b>「安全第一、宁缺毋滥」</b>的原则进行了谨慎保留，绝不在置信度不足时胡乱猜测改写或擅自删除原文件。<br/>
-                <b>算法与匹配规则并非万能，在部分元数据缺失或异常复杂的场景下无法保证完全准确</b>。对于这类极少数特殊或无保留价值的重复残留文件，建议您直接在源文件夹中手动审查、重命名或直接删除。
+            <details style="background: var(--bg-subtle); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--card-border);">
+              <summary style="font-weight: 600; cursor: pointer;">Q7: 如何在飞牛给应用添加文件夹访问权限？可以只授权上层大文件夹吗？</summary>
+              <div style="margin-top: 8px; color: var(--text-secondary); font-size: 12px; line-height: 1.6;">
+                <b>① 飞牛中添加文件夹权限的具体路径</b>：<br/>
+                打开飞牛桌面 -> 进入<b>「应用中心」</b> -> 点击顶部<b>「已安装」</b> -> 找到<b>「飞牛音乐伴侣」</b>卡片 -> 点击进入设置或详情 -> 在<b>「文件夹权限」</b>中点击<b>「添加文件夹」</b>。<br/><br/>
+                <b>② 应该分开添加两个子目录，还是只授权一个大文件夹？</b><br/>
+                • <b>推荐方式 A（最标准稳妥）</b>：分别添加「整理前」和「整理后」两个具体文件夹。原始文件夹设为只读或读写，整理后文件夹必须设为读写；<br/>
+                • <b>方式 B（授权上级大文件夹）</b>：如果两个文件夹都在同一个父级大目录（如 <code>/vol1/1000/Music</code>）下，也可以直接将这个大文件夹添加授权。<b>但请务必注意：该大文件夹必须勾选【读写】权限！</b>如果误选了只读，里面的整理后子目录会连带被锁死只读，导致程序无法生成曲库。<br/><br/>
+                <b>③ 两个文件夹摆放的核心红线</b>：<br/>
+                整理前文件夹与整理后文件夹可以是同级兄弟目录（在同一存储卷下还能触发 Btrfs 秒级写时复制大幅省盘），<b>但绝对不能互相嵌套（例如不能把整理后文件夹建在整理前文件夹里面）</b>，否则会导致流水线死循环扫描。
               </div>
             </details>
           </div>
@@ -1822,7 +1831,16 @@
           offlineLabel: "离线整理模式 (跳过联网刮削，仅根据已有内嵌标签整理与分轨)",
           saveDirBtn: "保存目录配置",
           cancelBtn: "取消",
-          noticeSource: "🔒 原始文件夹只读保护；音频临时文件仅在整理后目录本次运行期间流转，<strong>结束即清理</strong>。",
+          noticeSource: `🔒 <b>目录与权限说明</b>：<br/>• <b>安装预填</b>：安装向导中填写的两个文件夹已由飞牛系统自动挂载并预填。<br/>• <b>飞牛文件夹权限配置路径</b>：若要在飞牛系统修改访问权限，请在飞牛桌面打开<b>「应用中心」->「已安装」-> 找到「飞牛音乐伴侣」-> 点击卡片进入设置/详情 -> 在「文件夹权限」中点击「添加文件夹」</b>。<br/>• <b>子目录 vs 大文件夹授权规则</b>：<br/>&nbsp;&nbsp;① <b>推荐分别添加</b>：原始文件夹设为只读或读写，整理后文件夹必须设为读写；<br/>&nbsp;&nbsp;② <b>亦可直接授权上级大文件夹</b>：如果两个文件夹同属于一个大目录，可直接添加该大文件夹，<b>但大文件夹必须勾选【读写】权限</b>（否则其内的整理后子目录会连带被锁死只读导致无法生成曲库）；<br/>• <b>防死循环规则</b>：整理前与整理后必须为两个平级独立的目录，<b>严禁互相嵌套（如将整理后放在整理前内部）</b>。`,
+          statusBadges: {
+            unconfigured: "未配置",
+            sourceOk: "🟢 只读就绪",
+            sourceMissing: "🔴 未挂载/不存在",
+            sourceNoPerm: "⚠️ 不可读(无权限)",
+            outputOk: "🟢 读写就绪",
+            outputMissing: "🔴 未挂载/不存在",
+            outputNoPerm: "⚠️ 不可写(无权限)"
+          },
           storageLimit: "状态缓存硬限额 (512 MiB)",
           taskCenter: "任务控制中心",
           stopBtn: "⏹️ 停止当前整理任务",
@@ -1933,7 +1951,9 @@
             q5Title: "Q5: 离线整理模式是什么时候使用的？",
             q5Desc: "如果你的 NAS 处于纯局域网、无法访问外网，或者你已经对歌曲内嵌了完整的标签只想快速归档分目录，可以在配置中勾选「离线整理模式」。该模式完全不发起外网网络请求，纯靠本地内嵌标签整理，速度极快。",
             q6Title: "Q6: 首次全量整理后源目录还有一些文件未动，这是为什么？该怎么处理？",
-            q6Desc: "<b>① 推荐再跑一次（二次拾遗补漏）</b>：<br/>大批量整理海量歌曲时，难免会遇到公网网络瞬时抖动、或云端曲库接口防刷频控，导致极少数冷门歌曲未能在首轮即时命中。<br/>因为本程序拥有完整的断点账本与声纹缓存，绝大部分已整理的歌曲会自动秒级跳过，<b>您只需直接点击控制台的【增量整理】或【重新执行全量对齐】再跑一遍</b>，流水线会快速专注对这部分遗留文件进行查漏补缺，通常几十秒即可完成。<br/><br/><b>② 极少数顽固文件建议手动审查或删除</b>：<br/>如果复跑后源目录依然有极少数文件未被整理归档，这类通常属于“疑难杂症”顽固文件：例如文件名极度残缺（如只有 <code>Track 01.mp3</code> 且内嵌标签全空）、各大曲库均查无此曲、原唱/翻唱/伴奏存在语义逻辑争议、或是原盘抓轨重复度异常。<br/>本程序恪守<b>「安全第一、宁缺毋滥」</b>的原则进行了谨慎保留，绝不在置信度不足时胡乱猜测改写或擅自删除原文件。<br/><b>算法与匹配规则并非万能，在部分元数据缺失或异常复杂的场景下无法保证完全准确</b>。对于这类极少数特殊或无保留价值的重复残留文件，建议您直接在源文件夹中手动审查、重命名或直接删除。"
+            q6Desc: "<b>① 推荐再跑一次（二次拾遗补漏）</b>：<br/>大批量整理海量歌曲时，难免会遇到公网网络瞬时抖动、或云端曲库接口防刷频控，导致极少数冷门歌曲未能在首轮即时命中。<br/>因为本程序拥有完整的断点账本与声纹缓存，绝大部分已整理的歌曲会自动秒级跳过，<b>您只需直接点击控制台的【增量整理】或【重新执行全量对齐】再跑一遍</b>，流水线会快速专注对这部分遗留文件进行查漏补缺，通常几十秒即可完成。<br/><br/><b>② 极少数顽固文件建议手动审查或删除</b>：<br/>如果复跑后源目录依然有极少数文件未被整理归档，这类通常属于“疑难杂症”顽固文件：例如文件名极度残缺（如只有 <code>Track 01.mp3</code> 且内嵌标签全空）、各大曲库均查无此曲、原唱/翻唱/伴奏存在语义逻辑争议、或是原盘抓轨重复度异常。<br/>本程序恪守<b>「安全第一、宁缺毋滥」</b>的原则进行了谨慎保留，绝不在置信度不足时胡乱猜测改写或擅自删除原文件。<br/><b>算法与匹配规则并非万能，在部分元数据缺失或异常复杂的场景下无法保证完全准确</b>。对于这类极少数特殊或无保留价值的重复残留文件，建议您直接在源文件夹中手动审查、重命名或直接删除。",
+            q7Title: "Q7: 如何在飞牛给应用添加文件夹访问权限？可以只授权上层大文件夹吗？",
+            q7Desc: "<b>① 飞牛中添加文件夹权限的具体路径</b>：<br/>打开飞牛桌面 -> 进入<b>「应用中心」</b> -> 点击顶部<b>「已安装」</b> -> 找到<b>「飞牛音乐伴侣」</b>卡片 -> 点击进入设置或详情 -> 在<b>「文件夹权限」</b>中点击<b>「添加文件夹」</b>。<br/><br/><b>② 应该分开添加两个子目录，还是只授权一个大文件夹？</b><br/>• <b>推荐方式 A（最标准稳妥）</b>：分别添加「整理前」和「整理后」两个具体文件夹。原始文件夹设为只读或读写，整理后文件夹必须设为读写；<br/>• <b>方式 B（授权上级大文件夹）</b>：如果两个文件夹都在同一个父级大目录（如 <code>/vol1/1000/Music</code>）下，也可以直接将这个大文件夹添加授权。<b>但请务必注意：该大文件夹必须勾选【读写】权限！</b>如果误选了只读，里面的整理后子目录会连带被锁死只读，导致程序无法生成曲库。<br/><br/><b>③ 两个文件夹摆放的核心红线</b>：<br/>整理前文件夹与整理后文件夹可以是同级兄弟目录（在同一存储卷下还能触发 Btrfs 秒级写时复制大幅省盘），<b>但绝对不能互相嵌套（例如不能把整理后文件夹建在整理前文件夹里面）</b>，否则会导致流水线死循环扫描。"
           },
           features: {
             f1Title: "Btrfs 写时复制 (Reflink CoW)",
@@ -2060,7 +2080,16 @@
           offlineLabel: "Offline Mode (Skip cloud scraping, use local tags & fingerprints only)",
           saveDirBtn: "Save Directories",
           cancelBtn: "Cancel",
-          noticeSource: "🔒 Source directory is strictly read-only (:ro). Temporary files are held only during the run and purged on completion.",
+          noticeSource: `🔒 <b>Directory Permissions & Setup Guide</b>:<br/>• <b>Auto-Pre-filled</b>: The two folders entered during installation wizard are mounted and pre-filled automatically.<br/>• <b>How to Grant Folder Permissions in fnOS</b>: In fnOS Desktop, open <b>App Center -> Installed -> Click "MusicFlow" -> Folder Permissions</b> to add folders.<br/>• <b>Separate Subfolders vs Parent Folder Authorization</b>:<br/>&nbsp;&nbsp;① <b>Recommended: Add separately</b>: Set raw source folder as Read-Only or Read/Write, and organized library folder as Read/Write;<br/>&nbsp;&nbsp;② <b>Or authorize common parent folder</b>: The parent folder <b>MUST be granted [Read/Write] permission</b>, otherwise the target subfolder inherits read-only lock and fails to output tracks;<br/>• <b>Anti-Recursion Rule</b>: Source and target must be separate sibling folders. <b>Never nest the output folder inside the source folder</b> to avoid infinite scanning loops.`,
+          statusBadges: {
+            unconfigured: "Unconfigured",
+            sourceOk: "🟢 Read-Ready",
+            sourceMissing: "🔴 Not Mounted",
+            sourceNoPerm: "⚠️ Unreadable",
+            outputOk: "🟢 Read/Write Ready",
+            outputMissing: "🔴 Not Mounted",
+            outputNoPerm: "⚠️ Unwritable"
+          },
           storageLimit: "State Cache Limit (512 MiB)",
           taskCenter: "Task Control Center",
           stopBtn: "⏹️ Stop Current Task",
@@ -2171,7 +2200,9 @@
             q5Title: "Q5: When should I use Offline Mode?",
             q5Desc: "If your NAS is in an isolated LAN without internet access, or if your audio files already contain full embedded tags and you only need clean directory sorting, enable Offline Mode. It skips all cloud network calls and processes purely from local tags at lightning speed.",
             q6Title: "Q6: Why are there still some files remaining in the source folder after full organization?",
-            q6Desc: "<b>1. Recommended: Run once more to reconcile</b>:<br/>During large-scale batch organization, transient network timeouts or cloud API rate limits may occasionally cause a few cold tracks to miss on the first pass.<br/>Since MusicFlow features a persistent acoustic and hash ledger, previously organized tracks are skipped in seconds. <b>Simply click 'Incremental Run' or 'Re-run Full Organization' to run once more</b>; the pipeline will quickly focus on these remaining files and reconcile them in tens of seconds.<br/><br/><b>2. Manually review or delete stubborn files</b>:<br/>If a few files remain untouched after re-running, they are typically stubborn corner cases: completely missing metadata/filenames (e.g. bare <code>Track 01.mp3</code> with zero tags), tracks unindexed in any database, conflicting cover/instrumental/live variant logic, or corrupted rip duplicates.<br/>The engine strictly adheres to the <b>'Safety First / Better Retain Than Corrupt'</b> principle and will never guess or destroy your source files without sufficient confidence.<br/><b>Automated matching rules cannot guarantee 100% accuracy in complex corner cases</b>. For these rare stubborn or duplicate remnants, we recommend manually reviewing, fixing, or safely deleting them directly in your source directory."
+            q6Desc: "<b>1. Recommended: Run once more to reconcile</b>:<br/>During large-scale batch organization, transient network timeouts or cloud API rate limits may occasionally cause a few cold tracks to miss on the first pass.<br/>Since MusicFlow features a persistent acoustic and hash ledger, previously organized tracks are skipped in seconds. <b>Simply click 'Incremental Run' or 'Re-run Full Organization' to run once more</b>; the pipeline will quickly focus on these remaining files and reconcile them in tens of seconds.<br/><br/><b>2. Manually review or delete stubborn files</b>:<br/>If a few files remain untouched after re-running, they are typically stubborn corner cases: completely missing metadata/filenames (e.g. bare <code>Track 01.mp3</code> with zero tags), tracks unindexed in any database, conflicting cover/instrumental/live variant logic, or corrupted rip duplicates.<br/>The engine strictly adheres to the <b>'Safety First / Better Retain Than Corrupt'</b> principle and will never guess or destroy your source files without sufficient confidence.<br/><b>Automated matching rules cannot guarantee 100% accuracy in complex corner cases</b>. For these rare stubborn or duplicate remnants, we recommend manually reviewing, fixing, or safely deleting them directly in your source directory.",
+            q7Title: "Q7: How to grant folder permissions in fnOS? Can I authorize just the parent folder?",
+            q7Desc: "<b>1. Exact path to grant folder permissions in fnOS</b>:<br/>Open fnOS Desktop -> Enter <b>App Center</b> -> Click <b>Installed</b> -> Locate <b>MusicFlow</b> card -> Open Details/Settings -> In <b>Folder Permissions</b>, click <b>Add Folder</b>.<br/><br/><b>2. Should I add the two subfolders separately or authorize a parent folder?</b><br/>• <b>Recommended Option A (Safest & Standard)</b>: Separately add the raw source folder and organized library folder. Raw folder can be Read-Only or Read/Write, but organized library folder MUST be Read/Write;<br/>• <b>Option B (Authorize Common Parent Folder)</b>: If both folders reside under the same parent directory (e.g. <code>/vol1/1000/Music</code>), you can authorize this parent folder directly. <b>Crucial: The parent folder MUST be granted [Read/Write] permission!</b> If set to Read-Only, the target subfolder inherits the read-only lock and fails to output tracks.<br/><br/><b>3. Hard Safety Boundary</b>:<br/>Source and target folders can be sibling subfolders (sharing same volume enables instant Btrfs Reflink CoW), <b>but must never be nested (e.g., target inside source)</b> to avoid infinite scanning loops."
           },
           features: {
             f1Title: "Btrfs Copy-on-Write (Reflink CoW)",
@@ -2749,40 +2780,50 @@
       // Update directory badges
       const sBadge = document.getElementById("sourceStatusBadge");
       const oBadge = document.getElementById("outputStatusBadge");
+      const sb = (I18N[currentLang] && I18N[currentLang].controls && I18N[currentLang].controls.statusBadges) ? I18N[currentLang].controls.statusBadges : {
+        unconfigured: "未配置",
+        sourceOk: "🟢 只读就绪",
+        sourceMissing: "🔴 未挂载/不存在",
+        sourceNoPerm: "⚠️ 不可读(无权限)",
+        outputOk: "🟢 读写就绪",
+        outputMissing: "🔴 未挂载/不存在",
+        outputNoPerm: "⚠️ 不可写(无权限)"
+      };
+
       if (sBadge) {
         if (!cfg.source_dir) {
-          sBadge.textContent = "未配置";
+          sBadge.textContent = sb.unconfigured;
           sBadge.style.color = "#94a3b8";
           sBadge.style.background = "rgba(148,163,184,0.12)";
         } else if (cfg.source_status && cfg.source_status.readable) {
-          sBadge.textContent = "🟢 只读就绪";
+          sBadge.textContent = sb.sourceOk;
           sBadge.style.color = "#22c55e";
           sBadge.style.background = "rgba(34,197,94,0.12)";
         } else if (cfg.source_status && !cfg.source_status.exists) {
-          sBadge.textContent = "🔴 未挂载/不存在";
+          sBadge.textContent = sb.sourceMissing;
           sBadge.style.color = "#ef4444";
           sBadge.style.background = "rgba(239,68,68,0.12)";
         } else {
-          sBadge.textContent = "⚠️ 不可读(无权限)";
+          sBadge.textContent = sb.sourceNoPerm;
           sBadge.style.color = "#f59e0b";
           sBadge.style.background = "rgba(245,158,11,0.12)";
         }
       }
       if (oBadge) {
         if (!cfg.output_dir) {
-          oBadge.textContent = "未配置";
+          oBadge.textContent = sb.unconfigured;
           oBadge.style.color = "#94a3b8";
           oBadge.style.background = "rgba(148,163,184,0.12)";
         } else if (cfg.output_status && cfg.output_status.writable) {
-          oBadge.textContent = "🟢 读写就绪";
+          oBadge.textContent = sb.outputOk;
           oBadge.style.color = "#22c55e";
           oBadge.style.background = "rgba(34,197,94,0.12)";
         } else if (cfg.output_status && !cfg.output_status.exists) {
-          oBadge.textContent = "🔴 未挂载/不存在";
+          oBadge.textContent = sb.outputMissing;
           oBadge.style.color = "#ef4444";
           oBadge.style.background = "rgba(239,68,68,0.12)";
         } else {
-          oBadge.textContent = "⚠️ 不可写(无权限)";
+          oBadge.textContent = sb.outputNoPerm;
           oBadge.style.color = "#f59e0b";
           oBadge.style.background = "rgba(245,158,11,0.12)";
         }

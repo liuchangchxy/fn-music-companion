@@ -28,7 +28,7 @@
       },
       {
         "type": "tips",
-        "helpText": "💡 快捷路径获取方法：在飞牛桌面打开「文件管理」-> 找到你的音乐文件夹 -> 鼠标右键「属性」-> 点击「位置」右侧的【复制图标】粘贴即可（格式为 /vol1/1000/...）。\n\n🔒 安全机制：原始文件夹采用系统底层只读保护 (:ro)，不修改或删除原文件；同卷整理支持 Btrfs 写时复制大幅节省存储空间。"
+        "helpText": "💡 文件夹授权与配置说明 (Folder Permissions Guide)：\n1. 路径获取：在飞牛桌面「文件管理」右键文件夹「属性」-> 点击「位置」右侧复制图标粘贴即可（格式为 /vol1/1000/...）。\n2. 文件夹授权：若在飞牛应用中心给本应用配置文件夹访问权限，推荐分别添加「整理前」和「整理后」两个文件夹；亦可直接添加上级大文件夹，但大文件夹必须勾选【读写】权限（否则整理后子目录会连带变成只读）。\n3. 目录隔离：整理前与整理后必须为平级独立目录，严禁互相嵌套以防死循环。\n\n• Location: Right-click folder in File Manager -> Properties -> Copy Location (/vol1/1000/...). \n• Permissions: You can grant access to source and output folders separately, or grant their parent folder with [Read/Write] permission.\n• Rule: Never nest output folder inside source folder."
       }
     ]
   }

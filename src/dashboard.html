@@ -1335,7 +1335,7 @@
         </div>
         <form id="cfgForm">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
-            <label style="margin: 0; font-weight: 500;">原始文件夹（只读挂载）</label>
+            <label id="sourceDirLabel" data-i18n="controls.sourceLabel" style="margin: 0; font-weight: 500;">原始文件夹（只读挂载）</label>
             <span id="sourceStatusBadge" style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: rgba(34,197,94,0.12); color: #22c55e;">检查中...</span>
           </div>
           <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px; margin-bottom: 8px;">
@@ -1349,7 +1349,7 @@
           </div>
 
           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
-            <label style="margin: 0; font-weight: 500;">整理后文件夹（读写归档）</label>
+            <label id="outputDirLabel" data-i18n="controls.outputLabel" style="margin: 0; font-weight: 500;">整理后文件夹（读写归档）</label>
             <span id="outputStatusBadge" style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: rgba(34,197,94,0.12); color: #22c55e;">检查中...</span>
           </div>
           <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px; margin-bottom: 8px;">
@@ -1362,17 +1362,17 @@
             </button>
           </div>
           <datalist id="accessiblePathsList"></datalist>
-          <label style="margin-top: 8px;">网络代理 (可选，留空则系统直连访问全网)</label>
+          <label id="proxyLabel" data-i18n="controls.proxyLabel" style="margin-top: 8px;">网络代理 (可选，留空则系统直连访问全网)</label>
           <input id="proxyInput" placeholder="可选，例如 http://192.168.100.1:7890 (留空则设备直连 MusicBrainz 等全网源)" readonly>
           <label style="margin-top: 8px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-primary); cursor: pointer;">
             <input type="checkbox" id="offlineModeInput" disabled style="width: 16px; height: 16px; accent-color: var(--primary); margin: 0; cursor: pointer;">
-            <span>离线整理模式 (跳过联网刮削，仅根据已有内嵌标签整理与分轨)</span>
+            <span id="offlineModeLabel" data-i18n="controls.offlineLabel">离线整理模式 (跳过联网刮削，仅根据已有内嵌标签整理与分轨)</span>
           </label>
           <div id="cfgActionBox" style="display: none; margin-top: 10px; gap: 8px;">
-            <button type="submit" class="btn-main" style="background: var(--primary); padding: 8px 14px; font-size: 13px;">保存目录配置</button>
-            <button type="button" id="cancelEditDirBtn" class="btn-main" style="background: var(--bg-subtle); border: 1px solid var(--card-border); padding: 8px 14px; font-size: 13px;">取消</button>
+            <button type="submit" id="saveDirBtn" data-i18n="controls.saveDirBtn" class="btn-main" style="background: var(--primary); padding: 8px 14px; font-size: 13px;">保存目录配置</button>
+            <button type="button" id="cancelEditDirBtn" data-i18n="controls.cancelBtn" class="btn-main" style="background: var(--bg-subtle); border: 1px solid var(--card-border); padding: 8px 14px; font-size: 13px;">取消</button>
           </div>
-          <div class="notice" style="margin-top: 12px; font-size: 12px; line-height: 1.5; color: var(--text-secondary); background: var(--bg-subtle); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--card-border);">
+          <div class="notice" id="cfgNotice" style="margin-top: 12px; font-size: 12px; line-height: 1.5; color: var(--text-secondary); background: var(--bg-subtle); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--card-border);">
             💡 <b>飞牛文件夹权限说明</b>：本应用接入飞牛系统应用权限规范。请在飞牛系统（fnOS）中为本应用授予音乐文件夹访问权限，完成后刷新本面板即可直接从下拉菜单中一键选择，无需手敲底层物理路径。
           </div>
           <div class="storage-bar-box">
@@ -1902,6 +1902,7 @@
           offlineLabel: "离线整理模式 (跳过联网刮削，仅根据已有内嵌标签整理与分轨)",
           saveDirBtn: "保存目录配置",
           cancelBtn: "取消",
+          browseBtn: "📁 浏览...",
           unauthTitle: "尚未在飞牛系统授权音乐文件夹",
           unauthDesc: "检测到本应用尚未在飞牛私有云（fnOS）中获取文件夹访问权限。请在飞牛系统中为本应用授予所需音乐文件夹的访问权限（整理后曲库所在文件夹须具有读写权限）。授权完成后，<b>刷新本页面</b>即可在下方直接下拉选择，无需手动输入物理路径！",
           noticeSource: `🔒 <b>文件夹权限说明</b>：<br/>• <b>权限规范</b>：本应用接入飞牛系统应用权限体系。<br/>• <b>授权说明</b>：请在飞牛系统中为本应用授予音乐文件夹访问权限（整理后文件夹须具有读写权限）；<br/>• <b>授权方案建议</b>：<br/>&nbsp;&nbsp;① <b>分别授权</b>：分别授权「整理前」（只读/读写）与「整理后」（读写）；<br/>&nbsp;&nbsp;② <b>授权大文件夹</b>：亦可直接授权包含两者的上级大文件夹（<b>大文件夹须具有读写权限</b>）；<br/>• <b>便捷选择</b>：在飞牛中完成授权后，刷新本页面，点击【修改目录】直接从下拉菜单中点选即可，无需手动输入真实路径！`,
@@ -2082,6 +2083,28 @@
             opt3Desc: "清除本地 SQLite 中已缓存的歌词与标签。下次整理时将重新向音乐源发起检索。",
             btnCancel: "取消",
             btnConfirm: "确认执行重置"
+          },
+          picker: {
+            sourceTitle: "选择原始音乐文件夹（只读）",
+            outputTitle: "选择整理后曲库文件夹（读写）",
+            sourceBadge: "原始输入",
+            outputBadge: "整理归档",
+            sourceDesc: "请点选存放待整理音乐的根目录或子文件夹",
+            outputDesc: "请点选归档整理后曲库的目录（必须拥有读写权限）",
+            upBtn: "⬆️ 返回上一级",
+            rootTitle: "/ (授权存储卷列表)",
+            loading: "⏳ 正在加载目录...",
+            empty: "此目录下无更多子文件夹",
+            noSelection: "(尚未选中)",
+            selectedPrefix: "当前选中：",
+            btnCancel: "取消",
+            btnConfirm: "选择此文件夹",
+            writableBadge: "读写",
+            readOnlyBadge: "只读",
+            enterBtn: "进入 ➡️",
+            errorLoad: "无法加载目录内容",
+            errorNetwork: "网络错误",
+            alertNoSelect: "请先点选一个文件夹"
           }
         }
       },
@@ -2153,6 +2176,7 @@
           offlineLabel: "Offline Mode (Skip cloud scraping, use local tags & fingerprints only)",
           saveDirBtn: "Save Directories",
           cancelBtn: "Cancel",
+          browseBtn: "📁 Browse...",
           unauthTitle: "No Music Folders Authorized in fnOS",
           unauthDesc: "This application has not been granted folder access permissions in fnOS yet. Please grant music folder permissions to this application in fnOS (the organized library folder must have Read/Write permission). Once granted, <b>refresh this page</b> to pick them directly from the dropdown lists below without manual typing!",
           noticeSource: `🔒 <b>Folder Permissions Guide</b>:<br/>• <b>Permissions</b>: This app integrates with fnOS folder permission management.<br/>• <b>Granting Access</b>: Please grant music folder access to this app in fnOS (organized library folder must have Read/Write permission);<br/>• <b>Options</b>:<br/>&nbsp;&nbsp;① <b>Separate Folders</b>: Grant source and output folders separately;<br/>&nbsp;&nbsp;② <b>Parent Folder</b>: Or grant access to a common parent folder (<b>must have Read/Write permission</b>);<br/>• <b>Easy Selection</b>: Once granted in fnOS, refresh this page and click [Edit Directories] to select directly from dropdowns without manual typing!`,
@@ -2333,6 +2357,28 @@
             opt3Desc: "Purge locally cached lyrics and tags in SQLite. Future runs will fetch fresh data from providers.",
             btnCancel: "Cancel",
             btnConfirm: "Confirm Reset"
+          },
+          picker: {
+            sourceTitle: "Select Source Music Folder (Read-Only)",
+            outputTitle: "Select Organized Library Folder (Read/Write)",
+            sourceBadge: "Source Input",
+            outputBadge: "Output Library",
+            sourceDesc: "Select folder containing raw music files to organize",
+            outputDesc: "Select folder to store organized library (must have Read/Write permission)",
+            upBtn: "⬆️ Up to Parent",
+            rootTitle: "/ (Authorized Storage Volumes)",
+            loading: "⏳ Loading directory...",
+            empty: "No subfolders found in this directory",
+            noSelection: "(No folder selected)",
+            selectedPrefix: "Currently Selected: ",
+            btnCancel: "Cancel",
+            btnConfirm: "Select This Folder",
+            writableBadge: "Read/Write",
+            readOnlyBadge: "Read-Only",
+            enterBtn: "Enter ➡️",
+            errorLoad: "Unable to load directory contents",
+            errorNetwork: "Network error",
+            alertNoSelect: "Please select a folder first"
           }
         }
       }
@@ -2406,16 +2452,23 @@
       const editDirBtn = document.getElementById("editDirBtn");
       if (editDirBtn) editDirBtn.textContent = dict.controls.editDirBtn;
 
-      const labels = document.querySelectorAll("#cfgForm > label");
-      if (labels.length >= 3) {
-        labels[0].textContent = dict.controls.sourceLabel;
-        labels[1].textContent = dict.controls.outputLabel;
-        labels[2].textContent = dict.controls.proxyLabel;
-      }
-      const offlineSpan = document.querySelector("label[for='offlineModeInput'] span, label:has(#offlineModeInput) span");
+      // Update form labels safely (by specific ID or data-i18n)
+      const srcLbl = document.getElementById("sourceDirLabel");
+      if (srcLbl) srcLbl.textContent = dict.controls.sourceLabel;
+      const outLbl = document.getElementById("outputDirLabel");
+      if (outLbl) outLbl.textContent = dict.controls.outputLabel;
+      const prxLbl = document.getElementById("proxyLabel");
+      if (prxLbl) prxLbl.textContent = dict.controls.proxyLabel;
+
+      const srcBrowseBtn = document.getElementById("sourceBrowseBtn");
+      if (srcBrowseBtn) srcBrowseBtn.textContent = dict.controls.browseBtn || "📁 浏览...";
+      const outBrowseBtn = document.getElementById("outputBrowseBtn");
+      if (outBrowseBtn) outBrowseBtn.textContent = dict.controls.browseBtn || "📁 浏览...";
+
+      const offlineSpan = document.getElementById("offlineModeLabel") || document.querySelector("label[for='offlineModeInput'] span, label:has(#offlineModeInput) span");
       if (offlineSpan) offlineSpan.textContent = dict.controls.offlineLabel;
 
-      const saveDirBtn = document.querySelector("#cfgActionBox button[type='submit']");
+      const saveDirBtn = document.getElementById("saveDirBtn") || document.querySelector("#cfgActionBox button[type='submit']");
       if (saveDirBtn) saveDirBtn.textContent = dict.controls.saveDirBtn;
       const cancelDirBtn = document.getElementById("cancelEditDirBtn");
       if (cancelDirBtn) cancelDirBtn.textContent = dict.controls.cancelBtn;
@@ -2425,7 +2478,7 @@
       const unauthDescEl = document.getElementById("unauthDesc");
       if (unauthDescEl && dict.controls.unauthDesc) unauthDescEl.innerHTML = dict.controls.unauthDesc;
 
-      const noticeEl = document.querySelector("#cfgForm .notice");
+      const noticeEl = document.getElementById("cfgNotice") || document.querySelector("#cfgForm .notice");
       if (noticeEl) noticeEl.innerHTML = dict.controls.noticeSource;
 
       const storageLimitSpan = document.querySelector(".storage-bar-box .progress-meta span:first-child");
@@ -2607,6 +2660,14 @@
       if (resetCancelBtn) resetCancelBtn.textContent = dict.modals.reset.btnCancel;
       const resetConfirmBtn = document.querySelector("#doResetBtn span");
       if (resetConfirmBtn) resetConfirmBtn.textContent = dict.modals.reset.btnConfirm;
+
+      // Update Modal: File Picker (if open)
+      const pickerUpBtn = document.getElementById("pickerUpBtn");
+      if (pickerUpBtn) pickerUpBtn.textContent = dict.modals.picker.upBtn;
+      const pickerConfirmBtn = document.getElementById("pickerConfirmBtn");
+      if (pickerConfirmBtn) pickerConfirmBtn.textContent = dict.modals.picker.btnConfirm;
+      const pickerCancelBtn = document.querySelector("#filePickerModal .btn-cancel");
+      if (pickerCancelBtn) pickerCancelBtn.textContent = dict.modals.picker.btnCancel;
     }
 
     const phases = ["validate", "ncm_decode", "exact_dedupe", "acoustic_dedupe", "publish"];
@@ -3431,25 +3492,29 @@
       const titleEl = document.getElementById("pickerTitleText");
       const badgeEl = document.getElementById("pickerTargetBadge");
       const descEl = document.getElementById("pickerDescText");
+      const upBtn = document.getElementById("pickerUpBtn");
+      const confirmBtn = document.getElementById("pickerConfirmBtn");
 
-      const isZh = currentLang === "zh";
       if (target === "source") {
-        if (titleEl) titleEl.textContent = isZh ? "选择原始音乐文件夹（只读）" : "Select Source Music Folder (Read-Only)";
+        if (titleEl) titleEl.textContent = t("modals.picker.sourceTitle");
         if (badgeEl) {
-          badgeEl.textContent = isZh ? "原始输入" : "Source Input";
+          badgeEl.textContent = t("modals.picker.sourceBadge");
           badgeEl.style.background = "rgba(47, 129, 247, 0.25)";
           badgeEl.style.color = "var(--primary)";
         }
-        if (descEl) descEl.textContent = isZh ? "请点选存放待整理音乐的根目录或子文件夹" : "Select folder containing raw music files";
+        if (descEl) descEl.textContent = t("modals.picker.sourceDesc");
       } else {
-        if (titleEl) titleEl.textContent = isZh ? "选择整理后曲库文件夹（读写）" : "Select Organized Library Folder (Read/Write)";
+        if (titleEl) titleEl.textContent = t("modals.picker.outputTitle");
         if (badgeEl) {
-          badgeEl.textContent = isZh ? "整理归档" : "Output Library";
+          badgeEl.textContent = t("modals.picker.outputBadge");
           badgeEl.style.background = "rgba(35, 134, 54, 0.25)";
           badgeEl.style.color = "var(--success-light)";
         }
-        if (descEl) descEl.textContent = isZh ? "请点选归档整理后曲库的目录（必须拥有读写权限）" : "Select folder to store organized library (must be writable)";
+        if (descEl) descEl.textContent = t("modals.picker.outputDesc");
       }
+
+      if (upBtn) upBtn.textContent = t("modals.picker.upBtn");
+      if (confirmBtn) confirmBtn.textContent = t("modals.picker.btnConfirm");
 
       // Default start path: value from input or parent
       const currentVal = target === "source" ? sourceInput.value.trim() : outputInput.value.trim();
@@ -3476,11 +3541,14 @@
       const upBtn = document.getElementById("pickerUpBtn");
       const selDisplay = document.getElementById("pickerSelectedDisplay");
 
-      if (loading) loading.style.display = "block";
+      if (loading) {
+        loading.textContent = t("modals.picker.loading");
+        loading.style.display = "block";
+      }
       if (listEl) listEl.innerHTML = "";
 
       pickerSelectedDir = path;
-      if (selDisplay) selDisplay.textContent = path || "(尚未选中)";
+      if (selDisplay) selDisplay.textContent = path || t("modals.picker.noSelection");
 
       try {
         const query = path ? `?path=${encodeURIComponent(path)}` : "";
@@ -3489,7 +3557,7 @@
 
         if (!res.ok) {
           if (listEl) {
-            listEl.innerHTML = `<div style="color:var(--danger);padding:24px;text-align:center;">⚠️ ${escapeHTML(data.error || "无法加载目录内容")}</div>`;
+            listEl.innerHTML = `<div style="color:var(--danger);padding:24px;text-align:center;">⚠️ ${escapeHTML(data.error || t("modals.picker.errorLoad"))}</div>`;
           }
           if (loading) loading.style.display = "none";
           return;
@@ -3499,7 +3567,7 @@
         pickerParentDir = data.parent || "";
 
         if (currentPathEl) {
-          currentPathEl.textContent = pickerCurrentDir || "/ (授权存储卷列表)";
+          currentPathEl.textContent = pickerCurrentDir || t("modals.picker.rootTitle");
           currentPathEl.title = pickerCurrentDir;
         }
         if (upBtn) {
@@ -3511,15 +3579,19 @@
 
         const entries = data.entries || [];
         if (entries.length === 0) {
-          listEl.innerHTML = `<div style="color:var(--text-muted);padding:32px;text-align:center;">此目录下无更多子文件夹</div>`;
+          listEl.innerHTML = `<div style="color:var(--text-muted);padding:32px;text-align:center;">${escapeHTML(t("modals.picker.empty"))}</div>`;
           return;
         }
+
+        const rwText = t("modals.picker.writableBadge");
+        const roText = t("modals.picker.readOnlyBadge");
+        const enterText = t("modals.picker.enterBtn");
 
         listEl.innerHTML = entries.map(item => {
           const isSelected = item.path === pickerSelectedDir;
           const writeBadge = item.writable 
-            ? `<span style="font-size:10.5px;padding:1px 5px;border-radius:4px;background:rgba(35,134,54,0.15);color:#2ea043;">读写</span>`
-            : `<span style="font-size:10.5px;padding:1px 5px;border-radius:4px;background:rgba(148,163,184,0.15);color:#94a3b8;">只读</span>`;
+            ? `<span style="font-size:10.5px;padding:1px 5px;border-radius:4px;background:rgba(35,134,54,0.15);color:#2ea043;">${rwText}</span>`
+            : `<span style="font-size:10.5px;padding:1px 5px;border-radius:4px;background:rgba(148,163,184,0.15);color:#94a3b8;">${roText}</span>`;
           return `
             <div class="picker-item" data-path="${escapeHTML(item.path)}" style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:6px;cursor:pointer;background:${isSelected ? 'var(--primary-glow)' : 'transparent'};border:1px solid ${isSelected ? 'var(--primary)' : 'transparent'};" onclick="selectPickerItem('${escapeHTML(item.path)}')">
               <div style="display:flex;align-items:center;gap:8px;overflow:hidden;flex:1;">
@@ -3528,7 +3600,7 @@
                 ${writeBadge}
               </div>
               <button type="button" class="btn-icon" style="padding:3px 8px;font-size:11.5px;width:auto;border-radius:4px;border:1px solid var(--card-border);background:var(--bg-subtle);color:var(--text-secondary);" onclick="event.stopPropagation(); loadPickerPath('${escapeHTML(item.path)}')">
-                进入 ➡️
+                ${enterText}
               </button>
             </div>
           `;
@@ -3536,7 +3608,7 @@
       } catch (err) {
         if (loading) loading.style.display = "none";
         if (listEl) {
-          listEl.innerHTML = `<div style="color:var(--danger);padding:24px;text-align:center;">网络错误: ${escapeHTML(err.message || String(err))}</div>`;
+          listEl.innerHTML = `<div style="color:var(--danger);padding:24px;text-align:center;">${escapeHTML(t("modals.picker.errorNetwork"))}: ${escapeHTML(err.message || String(err))}</div>`;
         }
       }
     }
@@ -3565,7 +3637,7 @@
     function confirmPickerSelection() {
       const chosen = pickerSelectedDir || pickerCurrentDir;
       if (!chosen) {
-        alert(currentLang === "zh" ? "请先点选一个文件夹" : "Please select a folder first");
+        alert(t("modals.picker.alertNoSelect"));
         return;
       }
       if (pickerTarget === "source") {

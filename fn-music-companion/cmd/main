@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
 
-CONTAINER_NAME="fn-music-rebuild-organizer"
+CONTAINER_NAME="fn-music-companion-organizer"
 case "${1:-}" in
   start|stop)
     # fnOS docker-project owns Compose lifecycle.

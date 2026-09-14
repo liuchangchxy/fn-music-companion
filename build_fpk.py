@@ -6,7 +6,9 @@ import tarfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-PKG_DIR = ROOT / "fn-music-rebuild"
+PKG_DIR = ROOT / "fn-music-companion"
+if not PKG_DIR.exists():
+    PKG_DIR = ROOT / "fn-music-rebuild"
 APP_DIR = PKG_DIR / "app"
 MANIFEST = PKG_DIR / "manifest"
 
@@ -55,7 +57,7 @@ def make_app_tgz(app_dir: Path) -> bytes:
 
 def build_fpk(output_path: Path | None = None) -> Path:
     meta = get_manifest_info()
-    appname = meta.get("appname", "fn-music-rebuild")
+    appname = meta.get("appname", "fn-music-companion")
     version = meta.get("version", "0.3.0")
     if output_path is None:
         output_path = ROOT / f"{appname}-v{version}.fpk"
@@ -111,10 +113,13 @@ def build_fpk(output_path: Path | None = None) -> Path:
 
     print(f"Package built successfully: {output_path.name} ({output_path.stat().st_size} bytes)")
     import shutil
-    root_fpk = ROOT / "fn-music-rebuild.fpk"
+    root_fpk = ROOT / f"{appname}.fpk"
     if output_path != root_fpk:
         shutil.copyfile(output_path, root_fpk)
         print(f"Synced to: {root_fpk.name} ({root_fpk.stat().st_size} bytes)")
+    legacy_fpk = ROOT / "fn-music-rebuild.fpk"
+    if legacy_fpk.exists():
+        legacy_fpk.unlink(missing_ok=True)
     return output_path
 
 

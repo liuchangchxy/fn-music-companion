@@ -1,3 +1,10 @@
 #!/bin/bash
 set -eu
+
+if [ "${FN_MUSIC_DELETE_APP_DATA:-false}" = "true" ] || [ "${FN_MUSIC_DELETE_APP_DATA:-0}" = "1" ]; then
+  if [ -n "${TRIM_PKGVAR:-}" ] && [ -d "$TRIM_PKGVAR" ]; then
+    rm -rf "${TRIM_PKGVAR:?}"/* || true
+  fi
+fi
+
 exit 0

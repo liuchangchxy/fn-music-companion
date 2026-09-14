@@ -683,6 +683,21 @@ if __name__ == "__main__":
         LOCK.unlink(missing_ok=True)
     except OSError:
         pass
+
+    # Auto-initialize config from wizard environment variables on first boot
+    curr_cfg = read_json(CONFIG, {})
+    env_src = os.environ.get("MUSIC_MOUNT_SOURCE", "").strip()
+    env_out = os.environ.get("MUSIC_MOUNT_OUTPUT", "").strip()
+    if env_src and env_out:
+        cfg_updated = False
+        if not curr_cfg.get("source_dir"):
+            curr_cfg["source_dir"] = env_src
+            cfg_updated = True
+        if not curr_cfg.get("output_dir"):
+            curr_cfg["output_dir"] = env_out
+            cfg_updated = True
+        if cfg_updated:
+            write_json(CONFIG, curr_cfg)
     curr_status = read_json(STATUS, {})
     if curr_status.get("state") == "running":
         write_json(STATUS, {

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build an fnOS .fpk package from the fn-music-rebuild source directory."""
+"""Build an fnOS .fpk package from the fn-music-companion source directory."""
 import io
 import os
 import tarfile
@@ -7,8 +7,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 PKG_DIR = ROOT / "fn-music-companion"
-if not PKG_DIR.exists():
-    PKG_DIR = ROOT / "fn-music-rebuild"
 APP_DIR = PKG_DIR / "app"
 MANIFEST = PKG_DIR / "manifest"
 

@@ -1464,7 +1464,7 @@
         <!-- Tab 0: Guide & FAQ -->
         <div class="tab-pane" id="paneGuide">
           <div style="background: rgba(56, 189, 248, 0.08); border-left: 3px solid #38bdf8; padding: 12px 14px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; line-height: 1.6;">
-            <strong>💡 飞牛音乐伴侣只需 3 步，即可打造属于你的完美私人曲库：</strong>
+            <strong>💡 飞牛音乐伴侣只需 3 步，即可打造属于你的规范私人曲库：</strong>
           </div>
 
           <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
@@ -1473,8 +1473,8 @@
               <div>
                 <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">确认目录（原始音乐与整理后曲库）</div>
                 <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
-                  • <b>原始文件夹</b>：你的音乐下载目录。系统会以底层只读（:ro）保护，<b>绝对不会修改、删除或破坏你的原文件</b>。<br>
-                  • <b>整理后文件夹</b>：用于存放标准化分类（歌手/专辑/曲目）后的正式曲库。<b>Btrfs 零拷贝机制不会占用额外硬盘空间</b>。<br>
+                  • <b>原始文件夹</b>：你的音乐下载目录。系统会以底层只读（:ro）保护，<b>不修改或删除你的原文件</b>。<br>
+                  • <b>整理后文件夹</b>：用于存放标准化分类（歌手/专辑/曲目）后的正式曲库。<b>同卷支持 Btrfs 写时复制大幅节省存储空间</b>。<br>
                   • <i>快捷提示：在飞牛桌面打开「文件管理」-> 右键文件夹「属性」-> 点击「位置」右侧复制图标即可粘贴真实路径。</i>
                 </div>
               </div>
@@ -1511,7 +1511,7 @@
             <details style="background: var(--bg-subtle); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--card-border);">
               <summary style="font-weight: 600; cursor: pointer;">Q1: 会不会误删或改乱我原始下载目录里的歌曲？</summary>
               <div style="margin-top: 8px; color: var(--text-secondary); font-size: 12px; line-height: 1.5;">
-                <b>100% 绝对不会。</b>原始音乐目录在系统底层采用 Docker 物理只读挂载（<code>:ro</code>），代码层面彻底剥离了删除和重命名指令。无论发生断电或误操作，原始文件依然原封不动。
+                <b>不会。</b>原始音乐目录在系统底层采用 Docker 物理只读挂载（<code>:ro</code>），流水线代码中不包含针对源文件的删除或重命名操作。无论发生断电或异常中断，原始文件均保持原样。
               </div>
             </details>
 
@@ -1530,9 +1530,9 @@
             </details>
 
             <details style="background: var(--bg-subtle); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--card-border);">
-              <summary style="font-weight: 600; cursor: pointer;">Q4: 所谓的 Btrfs 零物理空间占用是什么意思？</summary>
+              <summary style="font-weight: 600; cursor: pointer;">Q4: 所谓的 Btrfs 写时复制节省空间是什么原理？</summary>
               <div style="margin-top: 8px; color: var(--text-secondary); font-size: 12px; line-height: 1.5;">
-                飞牛系统默认采用 Btrfs 文件系统。在发布歌曲时，本软件优先使用底层写时复制（Reflink CoW）。原文件和整理库文件共享同一块底层磁盘数据，即便整理出 100GB 的规范目录，新增的物理硬盘占用几乎为 0（仅写入标签与封面差异块）。
+                飞牛系统默认采用 Btrfs 文件系统。在发布歌曲时，本软件在同卷整理时优先使用底层写时复制（Reflink CoW）。原文件和整理库文件共享底层数据块，大幅减少实际磁盘占用（跨卷整理则安全回退为常规拷贝）。
               </div>
             </details>
 
@@ -1552,7 +1552,7 @@
                 <b>② 极少数顽固文件建议手动审查或删除</b>：<br/>
                 如果复跑后源目录依然有极少数文件未被整理归档，这类通常属于“疑难杂症”顽固文件：例如文件名极度残缺（如只有 <code>Track 01.mp3</code> 且内嵌标签全空）、各大曲库均查无此曲、原唱/翻唱/伴奏存在语义逻辑争议、或是原盘抓轨重复度异常。<br/>
                 本程序恪守<b>「安全第一、宁缺毋滥」</b>的原则进行了谨慎保留，绝不在置信度不足时胡乱猜测改写或擅自删除原文件。<br/>
-                <b>程序和算法并非万能，无法做到 100% 毫无死角绝对精准</b>。对于这类极少数特殊或无保留价值的重复残留文件，建议您直接在源文件夹中手动审查、重命名或直接删除。
+                <b>算法与匹配规则并非万能，在部分元数据缺失或异常复杂的场景下无法保证完全准确</b>。对于这类极少数特殊或无保留价值的重复残留文件，建议您直接在源文件夹中手动审查、重命名或直接删除。
               </div>
             </details>
           </div>
@@ -1561,8 +1561,8 @@
         <!-- Tab 1: Sponsor -->
         <div class="tab-pane" id="paneSponsor" style="display: none;">
           <div class="sponsor-notice">
-            <p><strong>感谢支持开源！</strong> 本项目为 100% 独立全开源作品，永久免费，无任何收费解锁、功能限制或商业捆绑。</p>
-            <p style="margin-top:6px;font-size:12px;color:var(--text-secondary);">如果您觉得它帮您理顺了混乱的海量曲库，或者利用 <b>Btrfs 零拷贝 (Reflink CoW)</b> 帮您省下了宝贵的 NAS 存储空间与排查时间，欢迎请作者喝一杯咖啡 ☕，鼓励更多功能迭代与官方应用商店维护！</p>
+            <p><strong>感谢支持开源！</strong> 本项目为独立开源作品，永久免费，无任何商业捆绑。</p>
+            <p style="margin-top:6px;font-size:12px;color:var(--text-secondary);">如果您觉得它帮您理顺了混乱的海量曲库，或者利用 <b>Btrfs 写时复制 (Reflink CoW)</b> 帮您省下了宝贵的 NAS 存储空间与排查时间，欢迎请作者喝一杯咖啡 ☕，鼓励更多功能迭代与官方应用商店维护！</p>
           </div>
 
           <div class="qr-switch-bar">
@@ -1603,7 +1603,7 @@
               <div class="feat-icon" style="color:#22c55e;">🛡️</div>
               <div>
                 <div class="feat-title">源目录只读保护</div>
-                <div class="feat-desc">输入目录在容器层默认以只读 (:ro) 挂载，流水线严禁对源文件执行删除、改写或原地移动，确保原始收藏毫发无损。</div>
+                <div class="feat-desc">输入目录在容器层默认以只读 (:ro) 挂载，流水线不包含对源文件的删除或原地修改操作，保障原始文件安全。</div>
               </div>
             </div>
             <div class="feat-item">
@@ -1693,7 +1693,7 @@
         <div class="reset-quick-presets">
           <span style="font-size: 12px; color: var(--text-muted); align-self: center;">快捷方案：</span>
           <button type="button" class="preset-btn" onclick="applyResetPreset('standard')">标准重置 (保留歌词知识库)</button>
-          <button type="button" class="preset-btn" onclick="applyResetPreset('full')">彻底清空 (从零全新开始)</button>
+          <button type="button" class="preset-btn" onclick="applyResetPreset('full')">完全重置 (从零全新开始)</button>
         </div>
 
         <div class="reset-option-list">
@@ -1817,7 +1817,7 @@
           init: {
             text: "增量整理 (新增 / 改动 / 重判 / 回补)",
             banner: "🎉 <b>曲库首次整理已就绪！</b> 请在飞牛「音乐」App 中添加整理后目录享受精美封面与流动歌词！<br/>📌 <b>拾遗补漏建议</b>：若源目录中仍有少量未整理文件，通常是因公网瞬时网络超时或冷门歌曲初次未命中。<b>推荐直接再次点击下方【增量整理】或【重新执行全量对齐】复跑一次</b>（支持声纹秒级缓存，复跑极快，自动查漏补缺）。",
-            hint: "💡 <b>关于整理后源目录的遗留文件处理指引：</b><br/>• <b>推荐复跑一次（自动拾遗）</b>：批量整理海量歌曲时，难免因网络偶发抖动或云端曲库接口防刷频控，导致极少数冷门歌曲未能在首轮完成匹配。已整理歌曲会自动秒级跳过，<b>再次运行通常只需几十秒即可补齐漏网之鱼</b>。<br/>• <b>顽固文件建议手动清理</b>：若复跑后仍有极少数顽固文件（例如原文件名严重残缺乱码、翻唱/原唱/伴奏存在逻辑冲突争议、或原盘抓轨重复度异常），这是由于程序恪守<b>「安全第一、宁缺毋滥」</b>的原则进行了谨慎保留，并未强行猜测改写。<b>程序并非万能，无法做到 100% 毫无死角绝对精准</b>，对于这类极少数特殊或无保留价值的重复残留文件，建议您直接在源文件夹中手动审查或清理删除。"
+            hint: "💡 <b>关于整理后源目录的遗留文件处理指引：</b><br/>• <b>推荐复跑一次（自动拾遗）</b>：批量整理海量歌曲时，难免因网络偶发抖动或云端曲库接口防刷频控，导致极少数冷门歌曲未能在首轮完成匹配。已整理歌曲会自动秒级跳过，<b>再次运行通常只需几十秒即可补齐漏网之鱼</b>。<br/>• <b>顽固文件建议手动清理</b>：若复跑后仍有极少数顽固文件（例如原文件名严重残缺乱码、翻唱/原唱/伴奏存在逻辑冲突争议、或原盘抓轨重复度异常），这是由于程序恪守<b>「安全第一、宁缺毋滥」</b>的原则进行了谨慎保留，并未强行猜测改写。<b>算法与匹配规则并非万能，在部分元数据缺失或异常复杂的场景下无法保证完全准确</b>，对于这类极少数特殊或无保留价值的重复残留文件，建议您直接在源文件夹中手动审查或清理删除。"
           },
           sampled: { text: "启动全量整理 (支持断点续跑)", banner: "✅ <b>样本测试已通过！</b> 刮削与环境验证一切正常，请点击下方【启动全量整理】开始正式对齐整理。", hint: "💡 <strong>智能幂等全量</strong>：支持断点续跑与缓存复用。已处理的文件将秒级复用，系统自动处理未完成和失败的文件。" },
           first: { text: "开始验证样本 (抽样 10 首)", banner: "✨ <b>极速上手提示</b>：请先检查左侧目录，再点击下方【开始验证样本】安全试跑 10 首歌（沙盒模拟，不写物理文件）。", hint: "💡 <strong>安全保障</strong>：全量前必须先通过小样本校验。样本阶段不向整理后目录发布文件。" }
@@ -1897,32 +1897,32 @@
             about: "ℹ️ 关于与 GitHub"
           },
           guide: {
-            banner: "💡 飞牛音乐伴侣只需 3 步，即可打造属于你的完美私人曲库：",
+            banner: "💡 飞牛音乐伴侣只需 3 步，即可打造属于你的规范私人曲库：",
             step1Title: "确认目录（原始音乐与整理后曲库）",
-            step1Desc: "• <b>原始文件夹</b>：你的音乐下载目录。系统会以底层只读（:ro）保护，<b>绝对不会修改、删除或破坏你的原文件</b>。<br>• <b>整理后文件夹</b>：用于存放标准化分类（歌手/专辑/曲目）后的正式曲库。<b>Btrfs 零拷贝机制不会占用额外硬盘空间</b>。<br>• <i>快捷提示：在飞牛桌面打开「文件管理」-> 右键文件夹「属性」-> 点击「位置」右侧复制图标即可粘贴真实路径。</i>",
+            step1Desc: "• <b>原始文件夹</b>：你的音乐下载目录。系统会以底层只读（:ro）保护，<b>不修改或删除你的原文件</b>。<br>• <b>整理后文件夹</b>：用于存放标准化分类（歌手/专辑/曲目）后的正式曲库。<b>同卷支持 Btrfs 写时复制大幅节省存储空间</b>。<br>• <i>快捷提示：在飞牛桌面打开「文件管理」-> 右键文件夹「属性」-> 点击「位置」右侧复制图标即可粘贴真实路径。</i>",
             step2Title: "首次试跑：点击【样本验证】",
             step2Desc: "系统会自动抽取 10 首样本在内存沙盒中模拟探针、NCM解密、声纹识别与 QQ/网易云双引擎刮削。<br><b>样本验证阶段不会向整理后目录写入任何文件</b>，仅用于让你确认封面、歌词与网络连通性。验证通过后即可一键全量整理。",
             step3Title: "联动收听：在飞牛自带「音乐」App 中添加媒体库",
             step3Desc: "整理完成后，打开飞牛桌面或手机端的<b>「飞牛音乐」App</b>，进入设置 -> 媒体库，把刚才设置的<b>「整理后文件夹」</b>添加进去。<br>飞牛音乐会自动秒级索引，精美高清封面墙与双语流动歌词即可无缝呈现！",
             faqTitle: "❓ 常见问题答疑 (FAQ)",
             q1Title: "Q1: 会不会误删或改乱我原始下载目录里的歌曲？",
-            q1Desc: "<b>100% 绝对不会。</b>原始音乐目录在系统底层采用 Docker 物理只读挂载（<code>:ro</code>），代码层面彻底剥离了删除和重命名指令。无论发生断电或误操作，原始文件依然原封不动。",
+            q1Desc: "<b>不会。</b>原始音乐目录在系统底层采用 Docker 物理只读挂载（<code>:ro</code>），流水线代码中不包含针对源文件的删除或重命名操作。无论发生断电或异常中断，原始文件均保持原样。",
             q2Title: "Q2: 为什么整理后飞牛自带的「音乐」App 里没看到歌曲？",
             q2Desc: "飞牛自带的「音乐」App 拥有独立的媒体库设置。请打开飞牛「音乐」App -> 点击「设置」-> 进入「媒体库设置」-> 点击「添加文件夹」，选中你设置的<b>整理后文件夹</b>，飞牛音乐就会立即自动收录！",
             q3Title: "Q3: 后面我新下载了歌曲，该怎么整理？会重复处理老歌吗？",
             q3Desc: "直接点击控制台的<b>【增量整理】</b>按钮即可！系统通过 SQLite 全生命周期账本精准追踪每个文件的哈希与修改时间，已整理完成的老歌直接纳秒级跳过，仅抓取新下载的文件，几秒钟即可完成补充。",
-            q4Title: "Q4: 所谓的 Btrfs 零物理空间占用是什么意思？",
-            q4Desc: "飞牛系统默认采用 Btrfs 文件系统。在发布歌曲时，本软件优先使用底层写时复制（Reflink CoW）。原文件和整理库文件共享同一块底层磁盘数据，即便整理出 100GB 的规范目录，新增的物理硬盘占用几乎为 0（仅写入标签与封面差异块）。",
+            q4Title: "Q4: 所谓的 Btrfs 写时复制节省空间是什么原理？",
+            q4Desc: "飞牛系统默认采用 Btrfs 文件系统。在发布歌曲时，本软件在同卷整理时优先使用底层写时复制（Reflink CoW）。原文件和整理库文件共享底层数据块，大幅减少实际磁盘占用（跨卷整理则安全回退为常规拷贝）。",
             q5Title: "Q5: 离线整理模式是什么时候使用的？",
             q5Desc: "如果你的 NAS 处于纯局域网、无法访问外网，或者你已经对歌曲内嵌了完整的标签只想快速归档分目录，可以在配置中勾选「离线整理模式」。该模式完全不发起外网网络请求，纯靠本地内嵌标签整理，速度极快。",
             q6Title: "Q6: 首次全量整理后源目录还有一些文件未动，这是为什么？该怎么处理？",
-            q6Desc: "<b>① 推荐再跑一次（二次拾遗补漏）</b>：<br/>大批量整理海量歌曲时，难免会遇到公网网络瞬时抖动、或云端曲库接口防刷频控，导致极少数冷门歌曲未能在首轮即时命中。<br/>因为本程序拥有完整的断点账本与声纹缓存，绝大部分已整理的歌曲会自动秒级跳过，<b>您只需直接点击控制台的【增量整理】或【重新执行全量对齐】再跑一遍</b>，流水线会快速专注对这部分遗留文件进行查漏补缺，通常几十秒即可完成。<br/><br/><b>② 极少数顽固文件建议手动审查或删除</b>：<br/>如果复跑后源目录依然有极少数文件未被整理归档，这类通常属于“疑难杂症”顽固文件：例如文件名极度残缺（如只有 <code>Track 01.mp3</code> 且内嵌标签全空）、各大曲库均查无此曲、原唱/翻唱/伴奏存在语义逻辑争议、或是原盘抓轨重复度异常。<br/>本程序恪守<b>「安全第一、宁缺毋滥」</b>的原则进行了谨慎保留，绝不在置信度不足时胡乱猜测改写或擅自删除原文件。<br/><b>程序和算法并非万能，无法做到 100% 毫无死角绝对精准</b>。对于这类极少数特殊或无保留价值的重复残留文件，建议您直接在源文件夹中手动审查、重命名或直接删除。"
+            q6Desc: "<b>① 推荐再跑一次（二次拾遗补漏）</b>：<br/>大批量整理海量歌曲时，难免会遇到公网网络瞬时抖动、或云端曲库接口防刷频控，导致极少数冷门歌曲未能在首轮即时命中。<br/>因为本程序拥有完整的断点账本与声纹缓存，绝大部分已整理的歌曲会自动秒级跳过，<b>您只需直接点击控制台的【增量整理】或【重新执行全量对齐】再跑一遍</b>，流水线会快速专注对这部分遗留文件进行查漏补缺，通常几十秒即可完成。<br/><br/><b>② 极少数顽固文件建议手动审查或删除</b>：<br/>如果复跑后源目录依然有极少数文件未被整理归档，这类通常属于“疑难杂症”顽固文件：例如文件名极度残缺（如只有 <code>Track 01.mp3</code> 且内嵌标签全空）、各大曲库均查无此曲、原唱/翻唱/伴奏存在语义逻辑争议、或是原盘抓轨重复度异常。<br/>本程序恪守<b>「安全第一、宁缺毋滥」</b>的原则进行了谨慎保留，绝不在置信度不足时胡乱猜测改写或擅自删除原文件。<br/><b>算法与匹配规则并非万能，在部分元数据缺失或异常复杂的场景下无法保证完全准确</b>。对于这类极少数特殊或无保留价值的重复残留文件，建议您直接在源文件夹中手动审查、重命名或直接删除。"
           },
           features: {
             f1Title: "Btrfs 写时复制 (Reflink CoW)",
             f1Desc: "同存储卷整理时优先使用 Reflink 写时复制，数据块秒级指针复用，大幅降低物理写入与额外空间（跨卷自动安全回退为常规拷贝）。",
             f2Title: "源目录只读保护",
-            f2Desc: "输入目录在容器层默认以只读 (:ro) 挂载，流水线严禁对源文件执行删除、改写或原地移动，确保原始收藏毫发无损。",
+            f2Desc: "输入目录在容器层默认以只读 (:ro) 挂载，流水线不包含对源文件的删除或原地修改操作，保障原始文件安全。",
             f3Title: "NCM 隔离解密与自动清理",
             f3Desc: "加密文件在独立临时沙盒中完成解码、声纹提取与元数据补全，发布后即刻自动销毁临时文件，保持存储空间整洁干净。",
             f4Title: "跨格式声纹辅助去重",
@@ -1933,8 +1933,8 @@
             f6Desc: "遵循飞牛应用商店 FPK 标准，输出规范的「歌手/专辑/曲目」目录层级，便于飞牛音乐（trim.music）即时扫描建库。"
           },
           sponsor: {
-            p1: "<strong>感谢支持开源！</strong> 本项目为 100% 独立全开源作品，永久免费，无任何收费解锁、功能限制或商业捆绑。",
-            p2: "如果您觉得它帮您理顺了混乱的海量曲库，或者利用 <b>Btrfs 零拷贝 (Reflink CoW)</b> 帮您省下了宝贵的 NAS 存储空间与排查时间，欢迎请作者喝一杯咖啡 ☕，鼓励更多功能迭代与官方应用商店维护！",
+            p1: "<strong>感谢支持开源！</strong> 本项目为独立开源作品，永久免费，无任何商业捆绑。",
+            p2: "如果您觉得它帮您理顺了混乱的海量曲库，或者利用 <b>Btrfs 写时复制 (Reflink CoW)</b> 帮您省下了宝贵的 NAS 存储空间与排查时间，欢迎请作者喝一杯咖啡 ☕，鼓励更多功能迭代与官方应用商店维护！",
             wechatBtn: "微信收款码",
             alipayBtn: "支付宝收款码",
             missing: "暂未找到收款码图片",
@@ -1960,10 +1960,10 @@
             badge: "系统维护",
             subtitle: "按需重置历史记录、曲目状态清单或清空本地歌词知识库",
             noticeTitle: "⚠️ 关于从头开始操作：",
-            noticeDesc: "重置操作仅清理系统运行账本与元数据，<b>原始音乐文件夹（只读）不受任何影响，系统也绝不在 SSD 留存任何音频文件</b>。你可以根据需求选择重置深度：",
+            noticeDesc: "重置操作仅清理系统运行账本与元数据，<b>原始音乐文件夹（只读）不受影响</b>。你可以根据需求选择重置深度：",
             presetLabel: "快捷方案：",
             presetStandard: "标准重置 (保留歌词知识库)",
-            presetFull: "彻底清空 (从零全新开始)",
+            presetFull: "完全重置 (从零全新开始)",
             opt1Title: "清空历史运行记录与指标账本",
             opt1Desc: "清空所有历史运行记录、处理指标统计（全部归零）并清空终端日志。",
             opt2Title: "重置曲目状态清单与门禁",
@@ -2055,7 +2055,7 @@
           init: {
             text: "Incremental Run (New / Modified / Stale / Retry)",
             banner: "🎉 <b>Library organization completed!</b> Add the organized folder to fnOS Music App to enjoy synced lyrics and album art!<br/>📌 <b>Tip</b>: If a few files remain in your source folder, it is often due to transient network timeout or cold tracks. <b>We recommend clicking Incremental Run or Re-run Full Organization once more</b> (cached and very fast, automatically picking up missed tracks).",
-            hint: "💡 <b>Guide for remaining source files after organization:</b><br/>• <b>Run again to reconcile (Fast)</b>: During large-scale processing, occasional network timeout or API rate limits may leave a few tracks unorganized. Already processed tracks are skipped instantly in seconds, allowing the pipeline to focus on remaining tracks.<br/>• <b>Manually review / delete stubborn files</b>: If a few stubborn files remain after re-running (e.g. garbled/missing tags, ambiguous cover/variant logic, or conflicting rip duplicates), the engine deliberately preserves them under the 'safety-first' rule rather than guessing. <b>No automated algorithm is 100% omnipotent</b>; for these few stubborn or unwanted duplicate files, you are encouraged to manually review or safely delete them from the source folder."
+            hint: "💡 <b>Guide for remaining source files after organization:</b><br/>• <b>Run again to reconcile (Fast)</b>: During large-scale processing, occasional network timeout or API rate limits may leave a few tracks unorganized. Already processed tracks are skipped instantly in seconds, allowing the pipeline to focus on remaining tracks.<br/>• <b>Manually review / delete stubborn files</b>: If a few stubborn files remain after re-running (e.g. garbled/missing tags, ambiguous cover/variant logic, or conflicting rip duplicates), the engine deliberately preserves them under the 'safety-first' rule rather than guessing. <b>Automated algorithms are not omnipotent and cannot guarantee complete accuracy in all edge cases</b>; for these few stubborn or unwanted duplicate files, you are encouraged to manually review or safely delete them from the source folder."
           },
           sampled: { text: "Start Full Organization", banner: "✅ <b>Sample validation passed!</b> Environment and scraping verified. Click below to start full organization.", hint: "💡 <strong>Full Organization</strong>: Safe, idempotent processing with instant reuse of previously organized tracks." },
           first: { text: "Start Sample Test (10 Tracks)", banner: "✨ <b>Quick Start</b>: Confirm directories on the left, then click below to test with 10 sample songs (sandbox simulation, no files written).", hint: "💡 <strong>Safety Gate</strong>: Sample validation is required before first full organization." }
@@ -2135,26 +2135,26 @@
             about: "ℹ️ About & GitHub"
           },
           guide: {
-            banner: "💡 Build your perfect private music library in just 3 steps with MusicFlow:",
+            banner: "💡 Organize your standard private music library in just 3 steps with MusicFlow:",
             step1Title: "Confirm Directories (Source & Library)",
-            step1Desc: "• <b>Source Folder</b>: Your raw download directory. Protected with OS-level read-only (:ro); <b>never modifies, deletes, or alters original files</b>.<br>• <b>Organized Folder</b>: Destination for standardized hierarchy (Artist/Album/Track). <b>Btrfs zero-copy creates no extra disk usage</b>.<br>• <i>Quick Tip: On fnOS desktop, open File Manager -> Right click folder -> Properties -> Click Copy icon next to Location to paste the true path.</i>",
+            step1Desc: "• <b>Source Folder</b>: Your raw download directory. Protected with OS-level read-only (:ro); <b>does not modify or delete original files</b>.<br>• <b>Organized Folder</b>: Destination for standardized hierarchy (Artist/Album/Track). <b>Btrfs Reflink CoW significantly saves disk space on the same volume</b>.<br>• <i>Quick Tip: On fnOS desktop, open File Manager -> Right click folder -> Properties -> Click Copy icon next to Location to paste the true path.</i>",
             step2Title: "First Run: Click [Start Sample Test]",
             step2Desc: "The system samples 10 tracks into an in-memory sandbox to verify format probes, NCM decryption, acoustic fingerprints, and QQ/NetEase scraping.<br><b>No files are written to the organized folder during sample validation</b>, ensuring network and metadata connectivity before full processing.",
             step3Title: "Enjoy Music: Add Library in fnOS Native Music App",
             step3Desc: "Once complete, open fnOS native <b>Music App</b> on desktop or mobile, go to Settings -> Media Library, and add your <b>Organized Folder</b>.<br>fnOS will index instantly, displaying pristine cover art walls and scrolling bilingual lyrics!",
             faqTitle: "❓ Frequently Asked Questions (FAQ)",
             q1Title: "Q1: Will it delete or mess up tracks in my original download folder?",
-            q1Desc: "<b>100% NEVER.</b> The source directory is mounted read-only (<code>:ro</code>) at Docker container level, and file deletion/rename calls are removed from the pipeline. Even during power outages or unexpected events, source files remain completely untouched.",
+            q1Desc: "<b>No.</b> The source directory is mounted read-only (<code>:ro</code>) at Docker container level, and the pipeline does not execute delete or rename operations on source files. Original files remain safe.",
             q2Title: "Q2: Why doesn't fnOS native Music App show songs after organizing?",
             q2Desc: "fnOS Music App maintains its own media library catalog. Open the fnOS Music App -> Settings -> Media Library -> Add Folder -> Select your <b>Organized Folder</b>, and fnOS will index all tracks immediately!",
             q3Title: "Q3: When I download new songs later, how do I organize? Will old songs be reprocessed?",
             q3Desc: "Simply click <b>[Incremental Run]</b>! The SQLite lifecycle ledger tracks file hashes and modification timestamps. Already verified tracks are skipped in nanoseconds, catching only new files in just seconds.",
-            q4Title: "Q4: What does 'Btrfs zero physical storage consumption' mean?",
-            q4Desc: "fnOS uses the Btrfs filesystem by default. When publishing files, MusicFlow uses Copy-on-Write (Reflink CoW). Organized files share identical data blocks with source files. Even a 100 GB organized library takes virtually zero additional storage on the drive.",
+            q4Title: "Q4: How does Btrfs Copy-on-Write save storage?",
+            q4Desc: "fnOS uses the Btrfs filesystem by default. When publishing files on the same volume, MusicFlow uses Copy-on-Write (Reflink CoW). Organized files share underlying data blocks with source files, significantly reducing physical disk usage (falls back to standard copy across volumes).",
             q5Title: "Q5: When should I use Offline Mode?",
             q5Desc: "If your NAS is in an isolated LAN without internet access, or if your audio files already contain full embedded tags and you only need clean directory sorting, enable Offline Mode. It skips all cloud network calls and processes purely from local tags at lightning speed.",
             q6Title: "Q6: Why are there still some files remaining in the source folder after full organization?",
-            q6Desc: "<b>1. Recommended: Run once more to reconcile</b>:<br/>During large-scale batch organization, transient network timeouts or cloud API rate limits may occasionally cause a few cold tracks to miss on the first pass.<br/>Since MusicFlow features a persistent acoustic and hash ledger, previously organized tracks are skipped in seconds. <b>Simply click 'Incremental Run' or 'Re-run Full Organization' to run once more</b>; the pipeline will quickly focus on these remaining files and reconcile them in tens of seconds.<br/><br/><b>2. Manually review or delete stubborn files</b>:<br/>If a few files remain untouched after re-running, they are typically stubborn corner cases: completely missing metadata/filenames (e.g. bare <code>Track 01.mp3</code> with zero tags), tracks unindexed in any database, conflicting cover/instrumental/live variant logic, or corrupted rip duplicates.<br/>The engine strictly adheres to the <b>'Safety First / Better Retain Than Corrupt'</b> principle and will never guess or destroy your source files without sufficient confidence.<br/><b>No automated software is 100% omnipotent</b>. For these rare stubborn or duplicate remnants, we recommend manually reviewing, fixing, or safely deleting them directly in your source directory."
+            q6Desc: "<b>1. Recommended: Run once more to reconcile</b>:<br/>During large-scale batch organization, transient network timeouts or cloud API rate limits may occasionally cause a few cold tracks to miss on the first pass.<br/>Since MusicFlow features a persistent acoustic and hash ledger, previously organized tracks are skipped in seconds. <b>Simply click 'Incremental Run' or 'Re-run Full Organization' to run once more</b>; the pipeline will quickly focus on these remaining files and reconcile them in tens of seconds.<br/><br/><b>2. Manually review or delete stubborn files</b>:<br/>If a few files remain untouched after re-running, they are typically stubborn corner cases: completely missing metadata/filenames (e.g. bare <code>Track 01.mp3</code> with zero tags), tracks unindexed in any database, conflicting cover/instrumental/live variant logic, or corrupted rip duplicates.<br/>The engine strictly adheres to the <b>'Safety First / Better Retain Than Corrupt'</b> principle and will never guess or destroy your source files without sufficient confidence.<br/><b>Automated matching rules cannot guarantee 100% accuracy in complex corner cases</b>. For these rare stubborn or duplicate remnants, we recommend manually reviewing, fixing, or safely deleting them directly in your source directory."
           },
           features: {
             f1Title: "Btrfs Copy-on-Write (Reflink CoW)",
@@ -2171,7 +2171,7 @@
             f6Desc: "Adheres to fnOS application packaging standards (FPK) and organizes files into clean Artist/Album/Track structures optimized for fnOS Music indexing."
           },
           sponsor: {
-            p1: "<strong>Thank you for supporting open source!</strong> This project is 100% independent and open source, permanently free with no paywalls, feature limits, or commercial bundling.",
+            p1: "<strong>Thank you for supporting open source!</strong> This project is an independent open source project, permanently free with no commercial bundling.",
             p2: "If MusicFlow helped you clean up your massive library, or saved valuable NAS storage space via <b>Btrfs Reflink CoW</b>, feel free to buy the author a coffee ☕ to support future updates and fnOS App Store maintenance!",
             wechatBtn: "WeChat Pay",
             alipayBtn: "Alipay",

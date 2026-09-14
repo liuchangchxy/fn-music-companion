@@ -9,8 +9,8 @@
       {
         "type": "switch",
         "field": "FN_MUSIC_DELETE_APP_DATA",
-        "label": "彻底删除应用配置与状态记录",
-        "helpText": "开启后将清理 /appdata 内的整理记录与配置缓存；绝对不会修改或删除您的原始音乐和整理后音乐库。"
+        "label": "清除应用配置与状态记录",
+        "helpText": "开启后将清理 /appdata 内的整理记录与配置缓存；不会影响或删除您的原始音乐和整理后音乐库。"
       }
     ]
   }

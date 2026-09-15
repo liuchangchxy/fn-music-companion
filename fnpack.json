@@ -1,0 +1,45 @@
+{
+  "schema_version": "2",
+  "source_info": {
+    "name": "飞牛音乐伴侣 (MusicFlow) 官方源",
+    "author": "liuchangchxy",
+    "homepage": "https://github.com/liuchangchxy/fn-music-companion",
+    "description": "专为飞牛私有云 (fnOS) 量身打造的高保真音乐整理与元数据增强工具应用源"
+  },
+  "apps": {
+    "fn-music-companion": {
+      "display_name": "飞牛音乐伴侣 (MusicFlow)",
+      "desc": "专为飞牛私有云 (fnOS) 量身打造的高保真音乐整理与元数据增强工具：支持 Btrfs 写时复制大幅节省存储空间、源目录只读挂载保护安全、QQ音乐+网易云双引擎标签与歌词封面补全、声纹跨格式智能去重。",
+      "platform": ["x86"],
+      "categories": ["影音媒体", "系统工具"],
+      "icon_url": "https://raw.githubusercontent.com/liuchangchxy/fn-music-companion/main/package/ICON_256.PNG",
+      "preview_urls": [
+        "https://raw.githubusercontent.com/liuchangchxy/fn-music-companion/main/screenshot_dashboard.png"
+      ],
+      "readme_url": "https://raw.githubusercontent.com/liuchangchxy/fn-music-companion/main/README.md",
+      "bug_report_url": "https://github.com/liuchangchxy/fn-music-companion/issues",
+      "maintainer": "liuchangchxy",
+      "maintainer_url": "https://github.com/liuchangchxy/fn-music-companion",
+      "distributor": "liuchangchxy",
+      "distributor_url": "https://github.com/liuchangchxy/fn-music-companion",
+      "run_as": "package",
+      "install_type": "user",
+      "is_docker": true,
+      "service_port": "8091",
+      "releases": {
+        "1.0.0": {
+          "changelog": "v1.0.0 正式版发布：深度适配飞牛音乐媒体库、Btrfs 写时复制、QQ音乐与网易云双引擎元数据与歌词补全、深层多级目录选择器、声明式多语言。",
+          "updated_at": "2026-09-15T08:16:28+08:00",
+          "os_min_version": "1.2.0401",
+          "packages": {
+            "x86": {
+              "download_url": "https://github.com/liuchangchxy/fn-music-companion/releases/download/v1.0.0/fn-music-companion-v1.0.0.fpk",
+              "sha256": "8e8198fe080dbc3fe99dd72122cf1d4434ee961e7736d8e69f3b3a104625aec4",
+              "size": 152667
+            }
+          }
+        }
+      }
+    }
+  }
+}

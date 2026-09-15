@@ -591,6 +591,28 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def is_authenticated(self, body: dict | None = None) -> bool:
+        cfg = read_json(CONFIG, {})
+        req_pwd = cfg.get("admin_password")
+        if not req_pwd:
+            return True
+        # 1. Header
+        given = self.headers.get("X-Admin-Password")
+        if given and given == req_pwd:
+            return True
+        # 2. Query param (for browser downloads and links)
+        parsed = urlparse(self.path)
+        qs = parse_qs(parsed.query)
+        param_pwd = qs.get("admin_password", [None])[0] or qs.get("token", [None])[0]
+        if param_pwd and param_pwd == req_pwd:
+            return True
+        # 3. Body (for POST requests)
+        if body and isinstance(body, dict):
+            body_pwd = body.get("admin_password")
+            if body_pwd and body_pwd == req_pwd:
+                return True
+        return False
+
     def do_HEAD(self) -> None:
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -601,6 +623,15 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
+        sensitive_paths = {
+            "/api/config", "/api/fs/ls", "/api/log", "/api/log/download",
+            "/api/report", "/api/runs", "/api/accessible-paths"
+        }
+        if parsed.path in sensitive_paths:
+            if not self.is_authenticated():
+                self.send(401, json.dumps({"error": "控制台访问受限：管理密码不匹配", "require_password": True}, ensure_ascii=False), "application/json")
+                return
+
         if parsed.path == "/api/config":
             cfg = get_or_init_config()
             resp = dict(cfg)
@@ -620,6 +651,17 @@ class Handler(BaseHTTPRequestHandler):
         elif parsed.path == "/api/status":
             st = read_json(STATUS, {"state": "idle"})
             cfg = get_or_init_config()
+            has_pwd = bool(cfg.get("admin_password"))
+            st["has_admin_password"] = has_pwd
+            if has_pwd and not self.is_authenticated():
+                self.send(200, json.dumps({
+                    "state": st.get("state", "idle"),
+                    "message": "已启用管理密码保护，请输入密码解锁",
+                    "has_admin_password": True,
+                    "authenticated": False
+                }, ensure_ascii=False), "application/json")
+                return
+            st["authenticated"] = True
             st["sample_gate_passed"] = sample_ready(cfg)
             st["has_initial_full_run"] = bool(cfg.get("initialized"))
             rep = report()
@@ -768,13 +810,16 @@ class Handler(BaseHTTPRequestHandler):
             self.send(400, "请求格式错误")
             return
 
-        cfg_val = read_json(CONFIG, {})
-        req_pwd = cfg_val.get("admin_password")
-        if req_pwd and self.path in ("/api/config", "/api/run", "/api/stop", "/api/reset", "/api/log/clear"):
-            given_pwd = self.headers.get("X-Admin-Password") or body.get("admin_password")
-            if given_pwd != req_pwd:
-                self.send(401, json.dumps({"error": "控制台访问受限：管理密码不匹配", "require_password": True}, ensure_ascii=False), "application/json")
-                return
+        if self.path == "/api/verify-password":
+            if self.is_authenticated(body):
+                self.send(200, json.dumps({"ok": True, "valid": True}, ensure_ascii=False), "application/json")
+            else:
+                self.send(401, json.dumps({"ok": False, "valid": False, "error": "管理密码不正确"}, ensure_ascii=False), "application/json")
+            return
+
+        if not self.is_authenticated(body):
+            self.send(401, json.dumps({"error": "控制台访问受限：管理密码不匹配", "require_password": True}, ensure_ascii=False), "application/json")
+            return
 
         if self.path == "/api/config":
             if read_json(STATUS, {}).get("state") == "running":
@@ -803,6 +848,16 @@ class Handler(BaseHTTPRequestHandler):
                     if key in old:
                         new[key] = old[key]
             write_json(CONFIG, new)
+            # Record mount roles so sync-accessible-mounts.sh can enforce :ro on source_dir
+            try:
+                roles_file = Path("/appdata/mount-roles.json")
+                roles_file.parent.mkdir(parents=True, exist_ok=True)
+                roles_file.write_text(json.dumps({
+                    "source_dir": new.get("source_dir", ""),
+                    "output_dir": new.get("output_dir", "")
+                }, ensure_ascii=False, indent=2), encoding="utf-8")
+            except Exception:
+                pass
             msg = "配置已保存，随时可以开始整理" if sample_ready(new) else "配置已保存；请先验证样本"
             write_json(STATUS, {"state": "idle", "message": msg})
             self.send(200, json.dumps(new, ensure_ascii=False), "application/json")

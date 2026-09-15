@@ -62,6 +62,7 @@ FORMAT_TIERS: dict[str, int] = {
     ".m4a": 600, ".aac": 580, ".opus": 550, ".ogg": 550,
     ".mp3": 400, ".wma": 300,
 }
+DB_WRITE_LOCK = threading.Lock()
 RUN_PREFIX = ".music-rebuild-run-"
 # Superseded (lower-quality) files are moved here instead of being deleted.  The
 # leading dot keeps the directory out of list_sources(), out of the library scan
@@ -459,19 +460,24 @@ def kb_get(connection: sqlite3.Connection, digest: str, artist: str = "", title:
 def kb_put(connection: sqlite3.Connection, digest: str, artist: str, album: str, title: str, track_number: str = "", year: int | None = None, lyrics: str | None = None, has_cover: bool = False) -> None:
     if not digest or not title:
         return
-    connection.execute("""
-    INSERT INTO knowledge_base(audio_sha256, artist, album, title, track_number, year, lyrics, has_cover, updated_at)
-    VALUES(?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-    ON CONFLICT(audio_sha256) DO UPDATE SET
-        artist=CASE WHEN excluded.artist != '' THEN excluded.artist ELSE knowledge_base.artist END,
-        album=CASE WHEN excluded.album != '' THEN excluded.album ELSE knowledge_base.album END,
-        title=CASE WHEN excluded.title != '' THEN excluded.title ELSE knowledge_base.title END,
-        track_number=CASE WHEN excluded.track_number != '' THEN excluded.track_number ELSE knowledge_base.track_number END,
-        year=COALESCE(excluded.year, knowledge_base.year),
-        lyrics=COALESCE(excluded.lyrics, knowledge_base.lyrics),
-        has_cover=MAX(knowledge_base.has_cover, excluded.has_cover),
-        updated_at=CURRENT_TIMESTAMP
-    """, (digest, artist or "", album or "", title, track_number or "", year, lyrics, 1 if has_cover else 0))
+    with DB_WRITE_LOCK:
+        connection.execute("""
+        INSERT INTO knowledge_base(audio_sha256, artist, album, title, track_number, year, lyrics, has_cover, updated_at)
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(audio_sha256) DO UPDATE SET
+            artist=CASE WHEN excluded.artist != '' THEN excluded.artist ELSE knowledge_base.artist END,
+            album=CASE WHEN excluded.album != '' THEN excluded.album ELSE knowledge_base.album END,
+            title=CASE WHEN excluded.title != '' THEN excluded.title ELSE knowledge_base.title END,
+            track_number=CASE WHEN excluded.track_number != '' THEN excluded.track_number ELSE knowledge_base.track_number END,
+            year=COALESCE(excluded.year, knowledge_base.year),
+            lyrics=COALESCE(excluded.lyrics, knowledge_base.lyrics),
+            has_cover=MAX(knowledge_base.has_cover, excluded.has_cover),
+            updated_at=CURRENT_TIMESTAMP
+        """, (digest, artist or "", album or "", title, track_number or "", year, lyrics, 1 if has_cover else 0))
+        try:
+            connection.commit()
+        except Exception:
+            pass
 
 
 def event(connection: sqlite3.Connection, run_id: str, action: str, status: str, source: Path | None = None, detail: str = "") -> None:
@@ -1681,15 +1687,16 @@ def publish_one(source: Path, run_root: Path, output: Path, real: bool, decoded_
         archive_previous_output(source, output, target)
         try:
             stat = source.stat()
-            conn = db()
-            try:
-                conn.execute(
-                    "INSERT INTO source_inventory(source_path,size_bytes,mtime_ns,sha256,disposition,output_path,metadata_state,lyrics_state,cover_state,rules_version) VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(source_path) DO UPDATE SET size_bytes=excluded.size_bytes,mtime_ns=excluded.mtime_ns,sha256=excluded.sha256,disposition=excluded.disposition,output_path=excluded.output_path,metadata_state=excluded.metadata_state,lyrics_state=excluded.lyrics_state,cover_state=excluded.cover_state,rules_version=excluded.rules_version,updated_at=CURRENT_TIMESTAMP",
-                    (str(source), stat.st_size, stat.st_mtime_ns, digest, "published", str(target), *states, RULES_VERSION),
-                )
-                conn.commit()
-            finally:
-                conn.close()
+            with DB_WRITE_LOCK:
+                conn = db()
+                try:
+                    conn.execute(
+                        "INSERT INTO source_inventory(source_path,size_bytes,mtime_ns,sha256,disposition,output_path,metadata_state,lyrics_state,cover_state,rules_version) VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(source_path) DO UPDATE SET size_bytes=excluded.size_bytes,mtime_ns=excluded.mtime_ns,sha256=excluded.sha256,disposition=excluded.disposition,output_path=excluded.output_path,metadata_state=excluded.metadata_state,lyrics_state=excluded.lyrics_state,cover_state=excluded.cover_state,rules_version=excluded.rules_version,updated_at=CURRENT_TIMESTAMP",
+                        (str(source), stat.st_size, stat.st_mtime_ns, digest, "published", str(target), *states, RULES_VERSION),
+                    )
+                    conn.commit()
+                finally:
+                    conn.close()
         except Exception:
             pass
         return target, states

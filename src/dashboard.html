@@ -1460,10 +1460,10 @@
         <a href="javascript:void(0)" onclick="openAboutModal('sponsor')">☕ 赞助支持</a> ·
         <a href="javascript:void(0)" onclick="openAboutModal('features')">🌟 架构亮点</a> ·
         <a href="javascript:void(0)" onclick="openAboutModal('about')">ℹ️ 关于与开源</a> ·
-        <a href="/api/report" target="_blank">报告 JSON</a> ·
-        <a href="/api/log?tail=500" target="_blank">近500条日志</a> ·
-        <a href="/api/log/download" target="_blank">下载日志</a> ·
-        <a href="/api/status" target="_blank">状态 API</a>
+        <a href="javascript:void(0)" onclick="openAuthedLink('/api/report')">报告 JSON</a> ·
+        <a href="javascript:void(0)" onclick="openAuthedLink('/api/log?tail=500')">近500条日志</a> ·
+        <a href="javascript:void(0)" onclick="openAuthedLink('/api/log/download')">下载日志</a> ·
+        <a href="javascript:void(0)" onclick="openAuthedLink('/api/status')">状态 API</a>
       </div>
     </footer>
   </div>
@@ -2703,17 +2703,63 @@
     updateThemeIcon(savedTheme);
     themeBtn.addEventListener("click", toggleTheme);
 
+    // Admin Password & API Auth Helpers
+    function getAdminPassword() {
+      return sessionStorage.getItem("fn-music-admin-password") || "";
+    }
+    function setAdminPassword(pwd) {
+      if (pwd) sessionStorage.setItem("fn-music-admin-password", pwd);
+      else sessionStorage.removeItem("fn-music-admin-password");
+    }
+
+    function authHeaders(custom = {}) {
+      const h = { ...custom };
+      const pwd = getAdminPassword();
+      if (pwd) {
+        h["X-Admin-Password"] = pwd;
+      }
+      return h;
+    }
+
+    let authModalActive = false;
+    function promptAdminPassword() {
+      if (authModalActive) return;
+      authModalActive = true;
+      const msg = currentLang === "en" ? "Management console is protected. Please enter admin password:" : "控制台已启用管理密码保护，请输入密码解锁：";
+      const val = prompt(msg);
+      authModalActive = false;
+      if (val !== null) {
+        setAdminPassword(val.trim());
+        updateDashboard();
+      }
+    }
+
+    function openAuthedLink(url) {
+      const pwd = getAdminPassword();
+      const sep = url.includes("?") ? "&" : "?";
+      const full = pwd ? `${url}${sep}admin_password=${encodeURIComponent(pwd)}` : url;
+      window.open(full, "_blank");
+    }
+
     // API Helpers
     async function fetchJSON(url) {
       try {
-        const res = await fetch(url);
+        const res = await fetch(url, { headers: authHeaders() });
+        if (res.status === 401) {
+          promptAdminPassword();
+          return null;
+        }
         return res.ok ? await res.json() : null;
       } catch (e) { return null; }
     }
 
     async function fetchText(url) {
       try {
-        const res = await fetch(url);
+        const res = await fetch(url, { headers: authHeaders() });
+        if (res.status === 401) {
+          promptAdminPassword();
+          return null;
+        }
         return res.ok ? await res.text() : null;
       } catch (e) { return null; }
     }
@@ -2721,9 +2767,13 @@
     async function postJSON(url, data) {
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(data)
       });
+      if (res.status === 401) {
+        promptAdminPassword();
+        return false;
+      }
       if (!res.ok) {
         const err = await res.text();
         alert(t("dialogs.resetFailed") + err);
@@ -3419,7 +3469,7 @@
       try {
         const res = await fetch("/api/reset", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: authHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             clear_history: clearHistory,
             clear_inventory: clearInventory,
@@ -3552,7 +3602,12 @@
 
       try {
         const query = path ? `?path=${encodeURIComponent(path)}` : "";
-        const res = await fetch(`/api/fs/ls${query}`);
+        const res = await fetch(`/api/fs/ls${query}`, { headers: authHeaders() });
+        if (res.status === 401) {
+          if (loading) loading.style.display = "none";
+          promptAdminPassword();
+          return;
+        }
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {

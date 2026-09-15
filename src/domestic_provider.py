@@ -32,9 +32,6 @@ except ImportError:
 TIMEOUT = 6
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
-# Dedicated direct-connection opener that bypasses any HTTP_PROXY / HTTPS_PROXY
-_DIRECT_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-
 def _log(msg: str) -> None:
     """Print debug log message only when verbose logging is enabled."""
     if os.environ.get("MUSIC_DEBUG") == "1":
@@ -129,31 +126,49 @@ def to_simplified(text: str) -> str:
             pass
     return "".join(_TRAD_TO_SIMP.get(c, c) for c in text)
 
+# Direct-connection opener that bypasses any proxy (for domestic speed)
+_DIRECT_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
+def _get_active_openers() -> list[urllib.request.OpenerDirector]:
+    """Return openers to try in order. If a proxy is configured (e.g. overseas user), try proxy first, then direct fallback."""
+    has_proxy = bool(
+        os.environ.get("HTTPS_PROXY") or os.environ.get("HTTP_PROXY") or os.environ.get("ALL_PROXY") or
+        os.environ.get("https_proxy") or os.environ.get("http_proxy") or os.environ.get("all_proxy")
+    )
+    if has_proxy:
+        try:
+            return [urllib.request.build_opener(), _DIRECT_OPENER]
+        except Exception:
+            return [_DIRECT_OPENER]
+    return [_DIRECT_OPENER]
+
 def _http_get_json(url: str, headers: dict | None = None, timeout: int = TIMEOUT) -> dict | None:
-    try:
-        h = {"User-Agent": USER_AGENT}
-        if headers:
-            h.update(headers)
-        req = urllib.request.Request(url, headers=h)
-        with _DIRECT_OPENER.open(req, timeout=timeout) as resp:
-            if resp.status == 200:
-                raw = resp.read().decode("utf-8", errors="replace")
-                return json.loads(raw)
-    except Exception:
-        pass
+    h = {"User-Agent": USER_AGENT}
+    if headers:
+        h.update(headers)
+    req = urllib.request.Request(url, headers=h)
+    for opener in _get_active_openers():
+        try:
+            with opener.open(req, timeout=timeout) as resp:
+                if resp.status == 200:
+                    raw = resp.read().decode("utf-8", errors="replace")
+                    return json.loads(raw)
+        except Exception:
+            continue
     return None
 
 def _http_get_bytes(url: str, headers: dict | None = None, timeout: int = TIMEOUT) -> bytes | None:
-    try:
-        h = {"User-Agent": USER_AGENT}
-        if headers:
-            h.update(headers)
-        req = urllib.request.Request(url, headers=h)
-        with _DIRECT_OPENER.open(req, timeout=timeout) as resp:
-            if resp.status == 200:
-                return resp.read()
-    except Exception:
-        pass
+    h = {"User-Agent": USER_AGENT}
+    if headers:
+        h.update(headers)
+    req = urllib.request.Request(url, headers=h)
+    for opener in _get_active_openers():
+        try:
+            with opener.open(req, timeout=timeout) as resp:
+                if resp.status == 200:
+                    return resp.read()
+        except Exception:
+            continue
     return None
 
 def _clean_str(s: str) -> str:

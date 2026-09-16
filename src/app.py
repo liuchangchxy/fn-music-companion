@@ -143,13 +143,18 @@ def accessible_paths() -> list[Path]:
             pass
 
     result: list[Path] = list(roots)
-    # Automatically scan first-level subdirectories for each authorized root
-    for root in roots:
+    # Automatically scan subdirectories (up to 3 levels deep, max 300 items) for each authorized root
+    queue: list[tuple[Path, int]] = [(r, 1) for r in roots]
+    while queue and len(result) < 300:
+        curr, depth = queue.pop(0)
+        if depth > 3:
+            continue
         try:
-            for item in sorted(root.iterdir()):
+            for item in sorted(curr.iterdir(), key=lambda p: p.name.lower()):
                 if item.is_dir() and not item.name.startswith((".", "@")):
                     if item not in result:
                         result.append(item)
+                    queue.append((item, depth + 1))
         except Exception:
             pass
 

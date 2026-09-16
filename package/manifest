@@ -5,6 +5,7 @@ desc                  = 专为飞牛私有云 (fnOS) 量身打造的高保真音
 arch                  = x86_64
 platform              = x86
 source                = thirdparty
+install_type          = root
 maintainer            = liuchangchxy
 maintainer_url        = https://github.com/liuchangchxy/fn-music-companion
 distributor           = liuchangchxy

@@ -1,5 +1,5 @@
 {
-  "defaults": {"run-as": "root"},
-  "username": "root",
-  "groupname": "root"
+  "defaults": {"run-as": "package"},
+  "username": "fnmusicrebuild",
+  "groupname": "fnmusicrebuild"
 }

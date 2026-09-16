@@ -8,9 +8,6 @@ services:
       MUSIC_STATE: /appdata/v6-state
       MUSIC_STATE_LIMIT_BYTES: "536870912"
       MUSIC_UI_PORT: "${service_port:-8091}"
-      TRIM_DATA_ACCESSIBLE_PATHS: "${TRIM_DATA_ACCESSIBLE_PATHS:-}"
-      MUSIC_MOUNT_SOURCE: "${source_dir:-}"
-      MUSIC_MOUNT_OUTPUT: "${output_dir:-}"
       MUSIC_SAFE_SIMILARITY: "0.997"
       MUSIC_SAFE_DURATION_DELTA: "4.5"
       MUSIC_METADATA_WORKERS: "${MUSIC_METADATA_WORKERS:-auto}"
@@ -18,6 +15,7 @@ services:
     volumes:
       - "${TRIM_PKGVAR}:/appdata:rw"
       - /etc/localtime:/etc/localtime:ro
+      - "${MUSIC_PATH:-/vol2/1000/Download/音乐}:/music:rw"
     ports:
       - "${service_port:-8091}:8091"
     command: ["python3", "/opt/music-rebuild/app.py"]

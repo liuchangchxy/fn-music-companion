@@ -53,11 +53,20 @@ def get_or_init_config() -> dict:
     src_val = cfg.get("source_dir", "")
     out_val = cfg.get("output_dir", "")
 
-    # If already configured, verify validity against current mounts
+    # If already configured, verify validity against current mounts or map to /music
     if src_val and not any(Path(src_val) == a or a in Path(src_val).parents for a in acc):
-        src_val = ""
+        if Path("/music").is_dir():
+            for m in ("整理前-第一部分", "整理前-第二部分", "整理前"):
+                if m in src_val and (Path("/music") / m).exists():
+                    src_val = str(Path("/music") / m)
+                    break
+        if src_val and not any(Path(src_val) == a or a in Path(src_val).parents for a in acc):
+            src_val = ""
     if out_val and not any(Path(out_val) == a or a in Path(out_val).parents for a in acc):
-        out_val = ""
+        if Path("/music").is_dir() and "整理后" in out_val and (Path("/music") / "整理后").exists():
+            out_val = str(Path("/music") / "整理后")
+        if out_val and not any(Path(out_val) == a or a in Path(out_val).parents for a in acc):
+            out_val = ""
 
     if not src_val and DEFAULT_SOURCE:
         p = Path(DEFAULT_SOURCE)
@@ -99,6 +108,13 @@ def get_or_init_config() -> dict:
 
 
 def accessible_paths() -> list[Path]:
+    roots: list[Path] = []
+
+    # 0. Primary standard: /music volume mount
+    music_mount = Path("/music")
+    if music_mount.exists() and music_mount.is_dir():
+        roots.append(music_mount)
+
     values: list[str] = []
     # 1. From authorized-paths file written by fnOS callback
     auth_file = Path("/appdata/authorized-paths")
@@ -115,7 +131,7 @@ def accessible_paths() -> list[Path]:
     env_paths = os.environ.get("TRIM_DATA_ACCESSIBLE_PATHS", "").split(":")
     values.extend(env_paths)
 
-    # 3. From mounts in /proc/mounts starting with /vol
+    # 3. From mounts in /proc/mounts starting with /vol or /music
     try:
         proc_mounts = Path("/proc/mounts")
         if proc_mounts.is_file():
@@ -123,20 +139,22 @@ def accessible_paths() -> list[Path]:
                 parts = line.split()
                 if len(parts) >= 2:
                     target = parts[1]
-                    if target.startswith("/vol") and "@" not in target:
+                    if (target.startswith("/vol") or target == "/music") and "@" not in target:
                         values.append(target)
     except Exception:
         pass
 
-    # 4. Fallback from legacy env
-    values.extend([os.environ.get("MUSIC_MOUNT_SOURCE", ""), os.environ.get("MUSIC_MOUNT_OUTPUT", "")])
+    # 4. Fallback from environment variables
+    values.extend([os.environ.get("MUSIC_PATH", ""), os.environ.get("MUSIC_MOUNT_SOURCE", ""), os.environ.get("MUSIC_MOUNT_OUTPUT", "")])
 
-    roots: list[Path] = []
     for value in values:
-        if not value or not value.strip().startswith("/vol"):
+        if not value:
+            continue
+        v_str = value.strip()
+        if not (v_str.startswith("/vol") or v_str.startswith("/music")):
             continue
         try:
-            path = Path(value.strip()).resolve(strict=False)
+            path = Path(v_str).resolve(strict=False)
             if path.exists() and path.is_dir() and path not in roots:
                 roots.append(path)
         except Exception:
@@ -171,8 +189,8 @@ ERRORS = {
         "en": "Please grant folder permissions to this app in fnOS, then select source and output directories below."
     },
     "vol_path_required": {
-        "zh": "只能使用飞牛授权返回的真实 /volN/... 路径",
-        "en": "Only valid /volN/... storage volume paths authorized by fnOS can be used."
+        "zh": "只能使用 /music/... 或 /volN/... 存储卷路径",
+        "en": "Only valid /music/... or /volN/... storage paths can be used."
     },
     "not_authorized": {
         "zh": "所选目录尚未在飞牛系统中为本应用授权访问（请先在飞牛中授予权限，刷新后直接下拉选择）",
@@ -323,7 +341,7 @@ def config_valid(config: dict, lang: str = "zh") -> tuple[bool, str]:
     source_raw, output_raw = config.get("source_dir"), config.get("output_dir")
     if not source_raw or not output_raw:
         return False, get_error_message("dirs_required", lang)
-    if not all(isinstance(value, str) and value.startswith("/vol") for value in (source_raw, output_raw)):
+    if not all(isinstance(value, str) and (value.startswith("/vol") or value.startswith("/music")) for value in (source_raw, output_raw)):
         return False, get_error_message("vol_path_required", lang)
     source, output = Path(source_raw), Path(output_raw)
     if not authorized(source) or not authorized(output):

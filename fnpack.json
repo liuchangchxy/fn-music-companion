@@ -34,8 +34,8 @@
           "packages": {
             "x86": {
               "download_url": "https://github.com/liuchangchxy/fn-music-companion/releases/download/v1.1.0/fn-music-companion-v1.1.0.fpk",
-              "sha256": "17e44dfb8d57806466a13463b811d5d8d2a89525c9fb1fbde62b900e039d38b1",
-              "size": 151895
+              "sha256": "e58c24bcfbb28aa68b285ed25f95ff27e4e59d72535fb13b74954756776a5d26",
+              "size": 150595
             }
           }
         },

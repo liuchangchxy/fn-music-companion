@@ -11,8 +11,11 @@
   <link rel="apple-touch-icon" href="/favicon.png">
   <style>
     :root {
+      color-scheme: dark;
       --bg: #0d1117;
       --bg-subtle: #161b22;
+      --bg-panel: #161b22;
+      --bg-input: #0d1117;
       --card-bg: rgba(22, 27, 34, 0.85);
       --card-border: rgba(240, 246, 252, 0.1);
       --text: #f0f6fc;
@@ -36,8 +39,11 @@
     }
 
     [data-theme="light"] {
+      color-scheme: light;
       --bg: #f6f8fa;
       --bg-subtle: #ffffff;
+      --bg-panel: #ffffff;
+      --bg-input: #ffffff;
       --card-bg: rgba(255, 255, 255, 0.9);
       --card-border: rgba(31, 35, 40, 0.12);
       --text: #1f2328;
@@ -505,10 +511,43 @@
     /* Toggle Switch */
     .switch { position: relative; display: inline-block; width: 36px; height: 20px; }
     .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--card-border); transition: .25s; border-radius: 20px; }
-    .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .25s; border-radius: 50%; }
-    .switch input:checked + .slider { background-color: var(--primary); }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(139, 148, 158, 0.3); transition: .25s; border-radius: 20px; border: 1px solid var(--card-border); }
+    .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: #ffffff; transition: .25s; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+    .switch input:checked + .slider { background-color: var(--primary); border-color: var(--primary); }
     .switch input:checked + .slider:before { transform: translateX(16px); }
+
+    /* Inputs & Selects Theme Adaptation */
+    input, select, textarea {
+      color-scheme: inherit;
+    }
+    input[type="time"] {
+      color-scheme: inherit;
+    }
+    .weekday-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      font-size: 11.5px;
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+      background: var(--bg-panel);
+      color: var(--text-secondary);
+      cursor: pointer;
+      user-select: none;
+      transition: var(--transition);
+    }
+    .weekday-pill:hover {
+      border-color: var(--primary);
+      color: var(--text);
+    }
+    .weekday-pill.active {
+      background: var(--primary-glow);
+      color: var(--primary);
+      border-color: var(--primary);
+      font-weight: 700;
+    }
 
     /* Footer */
     footer {
@@ -1381,7 +1420,7 @@
             <button type="button" id="cancelEditDirBtn" data-i18n="controls.cancelBtn" class="btn-main" style="background: var(--bg-subtle); border: 1px solid var(--card-border); padding: 8px 14px; font-size: 13px;">取消</button>
           </div>
           <div class="notice" id="cfgNotice" style="margin-top: 12px; font-size: 12px; line-height: 1.5; color: var(--text-secondary); background: var(--bg-subtle); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--card-border);">
-            💡 <b>飞牛文件夹权限说明</b>：本应用接入飞牛系统应用权限规范。请在飞牛系统（fnOS）中为本应用授予音乐文件夹访问权限，完成后刷新本面板即可直接从下拉菜单中一键选择，无需手敲底层物理路径。
+            💡 <b>音乐目录映射说明</b>：本应用采用标准容器卷映射架构。安装时填写的 NAS 音乐路径已映射为容器内的 <code>/music</code> 目录。点击【修改目录】直接从下拉菜单中点选对应子目录即可（如 <code>/music/整理前</code> 和 <code>/music/整理后</code>），无需手敲复杂物理路径。
           </div>
           <div class="storage-bar-box">
             <div class="progress-meta">
@@ -1430,27 +1469,72 @@
               </label>
             </div>
             
-            <div id="schedSettings" style="display: none; margin-top: 10px; font-size: 12.5px;">
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                <div>
-                  <label id="schedFreqLabel" style="display: block; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 4px;">执行周期</label>
-                  <select id="schedRule" onchange="handleSchedRuleChange(this.value)" style="width: 100%; padding: 5px 8px; border-radius: 6px; border: 1px solid var(--card-border); background: var(--bg-panel); color: var(--text); font-size: 12px;">
-                    <option value="daily" id="optSchedDaily">每天固定时间</option>
-                    <option value="interval_6h" id="optSched6h">每 6 小时</option>
-                    <option value="interval_12h" id="optSched12h">每 12 小时</option>
-                    <option value="interval_24h" id="optSched24h">每 24 小时</option>
-                    <option value="interval_1h" id="optSched1h">每小时</option>
-                  </select>
+            <div id="schedSettings" style="display: none; margin-top: 12px; font-size: 12.5px;">
+              <!-- Mode Selection -->
+              <div style="margin-bottom: 10px;">
+                <label id="schedFreqLabel" style="display: block; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 4px;">调度模式</label>
+                <select id="schedRule" onchange="handleSchedRuleChange(this.value)" style="width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--card-border); background: var(--bg-panel); color: var(--text); font-size: 12px;">
+                  <option value="daily" id="optSchedDaily">每日闲时定时 (Daily)</option>
+                  <option value="interval" id="optSchedInterval">基准锚点巡检 (Anchored Interval)</option>
+                  <option value="weekly" id="optSchedWeekly">每周定期整理 (Weekly)</option>
+                </select>
+              </div>
+
+              <!-- Daily Configuration -->
+              <div id="schedDailyBox" style="display: block; margin-bottom: 10px;">
+                <label id="schedDailyTimeLabel" style="display: block; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 4px;">每日执行时间</label>
+                <input type="time" id="schedDailyTime" value="03:00" style="width: 100%; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--card-border); background: var(--bg-panel); color: var(--text); font-size: 12px;" onchange="updateSchedulePreview()">
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;" id="schedDailyHint">每天深夜固定时间后台自动增量扫描整理，不占用白天 NAS 带宽与性能。</div>
+              </div>
+
+              <!-- Interval Configuration -->
+              <div id="schedIntervalBox" style="display: none; margin-bottom: 10px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 6px;">
+                  <div>
+                    <label id="schedAnchorLabel" style="display: block; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 4px;">基准起始时间 (锚点)</label>
+                    <input type="time" id="schedAnchorTime" value="00:00" style="width: 100%; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--card-border); background: var(--bg-panel); color: var(--text); font-size: 12px;" onchange="updateSchedulePreview()">
+                  </div>
+                  <div>
+                    <label id="schedIntervalLabel" style="display: block; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 4px;">巡检间隔时长</label>
+                    <select id="schedIntervalHours" style="width: 100%; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--card-border); background: var(--bg-panel); color: var(--text); font-size: 12px;" onchange="updateSchedulePreview()">
+                      <option value="2">每 2 小时</option>
+                      <option value="4">每 4 小时</option>
+                      <option value="6" selected>每 6 小时</option>
+                      <option value="8">每 8 小时</option>
+                      <option value="12">每 12 小时</option>
+                    </select>
+                  </div>
                 </div>
-                <div id="schedTimeCol">
-                  <label id="schedTimeLabel" style="display: block; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 4px;">触发时间</label>
-                  <input type="time" id="schedTime" value="03:00" style="width: 100%; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--card-border); background: var(--bg-panel); color: var(--text); font-size: 12px;">
+                <div id="schedPointsBar" style="padding: 6px 10px; background: rgba(56, 189, 248, 0.08); border: 1px dashed rgba(56, 189, 248, 0.3); border-radius: 6px; font-size: 11.5px; color: var(--text-secondary); margin-top: 4px;">
+                  计划执行点：00:00 · 06:00 · 12:00 · 18:00
+                </div>
+              </div>
+
+              <!-- Weekly Configuration -->
+              <div id="schedWeeklyBox" style="display: none; margin-bottom: 10px;">
+                <label id="schedWeeklyDaysLabel" style="display: block; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 6px;">选择执行日期 (周一至周日)</label>
+                <div id="weekdayPills" style="display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px;">
+                  <button type="button" class="weekday-pill active" data-day="1" onclick="toggleWeekday(this)">一</button>
+                  <button type="button" class="weekday-pill active" data-day="2" onclick="toggleWeekday(this)">二</button>
+                  <button type="button" class="weekday-pill active" data-day="3" onclick="toggleWeekday(this)">三</button>
+                  <button type="button" class="weekday-pill active" data-day="4" onclick="toggleWeekday(this)">四</button>
+                  <button type="button" class="weekday-pill active" data-day="5" onclick="toggleWeekday(this)">五</button>
+                  <button type="button" class="weekday-pill active" data-day="6" onclick="toggleWeekday(this)">六</button>
+                  <button type="button" class="weekday-pill active" data-day="7" onclick="toggleWeekday(this)">日</button>
+                </div>
+                <div>
+                  <label id="schedWeeklyTimeLabel" style="display: block; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 4px;">触发时间</label>
+                  <input type="time" id="schedWeeklyTime" value="03:00" style="width: 100%; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--card-border); background: var(--bg-panel); color: var(--text); font-size: 12px;" onchange="updateSchedulePreview()">
                 </div>
               </div>
               
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--card-border); flex-wrap: wrap; gap: 6px;">
+              <!-- Bottom Action Bar -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--card-border); flex-wrap: wrap; gap: 8px;">
                 <span id="schedStatusText" style="font-size: 11.5px; color: var(--text-muted);">下次执行：--</span>
-                <button type="button" class="btn-main" id="saveSchedBtn" onclick="saveScheduleSettings()" style="width: auto; padding: 4px 10px; font-size: 11.5px; background: var(--primary);">保存设置</button>
+                <div style="display: flex; gap: 6px;">
+                  <button type="button" class="btn-main" id="testSchedBtn" onclick="runScheduleTestNow()" style="width: auto; padding: 4px 10px; font-size: 11.5px; background: transparent; border: 1px solid var(--card-border); color: var(--text);" title="立即以计划任务模式执行一次增量测试">▶️ 立即测试</button>
+                  <button type="button" class="btn-main" id="saveSchedBtn" onclick="saveScheduleSettings()" style="width: auto; padding: 4px 10px; font-size: 11.5px; background: var(--primary);">保存计划</button>
+                </div>
               </div>
             </div>
           </div>
@@ -1635,13 +1719,16 @@
             </details>
 
             <details style="background: var(--bg-subtle); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--card-border);">
-              <summary style="font-weight: 600; cursor: pointer;">Q7: 文件夹权限该如何配置？可以只授权上层大文件夹吗？</summary>
-              <div style="margin-top: 8px; color: var(--text-secondary); font-size: 12px; line-height: 1.6;">
-                <b>① 应该分别授权两个子目录，还是只授权一个大文件夹？</b><br/>
-                • <b>分别授权（推荐）</b>：分别授权「整理前」和「整理后」两个文件夹。原始整理前文件夹设为只读或读写，整理后文件夹必须具有【读写】权限；<br/>
-                • <b>授权上级大文件夹</b>：如果两个文件夹都在同一个父级大目录下，也可以直接为该大文件夹授权。<b>但请务必注意：该大文件夹必须具有【读写】权限！</b>若误设为只读，其内的整理后子目录会被连带限制为只读，导致无法写入曲库。<br/><br/>
-                <b>② 两个文件夹摆放的核心红线</b>：<br/>
-                整理前文件夹与整理后文件夹可以是同级兄弟目录（在同一存储卷下还能触发 Btrfs 秒级写时复制大幅省盘），<b>但绝对不能互相嵌套（例如不能把整理后文件夹建在整理前文件夹内部）</b>，否则会导致流水线死循环扫描。
+              <summary style="font-weight: 600; cursor: pointer;" id="faqQ7Title">Q7: 容器内部 /music 目录与 NAS 真实路径是什么关系？文件夹该如何规划？</summary>
+              <div style="margin-top: 8px; color: var(--text-secondary); font-size: 12px; line-height: 1.6;" id="faqQ7Desc">
+                <b>① 容器内部 /music 与 NAS 真实路径的映射关系</b>：<br/>
+                • 本应用遵循 Docker 行业标准卷映射架构。安装向导中填写的 NAS 音乐路径（例如 <code>/vol2/1000/Download/音乐</code>）被直接挂载为容器内部的 <code>/music</code> 目录；<br/>
+                • 您在控制台中点击【修改目录】直接点选对应子目录即可（如 <code>/music/整理前</code>、<code>/music/整理后</code>），无需手敲底层物理路径。<br/><br/>
+                <b>② 文件夹规划的核心原则（Btrfs 秒级 CoW 省盘）</b>：<br/>
+                • <b>同卷兄弟目录（强烈推荐）</b>：建议将「整理前」与「整理后」作为同一音乐共享目录下的兄弟子目录（例如 <code>/music/整理前</code> 与 <code>/music/整理后</code>）。在飞牛默认的 Btrfs 文件系统下，同卷整理会自动触发<b>秒级写时复制 (Reflink CoW)</b>，海量歌曲瞬间完成归档，且完全不额外占用磁盘空间！<br/>
+                • <b>绝对红线：严禁相互嵌套</b>：整理前与整理后文件夹绝对不能相互包含（例如严禁将「整理后」建在「整理前」内部），否则会导致流水线死循环扫描。<br/><br/>
+                <b>③ 提示「不可读」或「不可写」如何排查？</b>：<br/>
+                如果控制台标记目录不可读或不可写，请直接在飞牛【文件管理】中找到该音乐共享文件夹，右键属性检查权限，确保普通应用具备读取与写入权限即可。
               </div>
             </details>
           </div>
@@ -1949,9 +2036,9 @@
           saveDirBtn: "保存目录配置",
           cancelBtn: "取消",
           browseBtn: "📁 浏览...",
-          unauthTitle: "尚未在飞牛系统授权音乐文件夹",
-          unauthDesc: "检测到本应用尚未在飞牛私有云（fnOS）中获取文件夹访问权限。请在飞牛系统中为本应用授予所需音乐文件夹的访问权限（整理后曲库所在文件夹须具有读写权限）。授权完成后，<b>刷新本页面</b>即可在下方直接下拉选择，无需手动输入物理路径！",
-          noticeSource: `🔒 <b>文件夹权限说明</b>：<br/>• <b>权限规范</b>：本应用接入飞牛系统应用权限体系。<br/>• <b>授权说明</b>：请在飞牛系统中为本应用授予音乐文件夹访问权限（整理后文件夹须具有读写权限）；<br/>• <b>授权方案建议</b>：<br/>&nbsp;&nbsp;① <b>分别授权</b>：分别授权「整理前」（只读/读写）与「整理后」（读写）；<br/>&nbsp;&nbsp;② <b>授权大文件夹</b>：亦可直接授权包含两者的上级大文件夹（<b>大文件夹须具有读写权限</b>）；<br/>• <b>便捷选择</b>：在飞牛中完成授权后，刷新本页面，点击【修改目录】直接从下拉菜单中点选即可，无需手动输入真实路径！`,
+          unauthTitle: "未检测到 /music 存储卷挂载",
+          unauthDesc: "检测到本应用容器尚未挂载 /music 目录。请在飞牛应用中心（或 Docker 应用设置）中将您的 NAS 音乐主文件夹映射为 /music。完成后<b>刷新本页面</b>即可在下方直接点选，无需手动输入物理路径！",
+          noticeSource: `💡 <b>音乐目录映射与规划说明</b>：<br/>• <b>卷映射机制</b>：本应用采用标准 Docker 卷映射体系，安装时配置的 NAS 音乐主路径已自动映射为容器内部的 <code>/music</code> 目录；<br/>• <b>便捷点选</b>：点击【修改目录】后，可直接从下拉菜单中点选 <code>/music</code> 下的对应子文件夹（如 <code>/music/整理前</code>、<code>/music/整理后</code>），无需手敲底层物理路径；<br/>• <b>同卷兄弟目录（Btrfs 秒级 CoW 省盘）</b>：建议将「整理前」和「整理后」设为同级兄弟目录。同在 Btrfs 格式存储卷下时，系统将自动触发<b>秒级写时复制 (Reflink CoW)</b>，秒级完成整理且不额外占用磁盘空间；<br/>• <b>严禁相互嵌套</b>：整理前与整理后文件夹绝对不可互相嵌套（例如不可将整理后目录放在整理前目录内部）。`,
           statusBadges: {
             unconfigured: "未配置",
             sourceOk: "🟢 只读就绪",
@@ -1973,19 +2060,23 @@
           guideBtnTitle: "新手极速上手与常见问题",
           sponsorBtnTitle: "赞助支持与关于应用",
           scheduleTitle: "定时自动增量整理",
-          schedFreqLabel: "执行周期",
-          schedTimeLabel: "触发时间",
-          optSchedDaily: "每天固定时间",
-          optSched6h: "每 6 小时",
-          optSched12h: "每 12 小时",
-          optSched24h: "每 24 小时",
-          optSched1h: "每小时",
-          saveSchedBtn: "保存设置",
+          schedFreqLabel: "调度模式",
+          optSchedDaily: "每日闲时定时 (Daily)",
+          optSchedInterval: "基准锚点巡检 (Anchored Interval)",
+          optSchedWeekly: "每周定期整理 (Weekly)",
+          schedDailyTimeLabel: "每日执行时间",
+          schedAnchorLabel: "基准起始时间 (锚点)",
+          schedIntervalLabel: "巡检间隔时长",
+          schedWeeklyDaysLabel: "选择执行日期 (周一至周日)",
+          schedWeeklyTimeLabel: "触发时间",
+          testSchedBtn: "▶️ 立即测试",
+          saveSchedBtn: "保存计划",
+          schedPlanPoints: "计划执行点：",
           schedNextRun: "下次执行：",
           schedLastRun: "上次执行：",
           schedPaused: "定时任务已暂停",
           schedNeedInit: "⚠️ 需先完成首次整理",
-          schedSavedMsg: "定时设置已保存！"
+          schedSavedMsg: "定时计划已保存！"
         },
         actionStates: {
           running: { text: "整理流水线正在运行中...", banner: "⚙️ <b>流水线运行中</b>：正在自动执行声纹波形比对去重与正版歌词封面刮削，已完成曲目已实时写入，请安心等待。" },
@@ -2092,8 +2183,8 @@
             q5Desc: "如果你的 NAS 处于纯局域网、无法访问外网，或者你已经对歌曲内嵌了完整的标签只想快速归档分目录，可以在配置中勾选「离线整理模式」。该模式完全不发起外网网络请求，纯靠本地内嵌标签整理，速度极快。",
             q6Title: "Q6: 首次全量整理后源目录还有一些文件未动，这是为什么？该怎么处理？",
             q6Desc: "<b>① 推荐再跑一次（二次拾遗补漏）</b>：<br/>大批量整理海量歌曲时，难免会遇到公网网络瞬时抖动、或云端曲库接口防刷频控，导致极少数冷门歌曲未能在首轮即时命中。<br/>因为本程序拥有完整的断点账本与声纹缓存，绝大部分已整理的歌曲会自动秒级跳过，<b>您只需直接点击控制台的【增量整理】或【重新执行全量对齐】再跑一遍</b>，流水线会快速专注对这部分遗留文件进行查漏补缺，通常几十秒即可完成。<br/><br/><b>② 极少数顽固文件建议手动审查或删除</b>：<br/>如果复跑后源目录依然有极少数文件未被整理归档，这类通常属于“疑难杂症”顽固文件：例如文件名极度残缺（如只有 <code>Track 01.mp3</code> 且内嵌标签全空）、各大曲库均查无此曲、原唱/翻唱/伴奏存在语义逻辑争议、或是原盘抓轨重复度异常。<br/>本程序恪守<b>「安全第一、宁缺毋滥」</b>的原则进行了谨慎保留，绝不在置信度不足时胡乱猜测改写或擅自删除原文件。<br/><b>算法与匹配规则并非万能，在部分元数据缺失或异常复杂的场景下无法保证完全准确</b>。对于这类极少数特殊或无保留价值的重复残留文件，建议您直接在源文件夹中手动审查、重命名或直接删除。",
-            q7Title: "Q7: 文件夹权限该如何配置？可以只授权上层大文件夹吗？",
-            q7Desc: "<b>① 应该分别授权两个子目录，还是只授权一个大文件夹？</b><br/>• <b>分别授权（推荐）</b>：分别授权「整理前」和「整理后」两个具体文件夹。原始整理前文件夹设为只读或读写，整理后曲库文件夹必须具有【读写】权限；<br/>• <b>授权上级大文件夹</b>：如果两个文件夹都在同一个父级大目录下，也可以直接为该大文件夹授权。<b>但请务必注意：该大文件夹必须具有【读写】权限！</b>若误设为只读，其内的整理后子目录会被连带限制为只读导致无法写入曲库。<br/><br/><b>② 两个文件夹摆放的核心红线</b>：<br/>整理前文件夹与整理后文件夹可以是同级兄弟目录（在同一存储卷下还能触发 Btrfs 秒级写时复制大幅省盘），<b>但绝对不能互相嵌套（例如不能把整理后文件夹建在整理前文件夹内部）</b>，否则会导致流水线死循环扫描。"
+            q7Title: "Q7: 容器内部 /music 目录与 NAS 真实路径是什么关系？文件夹该如何规划？",
+            q7Desc: "<b>① 容器内部 /music 与 NAS 真实路径的映射关系</b>：<br/>• 本应用遵循 Docker 行业标准卷映射架构。安装向导中填写的 NAS 音乐路径（例如 <code>/vol2/1000/Download/音乐</code>）被直接挂载为容器内部的 <code>/music</code> 目录。<br/>• 您在控制台中点击【修改目录】直接点选对应子目录即可（如 <code>/music/整理前</code>、<code>/music/整理后</code>），无需手敲底层物理路径。<br/><br/><b>② 文件夹规划的核心原则（Btrfs 秒级 CoW 省盘）</b>：<br/>• <b>同卷兄弟目录（强烈推荐）</b>：建议将「整理前」与「整理后」作为同一音乐共享目录下的兄弟子目录（例如 <code>/music/整理前</code> 与 <code>/music/整理后</code>）。在飞牛默认的 Btrfs 文件系统下，同卷整理会自动触发<b>秒级写时复制 (Reflink CoW)</b>，海量歌曲瞬间完成归档，且完全不额外占用磁盘空间！<br/>• <b>绝对红线：严禁相互嵌套</b>：整理前与整理后文件夹绝对不能相互包含（例如严禁将「整理后」建在「整理前」内部），否则会导致流水线死循环扫描。<br/><br/><b>③ 提示「不可读」或「不可写」如何排查？</b>：<br/>如果控制台标记目录不可读或不可写，请直接在飞牛【文件管理】中找到该音乐共享文件夹，右键属性检查权限，确保普通应用具备读取与写入权限即可。"
           },
           features: {
             f1Title: "Btrfs 写时复制 (Reflink CoW)",
@@ -2104,8 +2195,8 @@
             f3Desc: "加密文件在独立临时沙盒中完成解码、声纹提取与元数据补全，发布后即刻自动销毁临时文件（结束即清理），保持存储空间整洁干净。",
             f4Title: "跨格式声纹辅助去重",
             f4Desc: "基于开源 Chromaprint 提取音频波形特征指纹，识别不同格式的同一录音，并依据码率规则优先保留高品质版本。",
-            f5Title: "多源标签与歌词补全",
-            f5Desc: "整合 QQ 音乐、网易云与 LRCLIB 等多源数据，遵循接口限流规则防封禁，补齐高清封面与同步滚动歌词。",
+            f5Title: "多源双层元数据与歌词补全",
+            f5Desc: "双层多源智能增强：第一层调用主要流媒体引擎（QQ 音乐 / 网易云）高保真补齐华语与流行曲目标签、高清封面与同步滚动歌词；第二层由全球唱片文献库（MusicBrainz / LRCLIB）精准兜底全球发版与曲目信息。",
             f6Title: "契合飞牛原生规范",
             f6Desc: "遵循飞牛应用商店 FPK 标准，输出规范的「歌手/专辑/曲目」目录层级，便于飞牛音乐（trim.music）即时扫描建库。"
           },
@@ -2243,9 +2334,9 @@
           saveDirBtn: "Save Directories",
           cancelBtn: "Cancel",
           browseBtn: "📁 Browse...",
-          unauthTitle: "No Music Folders Authorized in fnOS",
-          unauthDesc: "This application has not been granted folder access permissions in fnOS yet. Please grant music folder permissions to this application in fnOS (the organized library folder must have Read/Write permission). Once granted, <b>refresh this page</b> to pick them directly from the dropdown lists below without manual typing!",
-          noticeSource: `🔒 <b>Folder Permissions Guide</b>:<br/>• <b>Permissions</b>: This app integrates with fnOS folder permission management.<br/>• <b>Granting Access</b>: Please grant music folder access to this app in fnOS (organized library folder must have Read/Write permission);<br/>• <b>Options</b>:<br/>&nbsp;&nbsp;① <b>Separate Folders</b>: Grant source and output folders separately;<br/>&nbsp;&nbsp;② <b>Parent Folder</b>: Or grant access to a common parent folder (<b>must have Read/Write permission</b>);<br/>• <b>Easy Selection</b>: Once granted in fnOS, refresh this page and click [Edit Directories] to select directly from dropdowns without manual typing!`,
+          unauthTitle: "Mounted /music Volume Not Detected",
+          unauthDesc: "The /music directory is not mounted in the container. Please ensure your NAS music path is mounted as /music in fnOS App Center or Docker settings, then <b>refresh this page</b> to select folders directly from the dropdown list!",
+          noticeSource: `💡 <b>Music Directory Mapping & Structure Guide</b>:<br/>• <b>Volume Mapping</b>: Adheres to standard Docker volume architecture. The NAS music path configured during installation is mapped directly to <code>/music</code> inside the container;<br/>• <b>Convenient Selection</b>: Click [Edit Directories] to select any subdirectories under <code>/music</code> (e.g. <code>/music/Source</code>, <code>/music/Library</code>) without manual typing;<br/>• <b>Sibling Subdirectories (Instant Btrfs CoW)</b>: Keep Source and Library as sibling folders under the same volume. On fnOS default Btrfs filesystem, this automatically triggers <b>Reflink Copy-on-Write (CoW)</b>, organizing in seconds with zero extra disk footprint;<br/>• <b>Strict Boundary</b>: Source and output folders must never be nested within each other.`,
           statusBadges: {
             unconfigured: "Unconfigured",
             sourceOk: "🟢 Read-Ready",
@@ -2267,14 +2358,18 @@
           guideBtnTitle: "Quick Start & FAQ",
           sponsorBtnTitle: "Sponsor & About",
           scheduleTitle: "Scheduled Incremental Run",
-          schedFreqLabel: "Frequency",
-          schedTimeLabel: "Time",
-          optSchedDaily: "Daily at fixed time",
-          optSched6h: "Every 6 hours",
-          optSched12h: "Every 12 hours",
-          optSched24h: "Every 24 hours",
-          optSched1h: "Hourly",
+          schedFreqLabel: "Schedule Mode",
+          optSchedDaily: "Daily at Fixed Time (Daily)",
+          optSchedInterval: "Anchored Interval Check",
+          optSchedWeekly: "Weekly Regular Run",
+          schedDailyTimeLabel: "Daily Run Time",
+          schedAnchorLabel: "Anchor Start Time",
+          schedIntervalLabel: "Interval Duration",
+          schedWeeklyDaysLabel: "Select Days of Week (Mon-Sun)",
+          schedWeeklyTimeLabel: "Run Time",
+          testSchedBtn: "▶️ Test Now",
           saveSchedBtn: "Save Schedule",
+          schedPlanPoints: "Scheduled points: ",
           schedNextRun: "Next run: ",
           schedLastRun: "Last run: ",
           schedPaused: "Scheduler paused",
@@ -2386,8 +2481,8 @@
             q5Desc: "If your NAS is in an isolated LAN without internet access, or if your audio files already contain full embedded tags and you only need clean directory sorting, enable Offline Mode. It skips all cloud network calls and processes purely from local tags at lightning speed.",
             q6Title: "Q6: Why are there still some files remaining in the source folder after full organization?",
             q6Desc: "<b>1. Recommended: Run once more to reconcile</b>:<br/>During large-scale batch organization, transient network timeouts or cloud API rate limits may occasionally cause a few cold tracks to miss on the first pass.<br/>Since MusicFlow features a persistent acoustic and hash ledger, previously organized tracks are skipped in seconds. <b>Simply click 'Incremental Run' or 'Re-run Full Organization' to run once more</b>; the pipeline will quickly focus on these remaining files and reconcile them in tens of seconds.<br/><br/><b>2. Manually review or delete stubborn files</b>:<br/>If a few files remain untouched after re-running, they are typically stubborn corner cases: completely missing metadata/filenames (e.g. bare <code>Track 01.mp3</code> with zero tags), tracks unindexed in any database, conflicting cover/instrumental/live variant logic, or corrupted rip duplicates.<br/>The engine strictly adheres to the <b>'Safety First / Better Retain Than Corrupt'</b> principle and will never guess or destroy your source files without sufficient confidence.<br/><b>Automated matching rules cannot guarantee 100% accuracy in complex corner cases</b>. For these rare stubborn or duplicate remnants, we recommend manually reviewing, fixing, or safely deleting them directly in your source directory.",
-            q7Title: "Q7: How should folder permissions be configured? Can I authorize just the parent folder?",
-            q7Desc: "<b>1. Should I add subfolders separately or authorize a common parent folder?</b><br/>• <b>Separate Folders (Recommended)</b>: Authorize the raw source folder and organized library folder separately. Raw folder can be Read-Only or Read/Write, but organized library folder MUST have Read/Write permission;<br/>• <b>Common Parent Folder</b>: If both folders reside under the same parent directory, you can authorize the parent folder directly. <b>Crucial: The parent folder MUST have [Read/Write] permission!</b> If set to Read-Only, the target subfolder inherits the read-only lock and fails to output tracks.<br/><br/><b>2. Hard Safety Boundary</b>:<br/>Source and target folders can be sibling subfolders (sharing same volume enables instant Btrfs Reflink CoW), <b>but must never be nested (e.g., target inside source)</b> to avoid infinite scanning loops."
+            q7Title: "Q7: How does the container /music path map to NAS storage? How should folders be structured?",
+            q7Desc: "<b>1. Mapping between container /music and NAS storage</b>:<br/>• Following standard Docker volume practices, your NAS music path configured during installation (e.g. <code>/vol2/1000/Download/Music</code>) is mounted directly to <code>/music</code> inside the container.<br/>• Simply click [Edit Directories] to select subdirectories under <code>/music</code> (such as <code>/music/Source</code> and <code>/music/Library</code>).<br/><br/><b>2. Folder Structure Best Practices (Instant Btrfs CoW)</b>:<br/>• <b>Sibling Subdirectories (Highly Recommended)</b>: Keep source and output folders as sibling directories under the same volume. Under fnOS's default Btrfs filesystem, this triggers instant Reflink Copy-on-Write (CoW), archiving tens of thousands of songs in seconds with zero extra disk usage!<br/>• <b>Hard Rule: Never Nest Folders</b>: The output directory must never be located inside the source directory, which would create an infinite scan loop.<br/><br/><b>3. Troubleshooting Read/Write Permissions</b>:<br/>If the dashboard reports a folder as unreadable or unwritable, open fnOS File Manager, right-click the shared folder properties, and ensure read/write permissions are granted."
           },
           features: {
             f1Title: "Btrfs Copy-on-Write (Reflink CoW)",
@@ -2398,8 +2493,8 @@
             f3Desc: "Encrypted tracks are decoded, fingerprinted, and enriched inside isolated temporary scratch storage, and automatically purged immediately upon publishing.",
             f4Title: "Cross-Format Acoustic Fingerprinting",
             f4Desc: "Extracts Chromaprint audio waveform fingerprints to recognize duplicate recordings across formats (e.g., FLAC vs MP3), retaining the highest quality copy.",
-            f5Title: "Multi-Source Metadata & Synced Lyrics",
-            f5Desc: "Integrates QQ Music, NetEase Cloud Music, and LRCLIB with polite rate-limiting, embedding high-res album covers and bilingual synced lyrics.",
+            f5Title: "Two-Tier Multi-Source Metadata & Lyrics",
+            f5Desc: "Intelligent two-tier architecture: Tier 1 calls primary streaming engines (QQ Music / NetEase Cloud Music) for high-fidelity C-Pop, J/K-Pop, synced scrolling lyrics, and HD covers; Tier 2 utilizes the global catalog (MusicBrainz / LRCLIB) for precise international release data and ISRC alignment.",
             f6Title: "Native fnOS Ecosystem Compliance",
             f6Desc: "Adheres to fnOS application packaging standards (FPK) and organizes files into clean Artist/Album/Track structures optimized for fnOS Music indexing."
           },
@@ -2791,20 +2886,33 @@
       if (schedTitle && dict.controls.scheduleTitle) schedTitle.textContent = dict.controls.scheduleTitle;
       const schedFreqLabel = document.getElementById("schedFreqLabel");
       if (schedFreqLabel && dict.controls.schedFreqLabel) schedFreqLabel.textContent = dict.controls.schedFreqLabel;
-      const schedTimeLabel = document.getElementById("schedTimeLabel");
-      if (schedTimeLabel && dict.controls.schedTimeLabel) schedTimeLabel.textContent = dict.controls.schedTimeLabel;
       const optSchedDaily = document.getElementById("optSchedDaily");
       if (optSchedDaily && dict.controls.optSchedDaily) optSchedDaily.textContent = dict.controls.optSchedDaily;
-      const optSched6h = document.getElementById("optSched6h");
-      if (optSched6h && dict.controls.optSched6h) optSched6h.textContent = dict.controls.optSched6h;
-      const optSched12h = document.getElementById("optSched12h");
-      if (optSched12h && dict.controls.optSched12h) optSched12h.textContent = dict.controls.optSched12h;
-      const optSched24h = document.getElementById("optSched24h");
-      if (optSched24h && dict.controls.optSched24h) optSched24h.textContent = dict.controls.optSched24h;
-      const optSched1h = document.getElementById("optSched1h");
-      if (optSched1h && dict.controls.optSched1h) optSched1h.textContent = dict.controls.optSched1h;
+      const optSchedInterval = document.getElementById("optSchedInterval");
+      if (optSchedInterval && dict.controls.optSchedInterval) optSchedInterval.textContent = dict.controls.optSchedInterval;
+      const optSchedWeekly = document.getElementById("optSchedWeekly");
+      if (optSchedWeekly && dict.controls.optSchedWeekly) optSchedWeekly.textContent = dict.controls.optSchedWeekly;
+      const schedDailyTimeLabel = document.getElementById("schedDailyTimeLabel");
+      if (schedDailyTimeLabel && dict.controls.schedDailyTimeLabel) schedDailyTimeLabel.textContent = dict.controls.schedDailyTimeLabel;
+      const schedAnchorLabel = document.getElementById("schedAnchorLabel");
+      if (schedAnchorLabel && dict.controls.schedAnchorLabel) schedAnchorLabel.textContent = dict.controls.schedAnchorLabel;
+      const schedIntervalLabel = document.getElementById("schedIntervalLabel");
+      if (schedIntervalLabel && dict.controls.schedIntervalLabel) schedIntervalLabel.textContent = dict.controls.schedIntervalLabel;
+      const schedWeeklyDaysLabel = document.getElementById("schedWeeklyDaysLabel");
+      if (schedWeeklyDaysLabel && dict.controls.schedWeeklyDaysLabel) schedWeeklyDaysLabel.textContent = dict.controls.schedWeeklyDaysLabel;
+      const schedWeeklyTimeLabel = document.getElementById("schedWeeklyTimeLabel");
+      if (schedWeeklyTimeLabel && dict.controls.schedWeeklyTimeLabel) schedWeeklyTimeLabel.textContent = dict.controls.schedWeeklyTimeLabel;
+      const testSchedBtn = document.getElementById("testSchedBtn");
+      if (testSchedBtn && dict.controls.testSchedBtn) testSchedBtn.textContent = dict.controls.testSchedBtn;
       const saveSchedBtn = document.getElementById("saveSchedBtn");
       if (saveSchedBtn && dict.controls.saveSchedBtn) saveSchedBtn.textContent = dict.controls.saveSchedBtn;
+      
+      // Update FAQ Q7
+      const faqQ7Title = document.getElementById("faqQ7Title");
+      if (faqQ7Title && dict.faqs && dict.faqs.q7Title) faqQ7Title.innerHTML = dict.faqs.q7Title;
+      const faqQ7Desc = document.getElementById("faqQ7Desc");
+      if (faqQ7Desc && dict.faqs && dict.faqs.q7Desc) faqQ7Desc.innerHTML = dict.faqs.q7Desc;
+
       if (typeof renderSchedule === "function") {
         renderSchedule();
       }
@@ -3208,7 +3316,70 @@
       }
     }
 
-    // Schedule Functions
+    // Schedule Helper Functions
+    function calcIntervalPoints(anchorTime, intervalHours) {
+      let [ah, am] = (anchorTime || "00:00").split(":").map(Number);
+      if (isNaN(ah)) ah = 0;
+      if (isNaN(am)) am = 0;
+      const step = Math.max(1, Math.min(24, parseInt(intervalHours, 10) || 6));
+      const hoursSet = new Set();
+      for (let i = 0; i <= Math.floor(24 / step); i++) {
+        hoursSet.add((ah + i * step) % 24);
+      }
+      const sortedHours = Array.from(hoursSet).sort((a, b) => a - b);
+      const mStr = String(am).padStart(2, "0");
+      return sortedHours.map(h => `${String(h).padStart(2, "0")}:${mStr}`);
+    }
+
+    function toggleWeekday(btn) {
+      btn.classList.toggle("active");
+      updateSchedulePreview();
+    }
+
+    function getSelectedWeekdays() {
+      const pills = document.querySelectorAll("#weekdayPills .weekday-pill.active");
+      return Array.from(pills).map(p => parseInt(p.getAttribute("data-day"), 10)).sort((a, b) => a - b);
+    }
+
+    function setSelectedWeekdays(days) {
+      const daySet = new Set(days && days.length ? days : [1, 2, 3, 4, 5, 6, 7]);
+      document.querySelectorAll("#weekdayPills .weekday-pill").forEach(p => {
+        const d = parseInt(p.getAttribute("data-day"), 10);
+        if (daySet.has(d)) {
+          p.classList.add("active");
+        } else {
+          p.classList.remove("active");
+        }
+      });
+    }
+
+    function handleSchedRuleChange(ruleVal) {
+      const dailyBox = document.getElementById("schedDailyBox");
+      const intervalBox = document.getElementById("schedIntervalBox");
+      const weeklyBox = document.getElementById("schedWeeklyBox");
+      if (dailyBox) dailyBox.style.display = (ruleVal === "daily") ? "block" : "none";
+      if (intervalBox) intervalBox.style.display = (ruleVal === "interval" || ruleVal.startsWith("interval_")) ? "block" : "none";
+      if (weeklyBox) weeklyBox.style.display = (ruleVal === "weekly") ? "block" : "none";
+      updateSchedulePreview();
+    }
+
+    function updateSchedulePreview() {
+      const rule = document.getElementById("schedRule") ? document.getElementById("schedRule").value : "daily";
+      const pointsBar = document.getElementById("schedPointsBar");
+      if (!pointsBar) return;
+
+      if (rule === "interval" || rule.startsWith("interval_")) {
+        const anchor = document.getElementById("schedAnchorTime") ? document.getElementById("schedAnchorTime").value : "00:00";
+        const hours = document.getElementById("schedIntervalHours") ? document.getElementById("schedIntervalHours").value : "6";
+        const pts = calcIntervalPoints(anchor, hours);
+        const pfx = (I18N[currentLang] && I18N[currentLang].controls && I18N[currentLang].controls.schedPlanPoints) || "计划执行点：";
+        pointsBar.textContent = `${pfx}${pts.join(" · ")}`;
+        pointsBar.style.display = "block";
+      } else {
+        pointsBar.style.display = "none";
+      }
+    }
+
     function renderSchedule(sched, hasInitRun) {
       const s = sched || (configCache && configCache.schedule) || {};
       const isInit = (typeof hasInitRun === "boolean") ? hasInitRun : Boolean(configCache && configCache.initialized);
@@ -3216,25 +3387,41 @@
       const enabledCb = document.getElementById("schedEnabled");
       const schedSettings = document.getElementById("schedSettings");
       const ruleSelect = document.getElementById("schedRule");
-      const timeInput = document.getElementById("schedTime");
-      const timeCol = document.getElementById("schedTimeCol");
+      const dailyTime = document.getElementById("schedDailyTime");
+      const anchorTime = document.getElementById("schedAnchorTime");
+      const intervalHours = document.getElementById("schedIntervalHours");
+      const weeklyTime = document.getElementById("schedWeeklyTime");
       const statusText = document.getElementById("schedStatusText");
 
-      if (!enabledCb || !schedSettings || !ruleSelect || !timeInput || !statusText) return;
+      if (!enabledCb || !schedSettings || !ruleSelect || !statusText) return;
 
       const enabled = Boolean(s.enabled);
       enabledCb.checked = enabled;
       schedSettings.style.display = enabled ? "block" : "none";
 
-      if (s.rule) {
-        ruleSelect.value = s.rule;
+      let rule = s.rule || "daily";
+      if (rule.startsWith("interval_")) {
+        rule = "interval";
       }
-      if (s.custom_time || s.time) {
-        timeInput.value = s.custom_time || s.time;
+      ruleSelect.value = rule;
+
+      if (dailyTime && (s.custom_time || s.time)) {
+        dailyTime.value = s.custom_time || s.time;
       }
-      if (timeCol) {
-        timeCol.style.display = (ruleSelect.value === "daily") ? "block" : "none";
+      if (anchorTime && s.anchor_time) {
+        anchorTime.value = s.anchor_time;
       }
+      if (intervalHours && s.interval_hours) {
+        intervalHours.value = String(s.interval_hours);
+      }
+      if (weeklyTime && (s.custom_time || s.time)) {
+        weeklyTime.value = s.custom_time || s.time;
+      }
+      if (s.days) {
+        setSelectedWeekdays(s.days);
+      }
+
+      handleSchedRuleChange(rule);
 
       if (!enabled) {
         statusText.textContent = (I18N[currentLang] && I18N[currentLang].controls && I18N[currentLang].controls.schedPaused) || "定时任务已暂停";
@@ -3260,28 +3447,50 @@
       await saveScheduleSettings(checked);
     }
 
-    function handleSchedRuleChange(ruleVal) {
-      const timeCol = document.getElementById("schedTimeCol");
-      if (timeCol) {
-        timeCol.style.display = (ruleVal === "daily") ? "block" : "none";
+    async function runScheduleTestNow() {
+      const btn = document.getElementById("testSchedBtn");
+      if (btn) btn.disabled = true;
+      try {
+        const res = await postJSON("/api/schedule/run-now", {});
+        if (res && res.accepted) {
+          const msg = (currentLang === "en") ? "Scheduled incremental task triggered, running..." : "已立即触发计划任务（增量整理模式），正在运行...";
+          if (typeof showActionHint === "function") showActionHint(msg, 3500);
+          if (typeof schedulePoll === "function") schedulePoll();
+        }
+      } catch (err) {
+        alert("Trigger failed: " + err);
+      } finally {
+        if (btn) btn.disabled = false;
       }
     }
 
     async function saveScheduleSettings(forcedEnabled) {
       const enabledCb = document.getElementById("schedEnabled");
       const ruleSelect = document.getElementById("schedRule");
-      const timeInput = document.getElementById("schedTime");
+      const dailyTime = document.getElementById("schedDailyTime");
+      const anchorTime = document.getElementById("schedAnchorTime");
+      const intervalHours = document.getElementById("schedIntervalHours");
+      const weeklyTime = document.getElementById("schedWeeklyTime");
       const saveBtn = document.getElementById("saveSchedBtn");
 
       const enabled = (typeof forcedEnabled === "boolean") ? forcedEnabled : (enabledCb ? enabledCb.checked : false);
       const rule = ruleSelect ? ruleSelect.value : "daily";
-      const custom_time = timeInput ? timeInput.value : "03:00";
+
+      let custom_time = "03:00";
+      if (rule === "daily" && dailyTime) {
+        custom_time = dailyTime.value || "03:00";
+      } else if (rule === "weekly" && weeklyTime) {
+        custom_time = weeklyTime.value || "03:00";
+      }
 
       const payload = {
         enabled: enabled,
         rule: rule,
         custom_time: custom_time,
-        time: custom_time
+        time: custom_time,
+        anchor_time: anchorTime ? (anchorTime.value || "00:00") : "00:00",
+        interval_hours: intervalHours ? parseInt(intervalHours.value, 10) : 6,
+        days: getSelectedWeekdays()
       };
 
       if (saveBtn) {
@@ -3299,7 +3508,7 @@
             saveBtn.textContent = "✓";
             setTimeout(() => {
               if (saveBtn) {
-                saveBtn.textContent = (I18N[currentLang] && I18N[currentLang].controls && I18N[currentLang].controls.saveSchedBtn) || "保存设置";
+                saveBtn.textContent = (I18N[currentLang] && I18N[currentLang].controls && I18N[currentLang].controls.saveSchedBtn) || "保存计划";
                 saveBtn.disabled = false;
               }
             }, 1200);
@@ -3311,7 +3520,7 @@
       }
       if (saveBtn) {
         saveBtn.disabled = false;
-        saveBtn.textContent = (I18N[currentLang] && I18N[currentLang].controls && I18N[currentLang].controls.saveSchedBtn) || "保存设置";
+        saveBtn.textContent = (I18N[currentLang] && I18N[currentLang].controls && I18N[currentLang].controls.saveSchedBtn) || "保存计划";
       }
     }
 

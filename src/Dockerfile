@@ -55,7 +55,7 @@ RUN dpkg-query -W -f='${Package}=${Version}\n' ffmpeg jdupes libchromaprint-tool
     && chmod 755 /opt/music-rebuild/app.py /opt/music-rebuild/pipeline.py /opt/music-rebuild/domestic_provider.py \
     && chmod 644 /opt/music-rebuild/dashboard.html* /opt/music-rebuild/*.png /opt/music-rebuild/*.ico 2>/dev/null || true
 ENV PATH="/opt/metadata-venv/bin:${PATH}"
-USER music
+# Running as container root allows seamless read/write on mounted NAS volumes without host privilege escalation
 WORKDIR /opt/music-rebuild
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["dupsonic", "--help"]

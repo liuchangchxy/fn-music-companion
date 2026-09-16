@@ -1320,7 +1320,7 @@ def enrich(temporary: Path, run_root: Path, digest: str | None = None, source_st
                 cov_st = "cover_already_present" if before_art else "cover_embedded"
                 return meta_st, lrc_st, cov_st
         except Exception as exc:
-            log(f"国内接口补充异常：{exc}")
+            log(f"[主要源 / Primary Engine] 检索异常: {exc}")
 
     # P4: If still no tags, try writing filename-derived metadata before Beets
     if not cur_complete and mediafile is not None and (stem_art or stem_tit):
@@ -1341,7 +1341,7 @@ def enrich(temporary: Path, run_root: Path, digest: str | None = None, source_st
         except Exception as exc:
             log(f"[元数据 / Metadata] {temporary.name}: 写入文件名元数据失败: {exc}")
 
-    # Overseas Beets Fallback (Only for songs still missing metadata, lyrics, or cover)
+    # Global Catalog Fallback (MusicBrainz / LRCLIB, for tracks still missing metadata, lyrics, or cover)
     beets_needed = []
     if not cur_complete:
         beets_needed.append("元数据")
@@ -1350,7 +1350,7 @@ def enrich(temporary: Path, run_root: Path, digest: str | None = None, source_st
     if not cur_art:
         beets_needed.append("封面")
     if beets_needed:
-        log(f"[海外源 / Fallback] {temporary.name}: 国内引擎({dom_source or '未命中'})未完成，需要补充: {', '.join(beets_needed)}")
+        log(f"[全球源 / Global Fallback] {temporary.name}: 主要流媒体源({dom_source or '未命中'})未补齐，补充检索: {', '.join(beets_needed)}")
 
     has_clean_tags = bool(cur_tags.get("title") and (cur_tags.get("artist") or cur_tags.get("album_artist")) and cur_tags.get("album"))
     beets = run_root / "beets" / uuid.uuid4().hex
@@ -1392,7 +1392,7 @@ def enrich(temporary: Path, run_root: Path, digest: str | None = None, source_st
             command(import_cmd, env, timeout=5)
         except Exception as exc:
             failures.add("metadata")
-            log(f"[Beets / Metadata] {temporary.name}: 元数据匹配失败 (海外 MusicBrainz 超时或无结果): {exc}")
+            log(f"[全球源 / Global Catalog] {temporary.name}: 元数据匹配失败 (MusicBrainz 超时或无结果): {exc}")
 
     # P3: Only attempt Beets lyrics for formats that support embedding
     if not cur_lyrics and can_embed_lyrics:
@@ -1401,7 +1401,7 @@ def enrich(temporary: Path, run_root: Path, digest: str | None = None, source_st
             command(["beet", "write"], env, timeout=5)
         except Exception as exc:
             failures.add("lyrics")
-            log(f"[海外源 / Fallback] {temporary.name}: 歌词获取失败 (海外 lrclib/lrcmux): {exc}")
+            log(f"[全球源 / Global Lyrics] {temporary.name}: 歌词获取失败 (LRCLIB/lrcmux): {exc}")
         _, _, cur_tags, _ = probe(temporary)
         cur_lyrics = any((k.startswith("lyrics") or k in ("unsyncedlyrics", "uslt")) and bool(v.strip()) for k, v in cur_tags.items())
 
@@ -1420,14 +1420,14 @@ def enrich(temporary: Path, run_root: Path, digest: str | None = None, source_st
                 failures.add("lyrics")
                 log(f"[歌词 / Lyrics] {temporary.name}: 外挂 .lrc 写入失败: {exc}")
         elif not can_embed_lyrics:
-            log(f"[歌词 / Lyrics] {temporary.name}: 格式 {ext} 不支持内嵌歌词，且国内引擎未收录该曲歌词")
+            log(f"[歌词 / Lyrics] {temporary.name}: 格式 {ext} 不支持内嵌歌词，且主要流媒体源未收录该曲歌词")
 
     if not cur_art:
         try:
             command(["beet", "embedart", "-y"], env, timeout=5)
         except Exception as exc:
             failures.add("cover")
-            log(f"[Beets / Metadata] {temporary.name}: 封面嵌入失败: {exc}")
+            log(f"[全球源 / Global Cover] {temporary.name}: 封面嵌入失败: {exc}")
 
     _, _, after_tags, after_art = probe(temporary)
     shutil.rmtree(beets, ignore_errors=True)
@@ -1451,7 +1451,7 @@ def enrich(temporary: Path, run_root: Path, digest: str | None = None, source_st
     lyrics = "lyrics_already_present" if before_lyrics else "lyrics_embedded" if after_has_lyrics else "lyrics_tool_error" if "lyrics" in failures else "lyrics_not_found"
     cover = "cover_already_present" if before_art else "cover_embedded" if after_art else "cover_tool_error" if "cover" in failures else "cover_not_found"
     if os.environ.get("MUSIC_DEBUG") == "1" or "error" in metadata or "error" in lyrics or "error" in cover:
-        log(f"[流水线 / Pipeline] {temporary.name}: 国内源={dom_source or '未命中'} → 元数据={metadata} / 歌词={lyrics}{'(外挂 .lrc)' if has_sidecar_lrc else ''} / 封面={cover}")
+        log(f"[流水线 / Pipeline] {temporary.name}: 主要源={dom_source or '未命中'} → 元数据={metadata} / 歌词={lyrics}{'(外挂 .lrc)' if has_sidecar_lrc else ''} / 封面={cover}")
     return metadata, lyrics, cover
 
 

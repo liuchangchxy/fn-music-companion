@@ -9,6 +9,10 @@
         "initValue": "/vol2/1000/Download/音乐",
         "placeholder": "例：/vol2/1000/Download/音乐 或 /vol1/1000/Music",
         "rules": [{"required": true, "message": "请输入存放音乐的真实存储卷路径（可在文件管理属性中复制）"}]
+      },
+      {
+        "type": "tips",
+        "helpText": "💡 卷映射说明：您填写的 NAS 存储卷路径将挂载为容器内的 /music 目录。后续在网页控制台中，直接从下拉菜单选择 /music 下的子目录即可。"
       }
     ]
   }

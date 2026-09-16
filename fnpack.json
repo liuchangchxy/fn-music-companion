@@ -28,14 +28,14 @@
       "service_port": "8091",
       "releases": {
         "1.1.0": {
-          "changelog": "v1.1.0 新增定时自动增量整理：支持每天固定时间、每6/12/24小时、每小时周期触发；自动化门禁拦截未初始化与并发任务；全新中英双语控制卡片与下次运行实时倒计时。",
-          "updated_at": "2026-09-16T21:45:00+08:00",
+          "changelog": "v1.1.0 重大更新：新增智能锚点周期巡检、每日闲时与每周定时整理；支持计划时间表实时预览与一键测试运行；全面修复深色/浅色模式控件与对比度；规范双层多源流媒体与全球知识库中英术语；重构 /music 目录映射指导并彻底消除权限误判与特权依赖。",
+          "updated_at": "2026-09-17T03:00:00+08:00",
           "os_min_version": "1.2.0401",
           "packages": {
             "x86": {
               "download_url": "https://github.com/liuchangchxy/fn-music-companion/releases/download/v1.1.0/fn-music-companion-v1.1.0.fpk",
-              "sha256": "2b14e1a1bc0f1d39a67348b723e6fcc12d8eed929495c367ee805630c5202d3e",
-              "size": 150604
+              "sha256": "36d945ad0a372835b4e188f496330504e2e95d792e3b18b1ee751291ab74a3c2",
+              "size": 150695
             }
           }
         },

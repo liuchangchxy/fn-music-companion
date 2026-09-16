@@ -4,6 +4,7 @@ services:
     pull_policy: always
     container_name: fn-music-companion-organizer
     restart: unless-stopped
+    user: "0:0"
     environment:
       MUSIC_STATE: /appdata/v6-state
       MUSIC_STATE_LIMIT_BYTES: "536870912"

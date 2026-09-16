@@ -185,16 +185,16 @@ ERRORS = {
         "en": "Configuration can only contain supported application settings fields."
     },
     "dirs_required": {
-        "zh": "请先在飞牛系统中为本应用授予文件夹权限，并在下方选择整理前与整理后目录",
-        "en": "Please grant folder permissions to this app in fnOS, then select source and output directories below."
+        "zh": "请在下方选择整理前（源目录）与整理后（曲库目录）",
+        "en": "Please select source and output library directories below."
     },
     "vol_path_required": {
         "zh": "只能使用 /music/... 或 /volN/... 存储卷路径",
         "en": "Only valid /music/... or /volN/... storage paths can be used."
     },
     "not_authorized": {
-        "zh": "所选目录尚未在飞牛系统中为本应用授权访问（请先在飞牛中授予权限，刷新后直接下拉选择）",
-        "en": "Selected directory is not authorized in fnOS. Please grant access in fnOS first and refresh."
+        "zh": "所选目录未包含在已挂载的 /music 存储卷中（请在飞牛安装/设置中确认 MUSIC_PATH 设置）",
+        "en": "Selected directory is not within mounted /music storage volume (check MUSIC_PATH in fnOS settings)."
     },
     "source_not_exists": {
         "zh": "原始文件夹必须真实存在于 NAS 存储卷中",
@@ -205,7 +205,7 @@ ERRORS = {
         "en": "Source music folder is not readable (check read permissions in fnOS File Manager)."
     },
     "output_not_writable": {
-        "zh": "整理后文件夹不可写入（请在飞牛「文件管理」中检查该目录或上级目录读写权限）",
+        "zh": "整理后文件夹不可写入（请在飞牛「文件管理」中检查该目录或上级共享文件夹读写权限）",
         "en": "Output library folder is not writable (check read/write permissions in fnOS File Manager)."
     },
     "nested_dirs": {
@@ -335,7 +335,7 @@ def check_readable(path: Path) -> bool:
 
 
 def config_valid(config: dict, lang: str = "zh") -> tuple[bool, str]:
-    allowed_keys = {"source_dir", "output_dir", "sample_verified", "initialized", "proxy", "offline_mode", "admin_password"}
+    allowed_keys = {"source_dir", "output_dir", "sample_verified", "initialized", "proxy", "offline_mode", "admin_password", "schedule"}
     if set(config) - allowed_keys:
         return False, get_error_message("unsupported_fields", lang)
     source_raw, output_raw = config.get("source_dir"), config.get("output_dir")
@@ -722,29 +722,108 @@ def start_mode(mode: str, lang: str = "zh") -> tuple[int, str]:
     return 202, json.dumps({"accepted": True, "mode": mode}, ensure_ascii=False)
 
 
-def compute_next_run(rule: str, custom_time: str = "03:00", from_dt: datetime | None = None) -> datetime:
+def parse_time_parts(time_str: str, default_h: int = 3, default_m: int = 0) -> tuple[int, int]:
+    try:
+        parts = str(time_str).strip().split(":")
+        h = int(parts[0])
+        m = int(parts[1]) if len(parts) > 1 else 0
+        return max(0, min(23, h)), max(0, min(59, m))
+    except Exception:
+        return default_h, default_m
+
+
+def compute_next_run(
+    rule: str = "daily",
+    custom_time: str = "03:00",
+    from_dt: datetime | None = None,
+    anchor_time: str | None = None,
+    interval_hours: int = 6,
+    days: list[int] | None = None
+) -> datetime:
     now = from_dt or datetime.now()
-    rule = rule or "daily"
-    if rule in ("hourly", "interval_1h"):
-        candidate = (now + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
-        return candidate
-    elif rule == "interval_6h":
-        return now + timedelta(hours=6)
-    elif rule == "interval_12h":
-        return now + timedelta(hours=12)
-    elif rule == "interval_24h":
-        return now + timedelta(hours=24)
-    elif rule in ("daily", "daily_03"):
-        try:
-            parts = str(custom_time).split(":")
-            h, m = int(parts[0]), int(parts[1]) if len(parts) > 1 else 0
-        except Exception:
-            h, m = 3, 0
+    rule = str(rule or "daily").strip().lower()
+
+    if anchor_time is None:
+        if rule in ("hourly", "interval_1h"):
+            return (now + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+        elif rule == "interval_6h":
+            return now + timedelta(hours=6)
+        elif rule == "interval_12h":
+            return now + timedelta(hours=12)
+        elif rule == "interval_24h":
+            return now + timedelta(hours=24)
+
+    if rule.startswith("interval"):
+        if "_" in rule and rule.split("_")[-1].endswith("h"):
+            try:
+                interval_hours = int(rule.split("_")[-1][:-1])
+            except Exception:
+                pass
+        interval_hours = max(1, min(24, int(interval_hours or 6)))
+        ah, am = parse_time_parts(anchor_time or "00:00", 0, 0)
+        pts = sorted(list(set([(ah + i * interval_hours) % 24 for i in range(24 // interval_hours + 1)])))
+        for day_offset in (0, 1):
+            base_date = now.date() + timedelta(days=day_offset)
+            for h in pts:
+                cand = datetime.combine(base_date, datetime.min.time()).replace(hour=h, minute=am, second=0, microsecond=0)
+                if cand > now:
+                    return cand
+        return now + timedelta(hours=interval_hours)
+
+    elif rule == "weekly":
+        h, m = parse_time_parts(custom_time, 3, 0)
+        valid_days = set(days) if days else {7}
+        for d in range(8):
+            cand_date = now.date() + timedelta(days=d)
+            cand = datetime.combine(cand_date, datetime.min.time()).replace(hour=h, minute=m, second=0, microsecond=0)
+            if cand > now and cand.isoweekday() in valid_days:
+                return cand
+        return now + timedelta(days=1)
+
+    else:  # daily
+        h, m = parse_time_parts(custom_time, 3, 0)
         target = now.replace(hour=h, minute=m, second=0, microsecond=0)
         if target <= now:
             target += timedelta(days=1)
         return target
-    return now + timedelta(hours=24)
+
+
+def get_schedule_preview(sched: dict, from_dt: datetime | None = None) -> dict:
+    now = from_dt or datetime.now()
+    rule = str(sched.get("rule", "daily")).strip().lower()
+    custom_time = str(sched.get("custom_time") or sched.get("time") or "03:00").strip()
+    anchor_time = sched.get("anchor_time")
+    interval_hours = int(sched.get("interval_hours", 6))
+    days = sched.get("days") or [1, 2, 3, 4, 5, 6, 7]
+
+    next_dt = compute_next_run(rule, custom_time, now, anchor_time, interval_hours, days)
+    
+    points = []
+    if rule.startswith("interval"):
+        if "_" in rule and rule.split("_")[-1].endswith("h"):
+            try:
+                interval_hours = int(rule.split("_")[-1][:-1])
+            except Exception:
+                pass
+        interval_hours = max(1, min(24, int(interval_hours or 6)))
+        if anchor_time:
+            ah, am = parse_time_parts(anchor_time, 0, 0)
+            pts = sorted(list(set([(ah + i * interval_hours) % 24 for i in range(24 // interval_hours + 1)])))
+            points = [f"{h:02d}:{am:02d}" for h in pts]
+        else:
+            points = [next_dt.strftime("%H:%M")]
+    elif rule == "weekly":
+        h, m = parse_time_parts(custom_time, 3, 0)
+        points = [f"{h:02d}:{m:02d}"]
+    else:
+        h, m = parse_time_parts(custom_time, 3, 0)
+        points = [f"{h:02d}:{m:02d}"]
+
+    return {
+        "rule": rule,
+        "points": points,
+        "next_run": next_dt.strftime("%Y-%m-%d %H:%M:%S")
+    }
 
 
 def check_and_trigger_schedule(now_dt: datetime | None = None) -> bool:
@@ -763,10 +842,14 @@ def check_and_trigger_schedule(now_dt: datetime | None = None) -> bool:
     next_run_str = sched.get("next_run")
     rule = sched.get("rule", "daily")
     custom_time = sched.get("custom_time") or sched.get("time") or "03:00"
+    anchor_time = sched.get("anchor_time")
+    interval_hours = int(sched.get("interval_hours", 6))
+    days = sched.get("days")
 
     if not next_run_str:
-        next_dt = compute_next_run(rule, custom_time, now)
-        sched["next_run"] = next_dt.strftime("%Y-%m-%d %H:%M:%S")
+        preview = get_schedule_preview(sched, now)
+        sched["next_run"] = preview["next_run"]
+        sched["points"] = preview["points"]
         cfg["schedule"] = sched
         write_json(CONFIG, cfg)
         return False
@@ -774,8 +857,9 @@ def check_and_trigger_schedule(now_dt: datetime | None = None) -> bool:
     try:
         next_dt = datetime.strptime(next_run_str, "%Y-%m-%d %H:%M:%S")
     except Exception:
-        next_dt = compute_next_run(rule, custom_time, now)
-        sched["next_run"] = next_dt.strftime("%Y-%m-%d %H:%M:%S")
+        preview = get_schedule_preview(sched, now)
+        sched["next_run"] = preview["next_run"]
+        sched["points"] = preview["points"]
         cfg["schedule"] = sched
         write_json(CONFIG, cfg)
         return False
@@ -784,7 +868,9 @@ def check_and_trigger_schedule(now_dt: datetime | None = None) -> bool:
         code, _ = start_mode("incremental", lang=sched.get("lang", "zh"))
         if code == 202:
             sched["last_run"] = now.strftime("%Y-%m-%d %H:%M:%S")
-            sched["next_run"] = compute_next_run(rule, custom_time, now).strftime("%Y-%m-%d %H:%M:%S")
+            preview = get_schedule_preview(sched, now)
+            sched["next_run"] = preview["next_run"]
+            sched["points"] = preview["points"]
             cfg["schedule"] = sched
             write_json(CONFIG, cfg)
             return True
@@ -1115,6 +1201,8 @@ class Handler(BaseHTTPRequestHandler):
                 for key in ("sample_verified", "initialized"):
                     if key in old:
                         new[key] = old[key]
+            if "schedule" in old:
+                new["schedule"] = old["schedule"]
             write_json(CONFIG, new)
             # Record mount roles so sync-accessible-mounts.sh can enforce :ro on source_dir
             try:
@@ -1162,21 +1250,29 @@ class Handler(BaseHTTPRequestHandler):
             cfg = get_or_init_config()
             sched = cfg.get("schedule", {})
             enabled = bool(body.get("enabled", False))
-            rule = str(body.get("rule", sched.get("rule", "daily"))).strip()
+            rule = str(body.get("rule", sched.get("rule", "daily"))).strip().lower()
             custom_time = str(body.get("custom_time", body.get("time", sched.get("custom_time", sched.get("time", "03:00"))))).strip()
+            anchor_time = str(body.get("anchor_time", sched.get("anchor_time", "00:00"))).strip()
+            interval_hours = int(body.get("interval_hours", sched.get("interval_hours", 6)))
+            days = body.get("days", sched.get("days", [1, 2, 3, 4, 5, 6, 7]))
             lang = self.headers.get("Accept-Language", "zh")
 
             sched["enabled"] = enabled
             sched["rule"] = rule
             sched["time"] = custom_time
             sched["custom_time"] = custom_time
+            sched["anchor_time"] = anchor_time
+            sched["interval_hours"] = interval_hours
+            sched["days"] = days
             sched["lang"] = lang
 
             if enabled:
-                next_dt = compute_next_run(rule, custom_time, datetime.now())
-                sched["next_run"] = next_dt.strftime("%Y-%m-%d %H:%M:%S")
+                preview = get_schedule_preview(sched, datetime.now())
+                sched["next_run"] = preview["next_run"]
+                sched["points"] = preview["points"]
             else:
                 sched["next_run"] = None
+                sched["points"] = []
 
             cfg["schedule"] = sched
             write_json(CONFIG, cfg)
@@ -1186,6 +1282,11 @@ class Handler(BaseHTTPRequestHandler):
                 "schedule": sched,
                 "message": msg
             }, ensure_ascii=False), "application/json")
+            return
+        if self.path == "/api/schedule/run-now":
+            lang = self.headers.get("Accept-Language", "zh")
+            code, message = start_mode("incremental", lang)
+            self.send(code, message, "application/json" if code == 202 else "text/plain; charset=utf-8")
             return
         self.send(404, "不存在")
 

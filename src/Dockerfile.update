@@ -5,5 +5,4 @@ COPY app.py pipeline.py domestic_provider.py dashboard.html /opt/music-rebuild/
 COPY *.png *.ico /opt/music-rebuild/
 RUN chmod 755 /opt/music-rebuild/app.py /opt/music-rebuild/pipeline.py /opt/music-rebuild/domestic_provider.py \
     && chmod 644 /opt/music-rebuild/dashboard.html /opt/music-rebuild/*.png /opt/music-rebuild/*.ico 2>/dev/null || true
-USER music
 WORKDIR /opt/music-rebuild

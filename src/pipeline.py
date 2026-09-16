@@ -418,15 +418,26 @@ def init_db(ledger_path: Path | None = None) -> None:
             );
             CREATE INDEX IF NOT EXISTS idx_kb_artist_title ON knowledge_base(artist, title);
             """)
-            for col in ("metadata_state", "lyrics_state", "cover_state", "duration"):
+            for col in ("metadata_state", "lyrics_state", "cover_state", "duration", "artist", "title", "retry_reason"):
                 try:
                     conn.execute(f"ALTER TABLE source_inventory ADD COLUMN {col} TEXT")
+                except sqlite3.OperationalError:
+                    pass
+            for col in ("retry_count", "unresolvable"):
+                try:
+                    conn.execute(f"ALTER TABLE source_inventory ADD COLUMN {col} INTEGER NOT NULL DEFAULT 0")
                 except sqlite3.OperationalError:
                     pass
             # Rows written before the stamp existed default to 0, i.e. "decided by rules
             # older than the current ones" — exactly what the incremental gate must redo.
             try:
                 conn.execute("ALTER TABLE source_inventory ADD COLUMN rules_version INTEGER NOT NULL DEFAULT 0")
+            except sqlite3.OperationalError:
+                pass
+            try:
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_inv_sha256 ON source_inventory(sha256)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_inv_output ON source_inventory(output_path)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_inv_unres ON source_inventory(unresolvable)")
             except sqlite3.OperationalError:
                 pass
             conn.commit()
@@ -726,6 +737,70 @@ def mark(connection: sqlite3.Connection, run_id: str, path: Path, disposition: s
 
 def exact_dedupe(run_id: str, source: Path, candidates: set[Path], library: Path | None, decoded_map: dict[Path, Path] | None = None, run_root: Path | None = None) -> set[Path]:
     update_phase(run_id, "exact_dedupe", 0, 1, "正在进行完全相同文件去重")
+    if not candidates:
+        update_phase(run_id, "exact_dedupe", 1, 1, "完全相同文件去重完成")
+        return candidates
+
+    is_incremental = run_id.startswith("incremental-")
+    # For incremental runs with library present, avoid full-disk jdupes traversal.
+    # Instead, match candidate digests against the SQLite ledger in O(1) time.
+    if is_incremental and library and library.exists():
+        connection = db()
+        rev_map: dict[str, Path] = {}
+        if decoded_map:
+            for orig, dec in decoded_map.items():
+                rev_map[str(dec)] = orig
+                rev_map[str(dec.resolve())] = orig
+
+        # 1. Intra-candidate deduplication by sha256
+        seen_hashes: dict[str, Path] = {}
+        to_discard = []
+        for p in sorted(candidates, key=lambda value: str(value).casefold()):
+            real_p = decoded_map.get(p, p) if decoded_map else p
+            if not real_p.is_file():
+                continue
+            h = sha256(real_p)
+            if h in seen_hashes:
+                winner = seen_hashes[h]
+                to_discard.append((p, winner, h))
+            else:
+                seen_hashes[h] = p
+
+        for p, winner, h in to_discard:
+            candidates.discard(p)
+            mark(connection, run_id, p, "duplicate_exact")
+            group_id = f"exact-{h}"
+            connection.execute(
+                "INSERT OR REPLACE INTO groups(id,run_id,tool,similarity,winner_source_path,decision,paths_json) VALUES(?,?,?,?,?,?,?)",
+                (group_id, run_id, "indexed_sha256", 1.0, str(winner), "keep", json.dumps([str(winner), str(p)], ensure_ascii=False))
+            )
+
+        # 2. Candidate vs Library deduplication using SQLite source_inventory index
+        for p in list(candidates):
+            real_p = decoded_map.get(p, p) if decoded_map else p
+            if not real_p.is_file():
+                continue
+            h = sha256(real_p)
+            row = connection.execute(
+                "SELECT output_path, source_path FROM source_inventory WHERE sha256=? AND disposition='published' AND output_path IS NOT NULL LIMIT 1",
+                (h,)
+            ).fetchone()
+            if row and row["output_path"]:
+                out_p = Path(row["output_path"])
+                if out_p.is_file() and row["source_path"] != str(p):
+                    candidates.discard(p)
+                    mark(connection, run_id, p, "duplicate_exact")
+                    group_id = f"exact-{h}"
+                    connection.execute(
+                        "INSERT OR REPLACE INTO groups(id,run_id,tool,similarity,winner_source_path,decision,paths_json) VALUES(?,?,?,?,?,?,?)",
+                        (group_id, run_id, "indexed_sha256", 1.0, str(out_p), "keep", json.dumps([str(out_p), str(p)], ensure_ascii=False))
+                    )
+
+        connection.commit()
+        connection.close()
+        update_phase(run_id, "exact_dedupe", 1, 1, "完全相同文件去重完成 (基于索引快速比对)")
+        return candidates
+
     roots = [source] + ([library] if library and library.exists() else [])
     if run_root and (run_root / "ncm").is_dir():
         roots.append(run_root / "ncm")
@@ -1030,47 +1105,90 @@ def acoustic_dedupe(run_id: str, source: Path, candidates: set[Path], library: P
     dur_rows = connection.execute("SELECT source_path, duration FROM items WHERE run_id=?", (run_id,)).fetchall()
     durations: dict[str, float] = {row["source_path"]: float(row["duration"] or 0) for row in dur_rows}
 
+    is_incremental = run_id.startswith("incremental-")
     library_files: list[Path] = []
-    if library and library.exists():
-        inv_rows = connection.execute("SELECT output_path, duration FROM source_inventory WHERE output_path IS NOT NULL").fetchall()
-        for row in inv_rows:
-            if row["output_path"] and row["duration"]:
-                durations[row["output_path"]] = float(row["duration"])
-        try:
-            for p in library.rglob("*"):
-                if p.is_file() and media(p) and not p.name.startswith(".") and not hidden_under(p, library):
-                    library_files.append(p)
-                    if str(p) not in durations:
-                        try:
-                            d, _, _, _ = probe(p)
-                            durations[str(p)] = d
-                        except Exception:
-                            pass
-        except OSError:
-            pass
-
-    buckets: dict[str, list[Path]] = {}
     file_metadata: dict[str, tuple[str, str]] = {}
-    all_files = sorted(list(candidates) + library_files, key=lambda value: str(value).casefold())
-    for p in all_files:
+    buckets: dict[str, list[Path]] = {}
+
+    # 1. Index candidate files first
+    cand_title_keys: set[str] = set()
+    for p in candidates:
         stem_art, stem_tit = extract_artist_and_title(p.stem)
         tag_art, tag_tit = "", ""
         real_p = decoded_map.get(p, p) if decoded_map else p
         if real_p.is_file():
-            try:
-                _, _, tags, _ = probe(real_p)
-                tag_art = tags.get("artist") or tags.get("album_artist", "")
-                tag_tit = tags.get("title", "")
-            except Exception:
-                pass
+            if str(p) not in durations or durations[str(p)] <= 0:
+                try:
+                    d, _, tags, _ = probe(real_p)
+                    durations[str(p)] = d
+                    durations[str(real_p)] = d
+                    tag_art = tags.get("artist") or tags.get("album_artist", "")
+                    tag_tit = tags.get("title", "")
+                except Exception:
+                    pass
         final_art = tag_art or stem_art
         final_tit = tag_tit or stem_tit or p.stem
         file_metadata[str(p)] = (final_art, final_tit)
-
-        title_key = re.sub(r"[^\w\u4e00-\u9fff]", "", simplify_chinese(final_tit).casefold())
-        if not title_key:
-            title_key = final_tit.casefold() or p.stem.casefold()
+        title_key = re.sub(r"[^\w\u4e00-\u9fff]", "", simplify_chinese(final_tit).casefold()) or final_tit.casefold() or p.stem.casefold()
+        cand_title_keys.add(title_key)
         buckets.setdefault(title_key, []).append(p)
+
+    # 2. Query library files
+    if library and library.exists():
+        if is_incremental:
+            # Fast-path: query existing published items from SQLite without disk traversal
+            inv_rows = connection.execute(
+                "SELECT output_path, duration, COALESCE(artist, ''), COALESCE(title, '') FROM source_inventory WHERE output_path IS NOT NULL AND disposition='published'"
+            ).fetchall()
+            for row in inv_rows:
+                out_str = row["output_path"]
+                if not out_str:
+                    continue
+                out_p = Path(out_str)
+                dur = float(row["duration"] or 0)
+                art, tit = row[2], row[3]
+                if not tit:
+                    art, tit = extract_artist_and_title(out_p.stem)
+                title_key = re.sub(r"[^\w\u4e00-\u9fff]", "", simplify_chinese(tit).casefold()) or tit.casefold() or out_p.stem.casefold()
+                # Only include library tracks that could potentially collide with candidates
+                if title_key in cand_title_keys:
+                    if out_p.is_file():
+                        durations[str(out_p)] = dur
+                        file_metadata[str(out_p)] = (art, tit)
+                        buckets.setdefault(title_key, []).append(out_p)
+        else:
+            # Full/Sample mode: disk discovery
+            inv_rows = connection.execute("SELECT output_path, duration FROM source_inventory WHERE output_path IS NOT NULL").fetchall()
+            for row in inv_rows:
+                if row["output_path"] and row["duration"]:
+                    durations[row["output_path"]] = float(row["duration"])
+            try:
+                for p in library.rglob("*"):
+                    if p.is_file() and media(p) and not p.name.startswith(".") and not hidden_under(p, library):
+                        library_files.append(p)
+                        if str(p) not in durations:
+                            try:
+                                d, _, _, _ = probe(p)
+                                durations[str(p)] = d
+                            except Exception:
+                                pass
+            except OSError:
+                pass
+            for p in library_files:
+                stem_art, stem_tit = extract_artist_and_title(p.stem)
+                tag_art, tag_tit = "", ""
+                if p.is_file():
+                    try:
+                        _, _, tags, _ = probe(p)
+                        tag_art = tags.get("artist") or tags.get("album_artist", "")
+                        tag_tit = tags.get("title", "")
+                    except Exception:
+                        pass
+                final_art = tag_art or stem_art
+                final_tit = tag_tit or stem_tit or p.stem
+                file_metadata[str(p)] = (final_art, final_tit)
+                title_key = re.sub(r"[^\w\u4e00-\u9fff]", "", simplify_chinese(final_tit).casefold()) or final_tit.casefold() or p.stem.casefold()
+                buckets.setdefault(title_key, []).append(p)
 
     for key, group in buckets.items():
         if len(group) < 2:
@@ -1766,9 +1884,11 @@ def publish_one(source: Path, run_root: Path, output: Path, real: bool, decoded_
             with DB_WRITE_LOCK:
                 conn = db()
                 try:
+                    art = target.parent.parent.name if target.parent.parent != output else ""
+                    tit = target.stem
                     conn.execute(
-                        "INSERT INTO source_inventory(source_path,size_bytes,mtime_ns,sha256,disposition,output_path,metadata_state,lyrics_state,cover_state,rules_version) VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(source_path) DO UPDATE SET size_bytes=excluded.size_bytes,mtime_ns=excluded.mtime_ns,sha256=excluded.sha256,disposition=excluded.disposition,output_path=excluded.output_path,metadata_state=excluded.metadata_state,lyrics_state=excluded.lyrics_state,cover_state=excluded.cover_state,rules_version=excluded.rules_version,updated_at=CURRENT_TIMESTAMP",
-                        (str(source), stat.st_size, stat.st_mtime_ns, digest, "published", str(target), *states, RULES_VERSION),
+                        "INSERT INTO source_inventory(source_path,size_bytes,mtime_ns,sha256,disposition,output_path,metadata_state,lyrics_state,cover_state,duration,artist,title,retry_count,unresolvable,rules_version) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,0,0,?) ON CONFLICT(source_path) DO UPDATE SET size_bytes=excluded.size_bytes,mtime_ns=excluded.mtime_ns,sha256=excluded.sha256,disposition=excluded.disposition,output_path=excluded.output_path,metadata_state=excluded.metadata_state,lyrics_state=excluded.lyrics_state,cover_state=excluded.cover_state,duration=excluded.duration,artist=excluded.artist,title=excluded.title,retry_count=0,unresolvable=0,rules_version=excluded.rules_version,updated_at=CURRENT_TIMESTAMP",
+                        (str(source), stat.st_size, stat.st_mtime_ns, digest, "published", str(target), *states, duration, art, tit, RULES_VERSION),
                     )
                     conn.commit()
                 finally:
@@ -1780,6 +1900,45 @@ def publish_one(source: Path, run_root: Path, output: Path, real: bool, decoded_
         if temporary:
             temporary.unlink(missing_ok=True)
         shutil.rmtree(song_sandbox, ignore_errors=True)
+
+
+def fallback_publish_one(source: Path, output: Path) -> Path | None:
+    """Safely publish an unresolvable track to a designated fallback location in output directory."""
+    if not source.is_file():
+        return None
+    dest_dir = output / "未知艺术家" / "未分类专辑"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    target = dest_dir / source.name
+    if target.exists() and sha256(target) == sha256(source):
+        pass
+    elif target.exists():
+        counter = 2
+        base_stem = source.stem
+        while target.exists() and sha256(target) != sha256(source):
+            target = dest_dir / f"{base_stem} ({counter}){source.suffix}"
+            counter += 1
+        if not target.exists():
+            copy_checked(source, target)
+    else:
+        copy_checked(source, target)
+
+    stat = source.stat()
+    dur = 0.0
+    try:
+        dur, _, _, _ = probe(source)
+    except Exception:
+        pass
+    with db() as conn:
+        conn.execute(
+            """INSERT INTO source_inventory(source_path,size_bytes,mtime_ns,sha256,disposition,output_path,metadata_state,lyrics_state,cover_state,duration,artist,title,retry_count,unresolvable,rules_version)
+               VALUES(?,?,?,?,?,?,'fallback_tags','none','none',?,'未知艺术家',?,0,0,?)
+               ON CONFLICT(source_path) DO UPDATE SET
+                 disposition=excluded.disposition,output_path=excluded.output_path,
+                 metadata_state=excluded.metadata_state,retry_count=0,unresolvable=0,updated_at=CURRENT_TIMESTAMP""",
+            (str(source), stat.st_size, stat.st_mtime_ns, sha256(source), "published", str(target), dur, source.stem, RULES_VERSION)
+        )
+        conn.commit()
+    return target
 
 
 def get_run_root(run_id: str, output: Path | None = None) -> Path:
@@ -2067,16 +2226,15 @@ def run_full(settings: dict, incremental: bool = False) -> dict:
 
 
 def classify_sources(source: Path, output: Path | None = None) -> dict[str, list[Path]]:
-    """Split the source tree into the four things an incremental pass can act on.
+    """Split the source tree into the things an incremental pass can act on.
 
-    新增 new       — 账本里根本没有这条源文件
-    改动 modified  — 有记录，但源文件的大小或修改时间变了
-    重判 stale     — 有记录，但当时的判定出自更旧的规则版本（RULES_VERSION 提升后必然命中）
-    回补 retry     — 上次没做完：失败、输出丢失、状态含 error、落在 Unknown Artist
-
-    「新增」只认第一种。其余三种各说各话，不再混成一个数字。
+    新增 new          — 账本里根本没有这条源文件
+    改动 modified     — 有记录，但源文件的大小或修改时间变了
+    重判 stale        — 有记录，但当时的判定出自更旧的规则版本
+    回补 retry        — 上次没做完：单次偶发失败、输出丢失、输出未打标签
+    疑难 unresolvable — 多次重试仍无法解析、或已熔断待人工决策的曲目（不再自动回补拖慢定时）
     """
-    buckets: dict[str, list[Path]] = {"new": [], "modified": [], "stale": [], "retry": []}
+    buckets: dict[str, list[Path]] = {"new": [], "modified": [], "stale": [], "retry": [], "unresolvable": []}
     conn = db()
     try:
         has_any_output = bool(output and output.exists() and any(p for p in output.rglob("*") if p.is_file() and media(p)))
@@ -2086,12 +2244,12 @@ def classify_sources(source: Path, output: Path | None = None) -> dict[str, list
             except OSError:
                 continue
             row = conn.execute(
-                "SELECT size_bytes,mtime_ns,disposition,output_path,metadata_state,lyrics_state,rules_version FROM source_inventory WHERE source_path=?",
+                "SELECT size_bytes,mtime_ns,disposition,output_path,metadata_state,lyrics_state,rules_version,retry_count,unresolvable FROM source_inventory WHERE source_path=?",
                 (str(path),),
             ).fetchone()
             if not row:
                 row = conn.execute(
-                    "SELECT source_size AS size_bytes, source_mtime_ns AS mtime_ns, disposition, output_path, metadata_state, lyrics_state, 0 AS rules_version FROM items WHERE source_path=? AND disposition='published' AND output_path IS NOT NULL ORDER BY id DESC LIMIT 1",
+                    "SELECT source_size AS size_bytes, source_mtime_ns AS mtime_ns, disposition, output_path, metadata_state, lyrics_state, 0 AS rules_version, 0 AS retry_count, 0 AS unresolvable FROM items WHERE source_path=? AND disposition='published' AND output_path IS NOT NULL ORDER BY id DESC LIMIT 1",
                     (str(path),),
                 ).fetchone()
             if row is None:
@@ -2101,6 +2259,11 @@ def classify_sources(source: Path, output: Path | None = None) -> dict[str, list
                 buckets["modified"].append(path)
                 continue
             disposition = str(row["disposition"])
+            unres = bool(row["unresolvable"]) if "unresolvable" in row.keys() else False
+            retries = int(row["retry_count"]) if "retry_count" in row.keys() else 0
+            if unres or retries >= 2:
+                buckets["unresolvable"].append(path)
+                continue
             if disposition == "failed":
                 buckets["retry"].append(path)
                 continue
@@ -2117,8 +2280,14 @@ def classify_sources(source: Path, output: Path | None = None) -> dict[str, list
                 if out_path is None or not out_path.is_file() or out_path.stat().st_size == 0:
                     buckets["retry"].append(path)
                     continue
-                if "error" in meta or "error" in lrc or untagged_output(out_path):
+                if untagged_output(out_path):
                     buckets["retry"].append(path)
+                    continue
+                if "error" in meta or "error" in lrc:
+                    if retries < 1:
+                        buckets["retry"].append(path)
+                    else:
+                        buckets["unresolvable"].append(path)
                     continue
             # Only queue for stale re-judgement if explicitly enabled via environment variable
             # (otherwise old runs with rules_version=0 would force every track into a full re-scan).
@@ -2142,12 +2311,15 @@ def flatten_buckets(buckets: dict[str, list[Path]]) -> list[Path]:
 
 
 def classify_counts(buckets: dict[str, list[Path]]) -> dict[str, int]:
-    return {
+    res = {
         "new_files": len(buckets.get("new", [])),
         "modified_files": len(buckets.get("modified", [])),
         "stale_decisions": len(buckets.get("stale", [])),
         "retry_files": len(buckets.get("retry", [])),
     }
+    if buckets.get("unresolvable"):
+        res["unresolvable_files"] = len(buckets["unresolvable"])
+    return res
 
 
 def changed_sources(source: Path, output: Path | None = None) -> list[Path]:
@@ -2163,9 +2335,12 @@ def run_incremental(settings: dict) -> dict:
     buckets = classify_sources(source, output)
     paths = flatten_buckets(buckets)
     counts = classify_counts(buckets)
+    unres_cnt = counts.get("unresolvable_files", 0)
     if not paths:
-        return {"metrics": {"scanned_total": 0, "published": 0, "state_bytes": directory_size(STATE), "orphans_archived": 0, **counts}, "message": "没有新增、改动、待重判或待回补的曲目"}
-    log(f"[增量门禁 / Gatekeeper] 本次处理 {len(paths)} 首：真新增 {counts['new_files']} · 源文件改动 {counts['modified_files']} · 旧规则重判 {counts['stale_decisions']} · 未完成回补 {counts['retry_files']}")
+        unres_note = f"（已熔断跳过 {unres_cnt} 首需人工决策的疑难曲目）" if unres_cnt else ""
+        return {"metrics": {"scanned_total": 0, "published": 0, "state_bytes": directory_size(STATE), "orphans_archived": 0, **counts}, "message": f"没有新增、改动或待回补的曲目{unres_note}"}
+    unres_note = f" · 熔断待处理 {unres_cnt}" if unres_cnt else ""
+    log(f"[增量门禁 / Gatekeeper] 本次处理 {len(paths)} 首：真新增 {counts['new_files']} · 源文件改动 {counts['modified_files']} · 旧规则重判 {counts['stale_decisions']} · 未完成回补 {counts['retry_files']}{unres_note}")
     return run_batch("incremental", source, output, paths, True, True, classification=counts)
 
 

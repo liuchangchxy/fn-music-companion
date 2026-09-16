@@ -1743,6 +1743,82 @@ class AppTests(unittest.TestCase):
                     self.assertEqual(updated_cfg["schedule"]["last_run"], "2026-09-16 14:00:00")
                     self.assertEqual(updated_cfg["schedule"]["next_run"], "2026-09-16 20:00:00")
 
+    def test_incremental_exact_dedupe_uses_index(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, patch.object(pipeline, "STATE", Path(directory) / "state"), patch.object(pipeline, "LEDGER", Path(directory) / "state" / "ledger-v6.sqlite"):
+            src_dir, out_dir = Path(directory) / "source", Path(directory) / "output"
+            src_dir.mkdir()
+            out_dir.mkdir()
+            (Path(directory) / "state").mkdir()
+            pub_song = out_dir / "Artist" / "Album" / "Song.mp3"
+            pub_song.parent.mkdir(parents=True)
+            pub_song.write_bytes(b"exact same music audio content")
+
+            incoming_dup = src_dir / "Incoming_Dup.mp3"
+            incoming_dup.write_bytes(b"exact same music audio content")
+
+            conn = pipeline.db()
+            try:
+                conn.execute(
+                    "INSERT INTO source_inventory(source_path,size_bytes,mtime_ns,sha256,disposition,output_path) VALUES(?,?,?,?,'published',?)",
+                    ("previous/source.mp3", len(b"exact same music audio content"), 12345, pipeline.sha256(pub_song), str(pub_song))
+                )
+                conn.commit()
+            finally:
+                conn.close()
+
+            # Calling exact_dedupe in incremental mode should detect duplicate via SQLite index
+            candidates = {incoming_dup}
+            with patch("subprocess.run") as mock_run:
+                remaining = pipeline.exact_dedupe("incremental-20260917-123456-abc123", src_dir, candidates, out_dir)
+                # Should not invoke jdupes at all!
+                mock_run.assert_not_called()
+                self.assertEqual(len(remaining), 0)
+
+    def test_circuit_breaker_stops_stubborn_retries(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, patch.object(pipeline, "STATE", Path(directory)), patch.object(pipeline, "LEDGER", Path(directory) / "ledger-v6.sqlite"):
+            src_dir, out_dir = Path(directory) / "source", Path(directory) / "output"
+            src_dir.mkdir()
+            out_dir.mkdir()
+            stubborn = src_dir / "stubborn.mp3"
+            stubborn.write_bytes(b"unrecognized noise")
+
+            conn = pipeline.db()
+            try:
+                # Track has failed twice already
+                conn.execute(
+                    "INSERT INTO source_inventory(source_path,size_bytes,mtime_ns,sha256,disposition,retry_count,unresolvable) VALUES(?,?,?,?,'failed',2,1)",
+                    (str(stubborn), stubborn.stat().st_size, stubborn.stat().st_mtime_ns, "hash")
+                )
+                conn.commit()
+            finally:
+                conn.close()
+
+            buckets = pipeline.classify_sources(src_dir, out_dir)
+            self.assertIn(stubborn, buckets["unresolvable"])
+            self.assertNotIn(stubborn, buckets["retry"])
+            self.assertEqual(pipeline.flatten_buckets(buckets), [])
+
+    def test_fallback_publish_one(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, patch.object(pipeline, "STATE", Path(directory)), patch.object(pipeline, "LEDGER", Path(directory) / "ledger-v6.sqlite"):
+            src_dir, out_dir = Path(directory) / "source", Path(directory) / "output"
+            src_dir.mkdir()
+            out_dir.mkdir()
+            song = src_dir / "MyVoiceMemo.mp3"
+            song.write_bytes(b"audio recording")
+
+            target = pipeline.fallback_publish_one(song, out_dir)
+            self.assertIsNotNone(target)
+            self.assertTrue(target.is_file())
+            self.assertIn("未知艺术家", str(target))
+
+            conn = pipeline.db()
+            try:
+                row = conn.execute("SELECT disposition, unresolvable FROM source_inventory WHERE source_path=?", (str(song),)).fetchone()
+                self.assertEqual(row["disposition"], "published")
+                self.assertEqual(row["unresolvable"], 0)
+            finally:
+                conn.close()
+
 
 if __name__ == "__main__":
     unittest.main()

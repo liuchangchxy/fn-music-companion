@@ -974,7 +974,8 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         sensitive_paths = {
             "/api/config", "/api/fs/ls", "/api/log", "/api/log/download",
-            "/api/report", "/api/runs", "/api/accessible-paths"
+            "/api/report", "/api/runs", "/api/accessible-paths",
+            "/api/runs/details", "/api/unresolved"
         }
         if parsed.path in sensitive_paths:
             if not self.is_authenticated():
@@ -1015,15 +1016,66 @@ class Handler(BaseHTTPRequestHandler):
             st["has_initial_full_run"] = bool(cfg.get("initialized"))
             st["schedule"] = cfg.get("schedule", {})
             rep = report()
+            runs = latest_runs(50)
+            st["recent_runs"] = runs
             if rep:
+                rep["recent_runs"] = runs
                 st["report"] = rep
-                if "recent_runs" not in st:
-                    st["recent_runs"] = latest_runs(10)
+            else:
+                st["report"] = {"recent_runs": runs}
+            try:
+                with connection() as db_conn:
+                    unres_row = db_conn.execute("SELECT count(*) FROM source_inventory WHERE unresolvable=1 OR (disposition='failed' AND retry_count >= 2)").fetchone()
+                    st["unresolvable_count"] = unres_row[0] if unres_row else 0
+            except Exception:
+                st["unresolvable_count"] = 0
             self.send(200, json.dumps(st, ensure_ascii=False), "application/json")
         elif parsed.path == "/api/report":
             self.send(200, json.dumps(report(parse_qs(parsed.query).get("run_id", [None])[0]), ensure_ascii=False), "application/json")
         elif parsed.path == "/api/runs":
-            self.send(200, json.dumps(latest_runs(), ensure_ascii=False), "application/json")
+            qs = parse_qs(parsed.query)
+            try:
+                limit = int(qs.get("limit", [50])[0])
+            except ValueError:
+                limit = 50
+            self.send(200, json.dumps(latest_runs(limit), ensure_ascii=False), "application/json")
+        elif parsed.path == "/api/runs/details":
+            qs = parse_qs(parsed.query)
+            run_id = qs.get("id", [""])[0].strip()
+            if not run_id:
+                self.send(400, "缺少 run_id 参数", "text/plain; charset=utf-8")
+                return
+            try:
+                with connection() as db_conn:
+                    run_row = db_conn.execute("SELECT * FROM runs WHERE id=?", (run_id,)).fetchone()
+                    if not run_row:
+                        self.send(404, "未找到该运行记录", "text/plain; charset=utf-8")
+                        return
+                    items = db_conn.execute(
+                        "SELECT source_path, source_size, source_kind, disposition, output_path, metadata_state, lyrics_state, cover_state, error FROM items WHERE run_id=? ORDER BY id ASC LIMIT 500",
+                        (run_id,)
+                    ).fetchall()
+                    data = {
+                        "run": dict(run_row),
+                        "items": [dict(r) for r in items]
+                    }
+                    if data["run"].get("summary_json"):
+                        try:
+                            data["run"]["summary"] = json.loads(data["run"]["summary_json"])
+                        except Exception:
+                            pass
+                    self.send(200, json.dumps(data, ensure_ascii=False), "application/json")
+            except Exception as exc:
+                self.send(500, f"查询失败: {exc}", "text/plain; charset=utf-8")
+        elif parsed.path == "/api/unresolved":
+            try:
+                with connection() as db_conn:
+                    rows = db_conn.execute(
+                        "SELECT source_path, size_bytes, mtime_ns, disposition, output_path, retry_count, retry_reason, updated_at FROM source_inventory WHERE unresolvable=1 OR (disposition='failed' AND retry_count >= 2) ORDER BY updated_at DESC LIMIT 200"
+                    ).fetchall()
+                    self.send(200, json.dumps([dict(r) for r in rows], ensure_ascii=False), "application/json")
+            except Exception as exc:
+                self.send(500, f"查询失败: {exc}", "text/plain; charset=utf-8")
         elif parsed.path == "/api/accessible-paths":
             paths = [str(p) for p in accessible_paths()]
             self.send(200, json.dumps(paths, ensure_ascii=False), "application/json")
@@ -1287,6 +1339,66 @@ class Handler(BaseHTTPRequestHandler):
             lang = self.headers.get("Accept-Language", "zh")
             code, message = start_mode("incremental", lang)
             self.send(code, message, "application/json" if code == 202 else "text/plain; charset=utf-8")
+            return
+        if self.path == "/api/unresolved/action":
+            action = str(body.get("action", "")).strip()
+            path_arg = str(body.get("path", "")).strip()
+            lang = self.headers.get("Accept-Language", "zh")
+            cfg = get_or_init_config()
+            output_dir_str = str(cfg.get("output_dir", "")).strip()
+            output_dir = Path(output_dir_str) if output_dir_str else None
+
+            if action == "retry_all":
+                with connection() as db_conn:
+                    db_conn.execute("UPDATE source_inventory SET unresolvable=0, retry_count=0 WHERE unresolvable=1 OR (disposition='failed' AND retry_count >= 2)")
+                    db_conn.commit()
+                msg = "已重置疑难文件重试计数，下次增量整理将重新尝试" if lang == "zh" else "Unresolved retry counters reset"
+                self.send(200, json.dumps({"ok": True, "message": msg}, ensure_ascii=False), "application/json")
+                return
+            elif action == "ignore_all":
+                with connection() as db_conn:
+                    db_conn.execute("UPDATE source_inventory SET unresolvable=1 WHERE disposition='failed' OR unresolvable=1")
+                    db_conn.commit()
+                msg = "已全部标记为忽略" if lang == "zh" else "All marked as ignored"
+                self.send(200, json.dumps({"ok": True, "message": msg}, ensure_ascii=False), "application/json")
+                return
+            elif action == "fallback_publish_all":
+                if not output_dir or not output_dir.is_dir():
+                    self.send(400, "整理后目录无效或未配置", "text/plain; charset=utf-8")
+                    return
+                import pipeline
+                published_count = 0
+                with connection() as db_conn:
+                    rows = db_conn.execute("SELECT source_path FROM source_inventory WHERE unresolvable=1 OR (disposition='failed' AND retry_count >= 2)").fetchall()
+                for r in rows:
+                    src_p = Path(r["source_path"])
+                    if src_p.is_file():
+                        try:
+                            pipeline.fallback_publish_one(src_p, output_dir)
+                            published_count += 1
+                        except Exception:
+                            pass
+                msg = f"已将 {published_count} 首疑难曲目原样安全归档入库" if lang == "zh" else f"Published {published_count} unresolved tracks as fallback"
+                self.send(200, json.dumps({"ok": True, "published_count": published_count, "message": msg}, ensure_ascii=False), "application/json")
+                return
+            elif action == "fallback_publish_one" and path_arg:
+                if not output_dir or not output_dir.is_dir():
+                    self.send(400, "整理后目录无效或未配置", "text/plain; charset=utf-8")
+                    return
+                import pipeline
+                src_p = Path(path_arg)
+                if src_p.is_file():
+                    try:
+                        target = pipeline.fallback_publish_one(src_p, output_dir)
+                        msg = f"已原样安全入库至: {target.name if target else ''}" if lang == "zh" else "Published as fallback"
+                        self.send(200, json.dumps({"ok": True, "target": str(target), "message": msg}, ensure_ascii=False), "application/json")
+                        return
+                    except Exception as exc:
+                        self.send(500, json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False), "application/json")
+                        return
+                self.send(400, "文件不存在", "text/plain; charset=utf-8")
+                return
+            self.send(400, "未知操作", "text/plain; charset=utf-8")
             return
         self.send(404, "不存在")
 

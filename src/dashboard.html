@@ -1638,43 +1638,43 @@
             <div class="feat-item">
               <div class="feat-icon" style="color:#38bdf8;">🚀</div>
               <div>
-                <div class="feat-title">Btrfs 写时复制 (Reflink CoW)</div>
-                <div class="feat-desc">同存储卷整理时优先使用 Reflink 写时复制，数据块秒级指针复用，大幅降低物理写入与额外空间（跨卷自动安全回退为常规拷贝）。</div>
+                <div class="feat-title" id="featTitle1">Btrfs 写时复制 (Reflink CoW)</div>
+                <div class="feat-desc" id="featDesc1">同存储卷整理时优先使用 Reflink 写时复制，数据块秒级指针复用，大幅降低物理写入与额外空间（跨卷自动安全回退为常规拷贝）。</div>
               </div>
             </div>
             <div class="feat-item">
               <div class="feat-icon" style="color:#22c55e;">🛡️</div>
               <div>
-                <div class="feat-title">源目录只读保护</div>
-                <div class="feat-desc">输入目录在容器层默认以只读 (:ro) 挂载，流水线不包含对源文件的删除或原地修改操作，保障原始文件安全。</div>
+                <div class="feat-title" id="featTitle2">源目录只读保护</div>
+                <div class="feat-desc" id="featDesc2">输入目录在容器层默认以只读 (:ro) 挂载，流水线不包含对源文件的删除或原地修改操作，保障原始文件安全。</div>
               </div>
             </div>
             <div class="feat-item">
               <div class="feat-icon" style="color:#eab308;">⚡</div>
               <div>
-                <div class="feat-title">NCM 隔离解密与自动清理</div>
-                <div class="feat-desc">加密文件在独立临时沙盒中完成解码、声纹提取与元数据补全，发布后即刻自动销毁临时文件，保持存储空间整洁干净。</div>
+                <div class="feat-title" id="featTitle3">NCM 隔离解密与自动清理</div>
+                <div class="feat-desc" id="featDesc3">加密文件在独立临时沙盒中完成解码、声纹提取与元数据补全，发布后即刻自动销毁临时文件，保持存储空间整洁干净。</div>
               </div>
             </div>
             <div class="feat-item">
               <div class="feat-icon" style="color:#a855f7;">🧬</div>
               <div>
-                <div class="feat-title">跨格式声纹辅助去重</div>
-                <div class="feat-desc">基于开源 Chromaprint 提取音频波形特征指纹，识别不同格式的同一录音，并依据码率规则优先保留高品质版本。</div>
+                <div class="feat-title" id="featTitle4">跨格式声纹辅助去重</div>
+                <div class="feat-desc" id="featDesc4">基于开源 Chromaprint 提取音频波形特征指纹，识别不同格式的同一录音，并依据码率规则优先保留高品质版本。</div>
               </div>
             </div>
             <div class="feat-item">
               <div class="feat-icon" style="color:#ec4899;">🌐</div>
               <div>
-                <div class="feat-title">多源标签与歌词补全</div>
-                <div class="feat-desc">整合 QQ 音乐、网易云与 LRCLIB 等多源数据，遵循接口限流规则防封禁，补齐高清封面与同步滚动歌词。</div>
+                <div class="feat-title" id="featTitle5">多源标签与歌词补全</div>
+                <div class="feat-desc" id="featDesc5">整合 QQ 音乐、网易云与 LRCLIB 等多源数据，遵循接口限流规则防封禁，补齐高清封面与同步滚动歌词。</div>
               </div>
             </div>
             <div class="feat-item">
               <div class="feat-icon" style="color:#f97316;">🖥️</div>
               <div>
-                <div class="feat-title">契合飞牛原生规范</div>
-                <div class="feat-desc">遵循飞牛应用商店 FPK 标准，输出规范的「歌手/专辑/曲目」目录层级，便于飞牛音乐（trim.music）即时扫描建库。</div>
+                <div class="feat-title" id="featTitle6">契合飞牛原生规范</div>
+                <div class="feat-desc" id="featDesc6">遵循飞牛应用商店 FPK 标准，输出规范的「歌手/专辑/曲目」目录层级，便于飞牛音乐（trim.music）即时扫描建库。</div>
               </div>
             </div>
           </div>
@@ -1684,23 +1684,23 @@
         <div class="tab-pane" id="paneAbout" style="display:none;">
           <div class="about-card">
             <div style="text-align:center;margin-bottom:18px;">
-              <h3 style="font-size:18px;margin-bottom:6px;">飞牛音乐伴侣 (MusicFlow for fnOS)</h3>
-              <p style="color:var(--text-muted);font-size:13px;">专为飞牛私有云量身定制的高保真无损音乐整理引擎</p>
+              <h3 style="font-size:18px;margin-bottom:6px;" id="aboutCardTitle">飞牛音乐伴侣 (MusicFlow for fnOS)</h3>
+              <p style="color:var(--text-muted);font-size:13px;" id="aboutCardSub">专为飞牛私有云量身定制的高保真无损音乐整理引擎</p>
             </div>
             <div class="about-links">
-              <a href="https://github.com/chang-nas/fn-music-flow" target="_blank" class="github-btn">
+              <a href="https://github.com/chang-nas/fn-music-flow" target="_blank" class="github-btn" id="aboutGithubBtn">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-                <span>访问 GitHub 仓库 · 欢迎 Star 支持</span>
+                <span id="aboutGithubBtnText">访问 GitHub 仓库 · 欢迎 Star 支持</span>
               </a>
             </div>
             <div style="margin-top:22px;font-size:12px;color:var(--text-muted);line-height:1.8;">
-              <div style="font-weight:600;color:var(--text-secondary);margin-bottom:4px;">开源上游组件致谢：</div>
-              <div>• <b>Rust / Dupsonic</b>：跨格式音频指纹索引与相似度聚类</div>
-              <div>• <b>TagLib (v2.1.1)</b>：高保真 ID3v2 / FLAC Vorbis 注释引擎</div>
-              <div>• <b>Chromaprint / fpcalc</b>：声学指纹抽取算法</div>
-              <div>• <b>taurusxin / ncmdump</b>：NCM 高保真格式还原</div>
-              <div>• <b>Beets & SACAD</b>：工业级音频元数据与原版超清封面抓取</div>
-              <div>• <b>fnOS Team</b>：飞牛私有云应用生态支持</div>
+              <div style="font-weight:600;color:var(--text-secondary);margin-bottom:4px;" id="aboutUpstreamTitle">开源上游组件致谢：</div>
+              <div id="aboutUpstream1">• <b>Rust / Dupsonic</b>：跨格式音频指纹索引与相似度聚类</div>
+              <div id="aboutUpstream2">• <b>TagLib (v2.1.1)</b>：高保真 ID3v2 / FLAC Vorbis 注释引擎</div>
+              <div id="aboutUpstream3">• <b>Chromaprint / fpcalc</b>：声学指纹抽取算法</div>
+              <div id="aboutUpstream4">• <b>taurusxin / ncmdump</b>：NCM 高保真格式还原</div>
+              <div id="aboutUpstream5">• <b>Beets & SACAD</b>：工业级音频元数据与原版超清封面抓取</div>
+              <div id="aboutUpstream6">• <b>fnOS Team</b>：飞牛私有云应用生态支持</div>
             </div>
           </div>
         </div>
@@ -1718,57 +1718,57 @@
           </div>
           <div>
             <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px;">
-              <span>清空缓存与从头开始</span>
-              <span style="font-size:11px;padding:2px 7px;border-radius:10px;background:var(--danger-glow);color:var(--danger);font-weight:600;">系统维护</span>
+              <span id="resetModalTitle">清空缓存与从头开始</span>
+              <span id="resetModalBadge" style="font-size:11px;padding:2px 7px;border-radius:10px;background:var(--danger-glow);color:var(--danger);font-weight:600;">系统维护</span>
             </div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">按需重置历史记录、曲目状态清单或清空本地歌词知识库</div>
+            <div id="resetModalSubtitle" style="font-size:12px;color:var(--text-muted);margin-top:2px;">按需重置历史记录、曲目状态清单或清空本地歌词知识库</div>
           </div>
         </div>
-        <button class="modal-close" onclick="closeResetModal()" title="关闭">&times;</button>
+        <button class="modal-close" id="resetModalCloseBtn" onclick="closeResetModal()" title="关闭">&times;</button>
       </div>
 
       <div class="modal-body">
         <div class="sponsor-notice" style="border-left: 3px solid var(--warning); background: var(--bg-subtle);">
-          <p style="font-weight: 600; color: var(--warning);">⚠️ 关于从头开始操作：</p>
-          <p style="font-size: 12.5px; color: var(--text-secondary); margin-top: 4px;">重置操作仅清理系统运行账本与元数据，<b>原始音乐文件夹（只读）不受任何影响，系统也绝不在 SSD 留存任何音频文件</b>。你可以根据需求选择重置深度：</p>
+          <p id="resetNoticeTitle" style="font-weight: 600; color: var(--warning);">⚠️ 关于从头开始操作：</p>
+          <p id="resetNoticeDesc" style="font-size: 12.5px; color: var(--text-secondary); margin-top: 4px;">重置操作仅清理系统运行账本与元数据，<b>原始音乐文件夹（只读）不受任何影响，系统也绝不在 SSD 留存任何音频文件</b>。你可以根据需求选择重置深度：</p>
         </div>
 
         <div class="reset-quick-presets">
-          <span style="font-size: 12px; color: var(--text-muted); align-self: center;">快捷方案：</span>
-          <button type="button" class="preset-btn" onclick="applyResetPreset('standard')">标准重置 (保留歌词知识库)</button>
-          <button type="button" class="preset-btn" onclick="applyResetPreset('full')">完全重置 (从零全新开始)</button>
+          <span id="resetPresetLabel" style="font-size: 12px; color: var(--text-muted); align-self: center;">快捷方案：</span>
+          <button type="button" class="preset-btn" id="resetPresetStandardBtn" onclick="applyResetPreset('standard')">标准重置 (保留歌词知识库)</button>
+          <button type="button" class="preset-btn" id="resetPresetFullBtn" onclick="applyResetPreset('full')">完全重置 (从零全新开始)</button>
         </div>
 
         <div class="reset-option-list">
           <label class="reset-option-item">
             <input type="checkbox" id="chkClearHistory" checked>
             <div class="reset-option-text">
-              <div class="opt-title">清空历史运行记录与指标账本</div>
-              <div class="opt-desc">清空所有历史运行记录、处理指标统计（全部归零）并清空终端日志。</div>
+              <div class="opt-title" id="optClearHistoryTitle">清空历史运行记录与指标账本</div>
+              <div class="opt-desc" id="optClearHistoryDesc">清空所有历史运行记录、处理指标统计（全部归零）并清空终端日志。</div>
             </div>
           </label>
 
           <label class="reset-option-item">
             <input type="checkbox" id="chkClearInventory" checked>
             <div class="reset-option-text">
-              <div class="opt-title">重置曲目状态清单与门禁</div>
-              <div class="opt-desc">清除曲目去重状态清单，解除门禁标记，允许重新验证样本或从零开始全新整理。</div>
+              <div class="opt-title" id="optClearInventoryTitle">重置曲目状态清单与门禁</div>
+              <div class="opt-desc" id="optClearInventoryDesc">清除曲目去重状态清单，解除门禁标记，允许重新验证样本或从零开始全新整理。</div>
             </div>
           </label>
 
           <label class="reset-option-item">
             <input type="checkbox" id="chkClearKB">
             <div class="reset-option-text">
-              <div class="opt-title">清空本地元数据与歌词知识库</div>
-              <div class="opt-desc">清除本地 SQLite 中已缓存的歌词与标签。下次整理时将重新向音乐源发起检索。</div>
+              <div class="opt-title" id="optClearKBTitle">清空本地元数据与歌词知识库</div>
+              <div class="opt-desc" id="optClearKBDesc">清除本地 SQLite 中已缓存的歌词与标签。下次整理时将重新向音乐源发起检索。</div>
             </div>
           </label>
         </div>
 
         <div class="reset-btn-group">
-          <button type="button" class="btn-cancel" onclick="closeResetModal()">取消</button>
+          <button type="button" class="btn-cancel" id="resetCancelBtn" onclick="closeResetModal()">取消</button>
           <button type="button" class="btn-danger-confirm" id="doResetBtn" onclick="executeReset()">
-            <span>确认执行重置</span>
+            <span id="resetConfirmBtnText">确认执行重置</span>
           </button>
         </div>
       </div>
@@ -1919,7 +1919,13 @@
           taskCenter: "任务控制中心",
           stopBtn: "⏹️ 停止当前整理任务",
           fullRerunBtn: "🔄 重新执行全量对齐 (支持秒级复用)",
-          resetBtn: "🧹 清空缓存与历史记录 (从头开始)"
+          resetBtn: "🧹 清空缓存与历史记录 (从头开始)",
+          quickSelect: "快捷选择目录...",
+          headerResetTitle: "清空缓存与历史记录 (从头开始)",
+          themeTitle: "切换明暗主题",
+          refreshTitle: "刷新数据",
+          guideBtnTitle: "新手极速上手与常见问题",
+          sponsorBtnTitle: "赞助支持与关于应用"
         },
         actionStates: {
           running: { text: "整理流水线正在运行中...", banner: "⚙️ <b>流水线运行中</b>：正在自动执行声纹波形比对去重与正版歌词封面刮削，已完成曲目已实时写入，请安心等待。" },
@@ -2035,7 +2041,7 @@
             f2Title: "源目录只读保护",
             f2Desc: "输入目录在容器层默认以只读 (:ro) 挂载，流水线不包含对源文件的删除或原地修改操作，保障原始文件安全。",
             f3Title: "NCM 隔离解密与自动清理",
-            f3Desc: "加密文件在独立临时沙盒中完成解码、声纹提取与元数据补全，发布后即刻自动销毁临时文件，保持存储空间整洁干净。",
+            f3Desc: "加密文件在独立临时沙盒中完成解码、声纹提取与元数据补全，发布后即刻自动销毁临时文件（结束即清理），保持存储空间整洁干净。",
             f4Title: "跨格式声纹辅助去重",
             f4Desc: "基于开源 Chromaprint 提取音频波形特征指纹，识别不同格式的同一录音，并依据码率规则优先保留高品质版本。",
             f5Title: "多源标签与歌词补全",
@@ -2193,7 +2199,13 @@
           taskCenter: "Task Control Center",
           stopBtn: "⏹️ Stop Current Task",
           fullRerunBtn: "🔄 Re-run Full Organization (Fast Reuse)",
-          resetBtn: "🧹 Reset Cache & History (Start Over)"
+          resetBtn: "🧹 Reset Cache & History (Start Over)",
+          quickSelect: "Quick select folder...",
+          headerResetTitle: "Reset Cache & History (Start Fresh)",
+          themeTitle: "Toggle Light/Dark Theme",
+          refreshTitle: "Refresh Data",
+          guideBtnTitle: "Quick Start & FAQ",
+          sponsorBtnTitle: "Sponsor & About"
         },
         actionStates: {
           running: { text: "Pipeline is currently running...", banner: "⚙️ <b>Pipeline in progress</b>: Comparing acoustic fingerprints, scraping covers and lyrics. Published files are written in real-time." },
@@ -2400,6 +2412,7 @@
       currentLang = currentLang === "zh" ? "en" : "zh";
       localStorage.setItem("fn-music-lang", currentLang);
       applyLanguage();
+      renderConfig(configCache);
       renderStatus(stateCache);
       renderMetrics(stateCache.report ? (stateCache.report.metrics || {}) : {});
       updateActionButtons();
@@ -2593,73 +2606,71 @@
       if (qrCap) qrCap.textContent = (typeof currentQRType !== 'undefined' && currentQRType === 'alipay') ? dict.modals.sponsor.captionAlipay : dict.modals.sponsor.captionWechat;
 
       // Update Tab 2: Features & Architecture
-      const featItems = document.querySelectorAll("#paneFeatures .feat-item");
-      if (featItems.length >= 6) {
-        featItems[0].querySelector(".feat-title").textContent = dict.modals.features.f1Title;
-        featItems[0].querySelector(".feat-desc").textContent = dict.modals.features.f1Desc;
-        featItems[1].querySelector(".feat-title").textContent = dict.modals.features.f2Title;
-        featItems[1].querySelector(".feat-desc").textContent = dict.modals.features.f2Desc;
-        featItems[2].querySelector(".feat-title").textContent = dict.modals.features.f3Title;
-        featItems[2].querySelector(".feat-desc").textContent = dict.modals.features.f3Desc;
-        featItems[3].querySelector(".feat-title").textContent = dict.modals.features.f4Title;
-        featItems[3].querySelector(".feat-desc").textContent = dict.modals.features.f4Desc;
-        featItems[4].querySelector(".feat-title").textContent = dict.modals.features.f5Title;
-        featItems[4].querySelector(".feat-desc").textContent = dict.modals.features.f5Desc;
-        featItems[5].querySelector(".feat-title").textContent = dict.modals.features.f6Title;
-        featItems[5].querySelector(".feat-desc").textContent = dict.modals.features.f6Desc;
+      for (let i = 1; i <= 6; i++) {
+        const titleEl = document.getElementById(`featTitle${i}`);
+        const descEl = document.getElementById(`featDesc${i}`);
+        if (titleEl && dict.modals.features[`f${i}Title`]) {
+          titleEl.textContent = dict.modals.features[`f${i}Title`];
+        }
+        if (descEl && dict.modals.features[`f${i}Desc`]) {
+          descEl.textContent = dict.modals.features[`f${i}Desc`];
+        }
       }
 
       // Update Tab 3: About & GitHub
-      const aboutH3 = document.querySelector("#paneAbout .about-card h3");
-      if (aboutH3) aboutH3.textContent = dict.modals.about.title;
-      const aboutSub = document.querySelector("#paneAbout .about-card p");
-      if (aboutSub) aboutSub.textContent = dict.modals.about.subtitle;
-      const ghBtn = document.querySelector("#paneAbout .github-btn span");
-      if (ghBtn) ghBtn.textContent = dict.modals.about.githubBtn;
-      const upTitle = document.querySelector("#paneAbout .about-card > div:last-child > div:first-child");
-      if (upTitle) upTitle.textContent = dict.modals.about.upstreamTitle;
-      const upList = document.querySelectorAll("#paneAbout .about-card > div:last-child > div:not(:first-child)");
-      dict.modals.about.upstreams.forEach((text, i) => {
-        if (upList[i]) upList[i].innerHTML = text;
-      });
+      const aboutCardTitle = document.getElementById("aboutCardTitle");
+      if (aboutCardTitle) aboutCardTitle.textContent = dict.modals.about.title;
+      const aboutCardSub = document.getElementById("aboutCardSub");
+      if (aboutCardSub) aboutCardSub.textContent = dict.modals.about.subtitle;
+      const aboutGithubBtnText = document.getElementById("aboutGithubBtnText");
+      if (aboutGithubBtnText) aboutGithubBtnText.textContent = dict.modals.about.githubBtn;
+      const aboutUpstreamTitle = document.getElementById("aboutUpstreamTitle");
+      if (aboutUpstreamTitle) aboutUpstreamTitle.textContent = dict.modals.about.upstreamTitle;
+      if (Array.isArray(dict.modals.about.upstreams)) {
+        dict.modals.about.upstreams.forEach((text, i) => {
+          const upEl = document.getElementById(`aboutUpstream${i + 1}`);
+          if (upEl) upEl.innerHTML = text;
+        });
+      }
 
       // Update Modal: Reset & Clear Cache
-      const resetBrand = document.querySelector("#resetModal .modal-brand div:last-child");
-      if (resetBrand) {
-        const titleSpan = resetBrand.querySelector("div:first-child span:first-child");
-        if (titleSpan) titleSpan.textContent = dict.modals.reset.title;
-        const badgeSpan = resetBrand.querySelector("div:first-child span:last-child");
-        if (badgeSpan) badgeSpan.textContent = dict.modals.reset.badge;
-        const subSpan = resetBrand.querySelector("div:last-child");
-        if (subSpan) subSpan.textContent = dict.modals.reset.subtitle;
-      }
-      const resetNoticeP1 = document.querySelector("#resetModal .sponsor-notice p:first-child");
-      if (resetNoticeP1) resetNoticeP1.textContent = dict.modals.reset.noticeTitle;
-      const resetNoticeP2 = document.querySelector("#resetModal .sponsor-notice p:last-child");
-      if (resetNoticeP2) resetNoticeP2.innerHTML = dict.modals.reset.noticeDesc;
+      const resetModalTitle = document.getElementById("resetModalTitle");
+      if (resetModalTitle) resetModalTitle.textContent = dict.modals.reset.title;
+      const resetModalBadge = document.getElementById("resetModalBadge");
+      if (resetModalBadge) resetModalBadge.textContent = dict.modals.reset.badge;
+      const resetModalSubtitle = document.getElementById("resetModalSubtitle");
+      if (resetModalSubtitle) resetModalSubtitle.textContent = dict.modals.reset.subtitle;
+      const resetModalCloseBtn = document.getElementById("resetModalCloseBtn");
+      if (resetModalCloseBtn) resetModalCloseBtn.title = dict.modals.closeBtn;
+      const resetNoticeTitle = document.getElementById("resetNoticeTitle");
+      if (resetNoticeTitle) resetNoticeTitle.textContent = dict.modals.reset.noticeTitle;
+      const resetNoticeDesc = document.getElementById("resetNoticeDesc");
+      if (resetNoticeDesc) resetNoticeDesc.innerHTML = dict.modals.reset.noticeDesc;
 
-      const presetLabelSpan = document.querySelector(".reset-quick-presets span");
-      if (presetLabelSpan) presetLabelSpan.textContent = dict.modals.reset.presetLabel;
-      const presetBtns = document.querySelectorAll(".reset-quick-presets button");
-      if (presetBtns.length >= 2) {
-        presetBtns[0].textContent = dict.modals.reset.presetStandard;
-        presetBtns[1].textContent = dict.modals.reset.presetFull;
-      }
+      const resetPresetLabel = document.getElementById("resetPresetLabel");
+      if (resetPresetLabel) resetPresetLabel.textContent = dict.modals.reset.presetLabel;
+      const resetPresetStandardBtn = document.getElementById("resetPresetStandardBtn");
+      if (resetPresetStandardBtn) resetPresetStandardBtn.textContent = dict.modals.reset.presetStandard;
+      const resetPresetFullBtn = document.getElementById("resetPresetFullBtn");
+      if (resetPresetFullBtn) resetPresetFullBtn.textContent = dict.modals.reset.presetFull;
 
-      const resetOpts = document.querySelectorAll(".reset-option-list .reset-option-item");
-      if (resetOpts.length >= 3) {
-        resetOpts[0].querySelector(".opt-title").textContent = dict.modals.reset.opt1Title;
-        resetOpts[0].querySelector(".opt-desc").textContent = dict.modals.reset.opt1Desc;
-        resetOpts[1].querySelector(".opt-title").textContent = dict.modals.reset.opt2Title;
-        resetOpts[1].querySelector(".opt-desc").textContent = dict.modals.reset.opt2Desc;
-        resetOpts[2].querySelector(".opt-title").textContent = dict.modals.reset.opt3Title;
-        resetOpts[2].querySelector(".opt-desc").textContent = dict.modals.reset.opt3Desc;
-      }
+      const optClearHistoryTitle = document.getElementById("optClearHistoryTitle");
+      if (optClearHistoryTitle) optClearHistoryTitle.textContent = dict.modals.reset.opt1Title;
+      const optClearHistoryDesc = document.getElementById("optClearHistoryDesc");
+      if (optClearHistoryDesc) optClearHistoryDesc.textContent = dict.modals.reset.opt1Desc;
+      const optClearInventoryTitle = document.getElementById("optClearInventoryTitle");
+      if (optClearInventoryTitle) optClearInventoryTitle.textContent = dict.modals.reset.opt2Title;
+      const optClearInventoryDesc = document.getElementById("optClearInventoryDesc");
+      if (optClearInventoryDesc) optClearInventoryDesc.textContent = dict.modals.reset.opt2Desc;
+      const optClearKBTitle = document.getElementById("optClearKBTitle");
+      if (optClearKBTitle) optClearKBTitle.textContent = dict.modals.reset.opt3Title;
+      const optClearKBDesc = document.getElementById("optClearKBDesc");
+      if (optClearKBDesc) optClearKBDesc.textContent = dict.modals.reset.opt3Desc;
 
-      const resetCancelBtn = document.querySelector(".reset-btn-group .btn-cancel");
+      const resetCancelBtn = document.getElementById("resetCancelBtn");
       if (resetCancelBtn) resetCancelBtn.textContent = dict.modals.reset.btnCancel;
-      const resetConfirmBtn = document.querySelector("#doResetBtn span");
-      if (resetConfirmBtn) resetConfirmBtn.textContent = dict.modals.reset.btnConfirm;
+      const resetConfirmBtnText = document.getElementById("resetConfirmBtnText");
+      if (resetConfirmBtnText) resetConfirmBtnText.textContent = dict.modals.reset.btnConfirm;
 
       // Update Modal: File Picker (if open)
       const pickerUpBtn = document.getElementById("pickerUpBtn");
@@ -2668,6 +2679,38 @@
       if (pickerConfirmBtn) pickerConfirmBtn.textContent = dict.modals.picker.btnConfirm;
       const pickerCancelBtn = document.querySelector("#filePickerModal .btn-cancel");
       if (pickerCancelBtn) pickerCancelBtn.textContent = dict.modals.picker.btnCancel;
+
+      // Update tooltips and button titles
+      const guideBtn = document.getElementById("guideBtn");
+      if (guideBtn) guideBtn.title = dict.controls.guideBtnTitle || "";
+      const sponsorBtn = document.getElementById("sponsorBtn");
+      if (sponsorBtn) sponsorBtn.title = dict.controls.sponsorBtnTitle || "";
+      const themeBtnEl = document.getElementById("themeBtn");
+      if (themeBtnEl) themeBtnEl.title = dict.controls.themeTitle || "";
+      const headerResetBtnEl = document.getElementById("headerResetBtn");
+      if (headerResetBtnEl) headerResetBtnEl.title = dict.controls.headerResetTitle || "";
+      const refreshBtnEl = document.getElementById("refreshBtn");
+      if (refreshBtnEl) refreshBtnEl.title = dict.controls.refreshTitle || "";
+      const clearLogBtnEl = document.getElementById("clearLogBtn");
+      if (clearLogBtnEl) clearLogBtnEl.title = dict.terminal.clearTitle || "";
+      const copyLogBtnEl = document.getElementById("copyLogBtn");
+      if (copyLogBtnEl) copyLogBtnEl.title = dict.terminal.copyTitle || "";
+
+      // Terminal initial placeholder
+      const logBodyEl = document.getElementById("logBody");
+      if (logBodyEl && (logBodyEl.textContent === "正在获取日志..." || logBodyEl.textContent === "Loading logs...")) {
+        logBodyEl.textContent = dict.terminal.getting || "正在获取日志...";
+      }
+
+      // Quick select placeholders
+      const sSelEl = document.getElementById("sourceSelect");
+      if (sSelEl && sSelEl.options.length > 0 && sSelEl.options[0].value === "") {
+        sSelEl.options[0].textContent = dict.controls.quickSelect || "快捷选择目录...";
+      }
+      const oSelEl = document.getElementById("outputSelect");
+      if (oSelEl && oSelEl.options.length > 0 && oSelEl.options[0].value === "") {
+        oSelEl.options[0].textContent = dict.controls.quickSelect || "快捷选择目录...";
+      }
     }
 
     const phases = ["validate", "ncm_decode", "exact_dedupe", "acoustic_dedupe", "publish"];
@@ -2718,6 +2761,7 @@
       if (pwd) {
         h["X-Admin-Password"] = pwd;
       }
+      h["Accept-Language"] = currentLang || "zh";
       return h;
     }
 
@@ -2776,7 +2820,7 @@
       }
       if (!res.ok) {
         const err = await res.text();
-        alert(t("dialogs.resetFailed") + err);
+        alert(err);
         return false;
       }
       return true;
@@ -2979,7 +3023,8 @@
             }
             return parts[parts.length - 1] || p;
           };
-          const opts = `<option value="">快捷选择目录...</option>` + cfg.accessible_dirs.map(d => {
+          const quickSelText = (I18N[currentLang] && I18N[currentLang].controls && I18N[currentLang].controls.quickSelect) || "快捷选择目录...";
+          const opts = `<option value="">${escapeHTML(quickSelText)}</option>` + cfg.accessible_dirs.map(d => {
             const label = formatPathLabel(d);
             return `<option value="${escapeHTML(d)}">${escapeHTML(label)} (${escapeHTML(d)})</option>`;
           }).join("");
@@ -3483,7 +3528,7 @@
           closeResetModal();
           await updateDashboard();
         } else {
-          alert(t("dialogs.resetFailed") + (data.error || data.detail || data.message || "未知异常"));
+          alert(t("dialogs.resetFailed") + (data.error || data.detail || data.message || (currentLang === "en" ? "Unknown error" : "未知异常")));
         }
       } catch (err) {
         alert(t("dialogs.resetFailed") + (err && err.message ? err.message : String(err)));

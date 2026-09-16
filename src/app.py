@@ -155,6 +155,64 @@ def accessible_paths() -> list[Path]:
     return sorted(result, key=lambda p: str(p))
 
 
+ERRORS = {
+    "unsupported_fields": {
+        "zh": "配置只能包含受支持的应用设置字段",
+        "en": "Configuration can only contain supported application settings fields."
+    },
+    "dirs_required": {
+        "zh": "请先在飞牛系统中为本应用授予文件夹权限，并在下方选择整理前与整理后目录",
+        "en": "Please grant folder permissions to this app in fnOS, then select source and output directories below."
+    },
+    "vol_path_required": {
+        "zh": "只能使用飞牛授权返回的真实 /volN/... 路径",
+        "en": "Only valid /volN/... storage volume paths authorized by fnOS can be used."
+    },
+    "not_authorized": {
+        "zh": "所选目录尚未在飞牛系统中为本应用授权访问（请先在飞牛中授予权限，刷新后直接下拉选择）",
+        "en": "Selected directory is not authorized in fnOS. Please grant access in fnOS first and refresh."
+    },
+    "source_not_exists": {
+        "zh": "原始文件夹必须真实存在于 NAS 存储卷中",
+        "en": "Source music folder must physically exist on the NAS storage volume."
+    },
+    "source_not_readable": {
+        "zh": "原始文件夹不可读（请在飞牛「文件管理」中检查该目录读取权限）",
+        "en": "Source music folder is not readable (check read permissions in fnOS File Manager)."
+    },
+    "output_not_writable": {
+        "zh": "整理后文件夹不可写入（请在飞牛「文件管理」中检查该目录或上级目录读写权限）",
+        "en": "Output library folder is not writable (check read/write permissions in fnOS File Manager)."
+    },
+    "nested_dirs": {
+        "zh": "两个文件夹不能相同，也不能互相包含",
+        "en": "Source and output folders cannot be identical or nested within each other."
+    },
+    "invalid_stage": {
+        "zh": "当前阶段不能执行此操作",
+        "en": "This action cannot be performed in the current phase."
+    },
+    "task_running": {
+        "zh": "已有任务在运行",
+        "en": "A task is already running."
+    },
+    "unauthorized_path": {
+        "zh": "路径未授权或不存在",
+        "en": "Path is not authorized or does not exist."
+    },
+    "admin_auth_failed": {
+        "zh": "控制台访问受限：管理密码不匹配",
+        "en": "Console access restricted: Admin password incorrect."
+    }
+}
+
+
+def get_error_message(key: str, lang: str = "zh") -> str:
+    lang_key = "en" if str(lang).lower().startswith("en") else "zh"
+    entry = ERRORS.get(key, {})
+    return entry.get(lang_key, entry.get("zh", key))
+
+
 def authorized(path: Path) -> bool:
     candidate = path.resolve(strict=False)
     acc = accessible_paths()
@@ -166,26 +224,117 @@ def nested(first: Path, second: Path) -> bool:
     return first == second or first in second.parents or second in first.parents
 
 
-def config_valid(config: dict) -> tuple[bool, str]:
+def check_writable(path: Path) -> bool:
+    try:
+        cand = path.resolve(strict=False)
+        # 1. If folder exists and is a directory, test direct access or probe file write
+        if cand.is_dir() or cand.exists():
+            if os.access(cand, os.W_OK):
+                return True
+            probe = cand / f".perm_probe_{uuid.uuid4().hex[:6]}.tmp"
+            try:
+                probe.write_text("ok", encoding="utf-8")
+                probe.unlink(missing_ok=True)
+                return True
+            except (OSError, PermissionError):
+                pass
+
+        # 2. If folder does not exist, probe mkdir creation
+        if not (cand.is_dir() or cand.exists()):
+            try:
+                cand.mkdir(parents=True, exist_ok=True)
+                probe = cand / f".perm_probe_{uuid.uuid4().hex[:6]}.tmp"
+                try:
+                    probe.write_text("ok", encoding="utf-8")
+                    probe.unlink(missing_ok=True)
+                    return True
+                except (OSError, PermissionError):
+                    pass
+            except (OSError, PermissionError):
+                pass
+
+        # 3. Parent inheritance: check existing nearest parent
+        curr = cand if not (cand.is_dir() or cand.exists()) else cand.parent
+        while str(curr) != "/" and not (curr.is_dir() or curr.exists()):
+            curr = curr.parent
+        if curr.is_dir() or curr.exists():
+            if os.access(curr, os.W_OK):
+                return True
+            probe = curr / f".perm_probe_{uuid.uuid4().hex[:6]}.tmp"
+            try:
+                probe.write_text("ok", encoding="utf-8")
+                probe.unlink(missing_ok=True)
+                return True
+            except (OSError, PermissionError):
+                pass
+
+        # 4. Authorized root inheritance: if any authorized ancestor is writable, subdirectories inherit
+        for root in accessible_paths():
+            if cand == root or root in cand.parents:
+                if os.access(root, os.W_OK):
+                    return True
+                probe_root = root / f".perm_probe_{uuid.uuid4().hex[:6]}.tmp"
+                try:
+                    probe_root.write_text("ok", encoding="utf-8")
+                    probe_root.unlink(missing_ok=True)
+                    return True
+                except (OSError, PermissionError):
+                    pass
+    except Exception:
+        pass
+    return False
+
+
+def check_readable(path: Path) -> bool:
+    try:
+        cand = path.resolve(strict=False)
+        if cand.is_dir() or cand.exists():
+            if os.access(cand, os.R_OK):
+                return True
+            try:
+                next(cand.iterdir(), None)
+                return True
+            except (OSError, PermissionError):
+                pass
+        curr = cand.parent
+        while str(curr) != "/" and not (curr.is_dir() or curr.exists()):
+            curr = curr.parent
+        if (curr.is_dir() or curr.exists()) and os.access(curr, os.R_OK):
+            return True
+        for root in accessible_paths():
+            if cand == root or root in cand.parents:
+                if os.access(root, os.R_OK):
+                    return True
+    except Exception:
+        pass
+    return False
+
+
+def config_valid(config: dict, lang: str = "zh") -> tuple[bool, str]:
     allowed_keys = {"source_dir", "output_dir", "sample_verified", "initialized", "proxy", "offline_mode", "admin_password"}
     if set(config) - allowed_keys:
-        return False, "配置只能包含受支持的应用设置字段"
+        return False, get_error_message("unsupported_fields", lang)
     source_raw, output_raw = config.get("source_dir"), config.get("output_dir")
     if not source_raw or not output_raw:
-        return False, "请先在飞牛系统中为本应用授予文件夹权限，并在下方选择整理前与整理后目录"
+        return False, get_error_message("dirs_required", lang)
     if not all(isinstance(value, str) and value.startswith("/vol") for value in (source_raw, output_raw)):
-        return False, "只能使用飞牛授权返回的真实 /volN/... 路径"
+        return False, get_error_message("vol_path_required", lang)
     source, output = Path(source_raw), Path(output_raw)
     if not authorized(source) or not authorized(output):
-        return False, "所选目录尚未在飞牛系统中为本应用授权访问（请先在飞牛中授予权限，刷新后直接下拉选择）"
-    if not source.is_dir() or not output.is_dir():
-        return False, "原始文件夹和整理后文件夹都必须真实存在于 NAS 存储卷中"
-    if not os.access(source, os.R_OK):
-        return False, "原始文件夹不可读（请在飞牛「文件管理」中检查该目录读取权限）"
-    if not os.access(output, os.R_OK | os.W_OK | os.X_OK):
-        return False, "整理后文件夹不可写入（请在飞牛「文件管理」中检查该目录读写权限）"
+        return False, get_error_message("not_authorized", lang)
+    if not (source.is_dir() or source.exists()):
+        return False, get_error_message("source_not_exists", lang)
+    if not check_readable(source):
+        return False, get_error_message("source_not_readable", lang)
+    if not check_writable(output):
+        return False, get_error_message("output_not_writable", lang)
+    if not (output.is_dir() or output.exists()):
+        try:
+            output.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            pass
     if nested(source, output):
-        return False, "两个文件夹不能相同，也不能互相包含"
+        return False, get_error_message("nested_dirs", lang)
     return True, ""
 
 
@@ -524,9 +673,9 @@ def run_pipeline(mode: str) -> None:
             pass
 
 
-def start_mode(mode: str) -> tuple[int, str]:
+def start_mode(mode: str, lang: str = "zh") -> tuple[int, str]:
     config = read_json(CONFIG, {})
-    valid, message = config_valid(config)
+    valid, message = config_valid(config, lang)
     if not valid:
         return 400, message
     allowed = (
@@ -535,9 +684,9 @@ def start_mode(mode: str) -> tuple[int, str]:
         or (mode == "incremental" and bool(config.get("initialized")))
     )
     if not allowed:
-        return 409, "当前阶段不能执行此操作"
+        return 409, get_error_message("invalid_stage", lang)
     if not take_lock():
-        return 409, "已有任务在运行"
+        return 409, get_error_message("task_running", lang)
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
         LOG.parent.mkdir(parents=True, exist_ok=True)
@@ -641,10 +790,10 @@ class Handler(BaseHTTPRequestHandler):
             s_raw, o_raw = cfg.get("source_dir", ""), cfg.get("output_dir", "")
             s_p = Path(s_raw) if s_raw else None
             o_p = Path(o_raw) if o_raw else None
-            s_exists = bool(s_p and s_p.is_dir())
-            s_read = bool(s_exists and os.access(s_p, os.R_OK))
-            o_exists = bool(o_p and o_p.is_dir())
-            o_write = bool(o_exists and os.access(o_p, os.R_OK | os.W_OK | os.X_OK))
+            s_exists = bool(s_p and s_p.exists())
+            s_read = bool(s_p and check_readable(s_p))
+            o_exists = bool(o_p and (o_p.exists() or (o_p.parent.exists() and check_writable(o_p.parent))))
+            o_write = bool(o_p and check_writable(o_p))
             resp["source_status"] = {"exists": s_exists, "readable": s_read}
             resp["output_status"] = {"exists": o_exists, "writable": o_write}
             self.send(200, json.dumps(resp, ensure_ascii=False), "application/json")
@@ -681,6 +830,7 @@ class Handler(BaseHTTPRequestHandler):
             qs = parse_qs(parsed.query)
             target_path_str = qs.get("path", [""])[0].strip()
             acc = accessible_paths()
+            lang = self.headers.get("Accept-Language", "zh")
             
             # If no path specified, return the authorized roots
             if not target_path_str:
@@ -691,26 +841,28 @@ class Handler(BaseHTTPRequestHandler):
                         roots_data.append({
                             "name": p.name or str(p),
                             "path": str(p),
-                            "readable": os.access(p, os.R_OK),
-                            "writable": os.access(p, os.W_OK),
+                            "readable": check_readable(p),
+                            "writable": check_writable(p),
                         })
                 self.send(200, json.dumps({"current": "", "entries": roots_data}, ensure_ascii=False), "application/json")
                 return
 
             target = Path(target_path_str).resolve(strict=False)
             if not authorized(target) or not target.is_dir():
-                self.send(403, json.dumps({"error": "路径未授权或不存在", "entries": []}, ensure_ascii=False), "application/json")
+                self.send(403, json.dumps({"error": get_error_message("unauthorized_path", lang), "entries": []}, ensure_ascii=False), "application/json")
                 return
 
             entries = []
+            target_writable = check_writable(target)
+            target_readable = check_readable(target)
             try:
                 for child in sorted(target.iterdir(), key=lambda c: c.name.lower()):
                     if child.is_dir() and not child.name.startswith((".", "@")):
                         entries.append({
                             "name": child.name,
                             "path": str(child),
-                            "readable": os.access(child, os.R_OK),
-                            "writable": os.access(child, os.W_OK),
+                            "readable": target_readable or check_readable(child),
+                            "writable": target_writable or check_writable(child),
                         })
             except Exception as exc:
                 self.send(500, json.dumps({"error": f"读取目录失败: {exc}", "entries": []}, ensure_ascii=False), "application/json")
@@ -720,8 +872,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send(200, json.dumps({
                 "current": str(target),
                 "parent": parent_path,
-                "readable": os.access(target, os.R_OK),
-                "writable": os.access(target, os.W_OK),
+                "readable": target_readable,
+                "writable": target_writable,
                 "entries": entries,
             }, ensure_ascii=False), "application/json")
         elif parsed.path in ("/favicon.ico", "/favicon.png", "/icon.png"):
@@ -838,7 +990,8 @@ class Handler(BaseHTTPRequestHandler):
                 p_val = str(body.get("admin_password", "")).strip()
                 if p_val:
                     new["admin_password"] = p_val
-            valid, message = config_valid(new)
+            lang = self.headers.get("Accept-Language", "zh")
+            valid, message = config_valid(new, lang)
             if not valid:
                 self.send(400, message)
                 return
@@ -863,7 +1016,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send(200, json.dumps(new, ensure_ascii=False), "application/json")
             return
         if self.path == "/api/run":
-            code, message = start_mode(str(body.get("mode", "")))
+            lang = self.headers.get("Accept-Language", "zh")
+            code, message = start_mode(str(body.get("mode", "")), lang)
             self.send(code, message, "application/json" if code == 202 else "text/plain; charset=utf-8")
             return
         if self.path == "/api/stop":

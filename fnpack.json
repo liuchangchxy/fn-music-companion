@@ -28,14 +28,14 @@
       "service_port": "8091",
       "releases": {
         "1.0.0": {
-          "changelog": "v1.0.0 正式版发布：深度适配飞牛音乐媒体库、Btrfs 写时复制、QQ音乐与网易云双引擎元数据与歌词补全、深层多级目录选择器、声明式多语言。",
-          "updated_at": "2026-09-15T08:16:28+08:00",
+          "changelog": "v1.0.0 正式版发布：深度适配飞牛音乐媒体库、Btrfs 写时复制、QQ音乐与网易云双引擎元数据与歌词补全、深层多级目录选择器、子目录权限继承与写入探针、全流程中英双语无缝切换。",
+          "updated_at": "2026-09-16T20:25:00+08:00",
           "os_min_version": "1.2.0401",
           "packages": {
             "x86": {
               "download_url": "https://github.com/liuchangchxy/fn-music-companion/releases/download/v1.0.0/fn-music-companion-v1.0.0.fpk",
-              "sha256": "364e7c62e219efdac93a7f6ddf637631beab3c91b8061c3870bf6b22e53fb994",
-              "size": 153095
+              "sha256": "5d5076cb167cadaf6545c1f94c77028e7f7058c83cf1926eef74f4dd15d7915a",
+              "size": 152126
             }
           }
         }

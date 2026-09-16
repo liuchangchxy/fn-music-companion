@@ -351,7 +351,7 @@ def repair_shadowed_wav_tags(path: Path) -> bool:
     if tag_is_unreadable(embedded.title) and tag_is_unreadable(embedded.artist):
         return False
     if strip_riff_chunk(path, b"LIST"):
-        log(f"[格式支持] {path.name}: 已清除遮蔽 ID3 的 RIFF INFO 标签块，标签对飞牛/ffmpeg 可见")
+        log(f"[格式 / Format] {path.name}: 已清除遮蔽 ID3 的 RIFF INFO 标签块，标签对飞牛/ffmpeg 可见")
         return True
     return False
 
@@ -490,9 +490,76 @@ def update_phase(run_id: str, phase: str, done: int, total: int, message: str) -
     update_state(message, state="running", run_id=run_id, phase=phase, phase_done=done, phase_total=total, state_bytes=directory_size(STATE))
 
 
+def check_writable_path(path: Path) -> bool:
+    try:
+        cand = path.resolve(strict=False)
+        # 1. If path exists and is a directory, probe write
+        if cand.exists() and cand.is_dir():
+            if os.access(cand, os.W_OK):
+                return True
+            probe = cand / f".perm_probe_{uuid.uuid4().hex[:6]}.tmp"
+            try:
+                probe.write_text("ok", encoding="utf-8")
+                probe.unlink(missing_ok=True)
+                return True
+            except (OSError, PermissionError):
+                pass
+        # 2. If path doesn't exist, try mkdir probe
+        if not cand.exists():
+            try:
+                cand.mkdir(parents=True, exist_ok=True)
+                probe = cand / f".perm_probe_{uuid.uuid4().hex[:6]}.tmp"
+                try:
+                    probe.write_text("ok", encoding="utf-8")
+                    probe.unlink(missing_ok=True)
+                    return True
+                except (OSError, PermissionError):
+                    pass
+            except (OSError, PermissionError):
+                pass
+        # 3. Parent inheritance: nearest existing parent probe
+        curr = cand if not cand.exists() else cand.parent
+        while str(curr) != "/" and not curr.exists():
+            curr = curr.parent
+        if curr.exists():
+            if os.access(curr, os.W_OK):
+                return True
+            probe = curr / f".perm_probe_{uuid.uuid4().hex[:6]}.tmp"
+            try:
+                probe.write_text("ok", encoding="utf-8")
+                probe.unlink(missing_ok=True)
+                return True
+            except (OSError, PermissionError):
+                pass
+    except Exception:
+        pass
+    return False
+
+
+def check_readable_path(path: Path) -> bool:
+    try:
+        cand = path.resolve(strict=False)
+        if cand.exists():
+            if os.access(cand, os.R_OK):
+                return True
+            try:
+                next(cand.iterdir(), None)
+                return True
+            except (OSError, PermissionError):
+                pass
+        curr = cand.parent
+        while str(curr) != "/" and not curr.exists():
+            curr = curr.parent
+        if curr.exists() and os.access(curr, os.R_OK):
+            return True
+    except Exception:
+        pass
+    return False
+
+
 def validate_settings(settings: dict) -> tuple[Path, Path]:
     if not isinstance(settings, dict):
-        raise RuntimeError("配置格式无效")
+        raise RuntimeError("配置格式无效 / Invalid configuration format")
     if any(k in settings for k in ("seed_dir", "input_dir", "work_dir")):
         raise RuntimeError("旧版配置已不再支持：配置只能包含原始文件夹、整理后文件夹及可选代理")
     proxy = str(settings.get("proxy", "")).strip()
@@ -501,17 +568,26 @@ def validate_settings(settings: dict) -> tuple[Path, Path]:
             os.environ[k] = proxy
     source_raw, output_raw = settings.get("source_dir"), settings.get("output_dir")
     if not all(isinstance(value, str) and value.startswith("/vol") for value in (source_raw, output_raw)):
-        raise RuntimeError("只能使用真实 /volN/... 路径")
+        raise RuntimeError("只能使用真实 /volN/... 路径 / Only valid /volN/... paths can be used")
     source, output = Path(source_raw), Path(output_raw)
     source_resolved, output_resolved = source.resolve(strict=False), output.resolve(strict=False)
     if source_resolved == output_resolved or source_resolved in output_resolved.parents or output_resolved in source_resolved.parents:
-        raise RuntimeError("两个目录不能相同，也不能互相包含")
-    if not source.is_dir() or not output.is_dir():
-        raise RuntimeError("原始文件夹和整理后文件夹都必须存在")
-    if not os.access(source, os.R_OK):
-        raise RuntimeError("原始文件夹不可读")
-    if not os.access(output, os.R_OK | os.W_OK | os.X_OK):
-        raise RuntimeError("整理后文件夹不可读写")
+        raise RuntimeError("两个目录不能相同，也不能互相包含 / Source and output directories cannot be identical or nested")
+    if not source.is_dir():
+        raise RuntimeError(f"原始文件夹必须存在 / Source directory does not exist: {source}")
+    if not check_readable_path(source):
+        raise RuntimeError(f"原始文件夹不可读 / Source directory is not readable: {source}")
+
+    # Auto-create output directory if it doesn't exist yet
+    if not output.exists():
+        try:
+            output.mkdir(parents=True, exist_ok=True)
+            log(f"[发布 / Publish] 自动创建整理后曲库目录 / Automatically created output directory: {output}")
+        except OSError as exc:
+            raise RuntimeError(f"无法创建整理后文件夹 / Cannot create output directory: {exc}")
+
+    if not check_writable_path(output):
+        raise RuntimeError(f"整理后文件夹不可读写 / Output directory is not writable: {output}")
     return source, output
 
 
@@ -810,7 +886,7 @@ def archive_superseded(path: Path, output: Path, connection: sqlite3.Connection 
             archived = archived.with_name(f"{archived.stem}-{uuid.uuid4().hex[:6]}{archived.suffix}")
         os.replace(path, archived)
     except OSError as exc:
-        log(f"[品质升级] 旧文件归档失败 {path}: {exc}")
+        log(f"[品质升级 / Upgrade] 旧文件归档失败 {path}: {exc}")
         return None
     sidecar = path.with_suffix(".lrc")
     if sidecar.is_file():
@@ -835,17 +911,17 @@ def archive_superseded(path: Path, output: Path, connection: sqlite3.Connection 
         except sqlite3.OperationalError:
             time.sleep(0.1 * (attempt + 1))
         except sqlite3.Error as exc:
-            log(f"[品质升级] 账本记录更新失败 {path}: {exc}")
+            log(f"[品质升级 / Upgrade] 账本记录更新失败 {path}: {exc}")
             break
 
     if not db_updated:
-        log(f"[品质升级] 数据库未同步，回滚文件移动: {archived} -> {path}")
+        log(f"[品质升级 / Upgrade] 数据库未同步，回滚文件移动: {archived} -> {path}")
         try:
             os.replace(archived, path)
             if sidecar.is_file() and archived.with_suffix(".lrc").is_file():
                 os.replace(archived.with_suffix(".lrc"), sidecar)
         except OSError as exc:
-            log(f"[品质升级] 回滚文件移动失败: {exc}")
+            log(f"[品质升级 / Upgrade] 回滚文件移动失败: {exc}")
         return None
 
     return archived
@@ -872,7 +948,7 @@ def apply_quality_upgrade(winner: Path, sub_group: list[Path], own: list[Path], 
     archived = [str(path) for path in (archive_superseded(path, output, connection) for path in superseded) if path]
     detail = json.dumps({"winner": str(winner), "superseded": [str(p) for p in superseded], "archived": archived}, ensure_ascii=False)
     for path in superseded:
-        log(f"[品质升级] 库中 {path.name} ({path.suffix}) 已被更优版本 {winner.name} ({winner.suffix}) 取代，移入 {ARCHIVE_DIRNAME}")
+        log(f"[品质升级 / Upgrade] 库中 {path.name} ({path.suffix}) 已被更优版本 {winner.name} ({winner.suffix}) 取代，移入 {ARCHIVE_DIRNAME}")
     connection.execute(
         "INSERT OR REPLACE INTO groups(id,run_id,tool,similarity,winner_source_path,decision,paths_json) VALUES(?,?,?,?,?,?,?)",
         (group_id, run_id, "quality_upgrade", 1.0, str(winner), "quality_upgrade", detail),
@@ -1261,9 +1337,9 @@ def enrich(temporary: Path, run_root: Path, digest: str | None = None, source_st
                 mf.save()
                 _, _, cur_tags, _ = probe(temporary)
                 cur_complete = bool(cur_tags.get("title") and (cur_tags.get("artist") or cur_tags.get("album_artist")))
-                log(f"[标签补全] {temporary.name}: 从文件名提取元数据 → artist={stem_art or '?'}, title={stem_tit or '?'}")
+                log(f"[元数据 / Metadata] {temporary.name}: 从文件名提取元数据 → artist={stem_art or '?'}, title={stem_tit or '?'}")
         except Exception as exc:
-            log(f"[标签补全] {temporary.name}: 写入文件名元数据失败: {exc}")
+            log(f"[元数据 / Metadata] {temporary.name}: 写入文件名元数据失败: {exc}")
 
     # Overseas Beets Fallback (Only for songs still missing metadata, lyrics, or cover)
     beets_needed = []
@@ -1274,7 +1350,7 @@ def enrich(temporary: Path, run_root: Path, digest: str | None = None, source_st
     if not cur_art:
         beets_needed.append("封面")
     if beets_needed:
-        log(f"[海外兜底] {temporary.name}: 国内引擎({dom_source or '未命中'})未完成，需要补充: {', '.join(beets_needed)}")
+        log(f"[海外源 / Fallback] {temporary.name}: 国内引擎({dom_source or '未命中'})未完成，需要补充: {', '.join(beets_needed)}")
 
     has_clean_tags = bool(cur_tags.get("title") and (cur_tags.get("artist") or cur_tags.get("album_artist")) and cur_tags.get("album"))
     beets = run_root / "beets" / uuid.uuid4().hex
@@ -1316,7 +1392,7 @@ def enrich(temporary: Path, run_root: Path, digest: str | None = None, source_st
             command(import_cmd, env, timeout=5)
         except Exception as exc:
             failures.add("metadata")
-            log(f"[Beets] {temporary.name}: 元数据匹配失败 (海外 MusicBrainz 超时或无结果): {exc}")
+            log(f"[Beets / Metadata] {temporary.name}: 元数据匹配失败 (海外 MusicBrainz 超时或无结果): {exc}")
 
     # P3: Only attempt Beets lyrics for formats that support embedding
     if not cur_lyrics and can_embed_lyrics:
@@ -1325,7 +1401,7 @@ def enrich(temporary: Path, run_root: Path, digest: str | None = None, source_st
             command(["beet", "write"], env, timeout=5)
         except Exception as exc:
             failures.add("lyrics")
-            log(f"[海外兜底] {temporary.name}: 歌词获取失败 (海外 lrclib/lrcmux): {exc}")
+            log(f"[海外源 / Fallback] {temporary.name}: 歌词获取失败 (海外 lrclib/lrcmux): {exc}")
         _, _, cur_tags, _ = probe(temporary)
         cur_lyrics = any((k.startswith("lyrics") or k in ("unsyncedlyrics", "uslt")) and bool(v.strip()) for k, v in cur_tags.items())
 
@@ -1339,19 +1415,19 @@ def enrich(temporary: Path, run_root: Path, digest: str | None = None, source_st
                 has_sidecar_lrc = True
                 cur_lyrics = True
                 reason = f"格式 {ext} 不支持内嵌歌词" if not can_embed_lyrics else "内嵌歌词未生效"
-                log(f"[格式支持] {temporary.name}: {reason}，将随发布生成同名外挂 .lrc")
+                log(f"[格式 / Format] {temporary.name}: {reason}，将随发布生成同名外挂 .lrc")
             except OSError as exc:
                 failures.add("lyrics")
-                log(f"[歌词] {temporary.name}: 外挂 .lrc 写入失败: {exc}")
+                log(f"[歌词 / Lyrics] {temporary.name}: 外挂 .lrc 写入失败: {exc}")
         elif not can_embed_lyrics:
-            log(f"[歌词] {temporary.name}: 格式 {ext} 不支持内嵌歌词，且国内引擎未收录该曲歌词")
+            log(f"[歌词 / Lyrics] {temporary.name}: 格式 {ext} 不支持内嵌歌词，且国内引擎未收录该曲歌词")
 
     if not cur_art:
         try:
             command(["beet", "embedart", "-y"], env, timeout=5)
         except Exception as exc:
             failures.add("cover")
-            log(f"[Beets] {temporary.name}: 封面嵌入失败: {exc}")
+            log(f"[Beets / Metadata] {temporary.name}: 封面嵌入失败: {exc}")
 
     _, _, after_tags, after_art = probe(temporary)
     shutil.rmtree(beets, ignore_errors=True)
@@ -1375,7 +1451,7 @@ def enrich(temporary: Path, run_root: Path, digest: str | None = None, source_st
     lyrics = "lyrics_already_present" if before_lyrics else "lyrics_embedded" if after_has_lyrics else "lyrics_tool_error" if "lyrics" in failures else "lyrics_not_found"
     cover = "cover_already_present" if before_art else "cover_embedded" if after_art else "cover_tool_error" if "cover" in failures else "cover_not_found"
     if os.environ.get("MUSIC_DEBUG") == "1" or "error" in metadata or "error" in lyrics or "error" in cover:
-        log(f"[整理链] {temporary.name}: 国内源={dom_source or '未命中'} → 元数据={metadata} / 歌词={lyrics}{'(外挂 .lrc)' if has_sidecar_lrc else ''} / 封面={cover}")
+        log(f"[流水线 / Pipeline] {temporary.name}: 国内源={dom_source or '未命中'} → 元数据={metadata} / 歌词={lyrics}{'(外挂 .lrc)' if has_sidecar_lrc else ''} / 封面={cover}")
     return metadata, lyrics, cover
 
 
@@ -1519,7 +1595,7 @@ def archive_previous_output(source: Path, output: Path, target: Path) -> None:
     if stale is None or stale == target or not stale.is_file() or hidden_under(stale, output):
         return
     if archive_superseded(stale, output):
-        log(f"[发布] {source.name}: 位置更新 {stale.parent.name}/ → {target.parent.name}/，旧副本已移入 {ARCHIVE_DIRNAME}")
+        log(f"[发布 / Publish] {source.name}: 位置更新 {stale.parent.name}/ → {target.parent.name}/，旧副本已移入 {ARCHIVE_DIRNAME}")
 
 
 def clean_lrc(payload: str) -> str:
@@ -1558,9 +1634,9 @@ def publish_cue(target: Path, source: Path) -> None:
     try:
         if not target_cue.exists() or target_cue.stat().st_size == 0:
             shutil.copy2(str(cue), str(target_cue))
-            log(f"[CUE索引] {target.name}: 已同步伴随分轨文件 {target_cue.name}")
+            log(f"[CUE索引 / CUE] {target.name}: 已同步伴随分轨文件 {target_cue.name}")
     except Exception as exc:
-        log(f"[CUE索引] {target.name}: 伴随分轨文件复制失败: {exc}")
+        log(f"[CUE索引 / CUE] {target.name}: 伴随分轨文件复制失败: {exc}")
 
 
 def publish_sidecar(target: Path, source: Path | None) -> None:
@@ -1588,9 +1664,9 @@ def publish_sidecar(target: Path, source: Path | None) -> None:
             pass
     try:
         sidecar.write_text(payload, encoding="utf-8")
-        log(f"[歌词] {target.name}: 已随发布写入外挂 {sidecar.name}")
+        log(f"[歌词 / Lyrics] {target.name}: 已随发布写入外挂 {sidecar.name}")
     except OSError as exc:
-        log(f"[歌词] {target.name}: 外挂 {sidecar.name} 写入失败: {exc}")
+        log(f"[歌词 / Lyrics] {target.name}: 外挂 {sidecar.name} 写入失败: {exc}")
 
 
 def restore_sidecar(target: Path, digest: str) -> bool:
@@ -1611,7 +1687,7 @@ def restore_sidecar(target: Path, digest: str) -> bool:
         sidecar.write_text(clean_lrc(row["lyrics"]), encoding="utf-8")
     except OSError:
         return False
-    log(f"[歌词] {target.name}: 复用缓存，已从知识库恢复外挂 {sidecar.name}")
+    log(f"[歌词 / Lyrics] {target.name}: 复用缓存，已从知识库恢复外挂 {sidecar.name}")
     return True
 
 
@@ -1663,9 +1739,9 @@ def publish_one(source: Path, run_root: Path, output: Path, real: bool, decoded_
             elif target.exists() and (owner == target or losing_occupant):
                 if losing_occupant:
                     archive_superseded(target, output)
-                    log(f"[发布] {source.name}: 取代同曲旧件 {target.parent.name}/{target.name}（旧件移入 {ARCHIVE_DIRNAME}）")
+                    log(f"[发布 / Publish] {source.name}: 取代同曲旧件 {target.parent.name}/{target.name}（旧件移入 {ARCHIVE_DIRNAME}）")
                 else:
-                    log(f"[发布] {source.name}: 就地更新 {target.parent.name}/{target.name}（不再产生 (2) 副本）")
+                    log(f"[发布 / Publish] {source.name}: 就地更新 {target.parent.name}/{target.name}（不再产生 (2) 副本）")
                 shutil.move(str(temporary), str(target))
                 temporary = None
             elif target.exists():
@@ -1792,13 +1868,13 @@ def sweep_orphan_conflict_copies(output: Path, connection: sqlite3.Connection) -
                 base_dur, _, _, _ = probe(base)
                 orphan_dur, _, _, _ = probe(path)
                 if base_dur > 0 and orphan_dur > 0 and abs(base_dur - orphan_dur) > 1.0:
-                    log(f"[清理] {path.parent.name}/{path.name}: 与原件时长差异较大({abs(base_dur - orphan_dur):.1f}s)，判定为不同曲目，跳过自动清理")
+                    log(f"[清理 / Cleanup] {path.parent.name}/{path.name}: 与原件时长差异较大({abs(base_dur - orphan_dur):.1f}s)，判定为不同曲目，跳过自动清理")
                     continue
             except Exception:
                 pass
 
             if archive_superseded(path, output, connection):
-                log(f"[清理] {path.parent.name}/{path.name}: 验证为同曲历史冲突副本，已移入 {ARCHIVE_DIRNAME}")
+                log(f"[清理 / Cleanup] {path.parent.name}/{path.name}: 验证为同曲历史冲突副本，已移入 {ARCHIVE_DIRNAME}")
                 archived += 1
     return archived
 
@@ -1967,10 +2043,10 @@ def run_full(settings: dict, incremental: bool = False) -> dict:
         counts = classify_counts(buckets)
         skipped = len(all_paths) - len(paths)
         if skipped > 0:
-            log(f"[增量门禁] 源目录 {len(all_paths)} 首：本次处理 {len(paths)} 首（真新增 {counts['new_files']} · 源文件改动 {counts['modified_files']} · 旧规则重判 {counts['stale_decisions']} · 未完成回补 {counts['retry_files']}），跳过 {skipped} 首")
+            log(f"[增量门禁 / Gatekeeper] 源目录 {len(all_paths)} 首：本次处理 {len(paths)} 首（真新增 {counts['new_files']} · 源文件改动 {counts['modified_files']} · 旧规则重判 {counts['stale_decisions']} · 未完成回补 {counts['retry_files']}），跳过 {skipped} 首")
             update_state(f"增量：处理 {len(paths)} 首（新增 {counts['new_files']} / 改动 {counts['modified_files']} / 重判 {counts['stale_decisions']} / 回补 {counts['retry_files']}）", state="running", phase="starting", phase_done=0, phase_total=len(paths))
         if not paths:
-            log("[增量门禁] 没有新增、改动、待重判或待回补的曲目，曲库已是最新状态。")
+            log("[增量门禁 / Gatekeeper] 没有新增、改动、待重判或待回补的曲目，曲库已是最新状态。")
             update_state(f"源目录 {len(all_paths)} 首均已按当前规则处理完成，无需重复处理", state="idle", phase="done", phase_done=1, phase_total=1)
             conn = db()
             try:
@@ -1985,7 +2061,7 @@ def run_full(settings: dict, incremental: bool = False) -> dict:
     else:
         paths = all_paths
         counts = None
-        log(f"[全量整理] 开始全量整理：对全部 {len(all_paths)} 首输入曲目执行全局去重并与物理磁盘对齐。")
+        log(f"[全量整理 / Full Run] 开始全量整理：对全部 {len(all_paths)} 首输入曲目执行全局去重并与物理磁盘对齐。")
 
     return run_batch("full", source, output, paths, True, False, classification=counts)
 
@@ -2089,7 +2165,7 @@ def run_incremental(settings: dict) -> dict:
     counts = classify_counts(buckets)
     if not paths:
         return {"metrics": {"scanned_total": 0, "published": 0, "state_bytes": directory_size(STATE), "orphans_archived": 0, **counts}, "message": "没有新增、改动、待重判或待回补的曲目"}
-    log(f"[增量门禁] 本次处理 {len(paths)} 首：真新增 {counts['new_files']} · 源文件改动 {counts['modified_files']} · 旧规则重判 {counts['stale_decisions']} · 未完成回补 {counts['retry_files']}")
+    log(f"[增量门禁 / Gatekeeper] 本次处理 {len(paths)} 首：真新增 {counts['new_files']} · 源文件改动 {counts['modified_files']} · 旧规则重判 {counts['stale_decisions']} · 未完成回补 {counts['retry_files']}")
     return run_batch("incremental", source, output, paths, True, True, classification=counts)
 
 

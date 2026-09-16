@@ -1886,10 +1886,17 @@ def publish_one(source: Path, run_root: Path, output: Path, real: bool, decoded_
                 try:
                     art = target.parent.parent.name if target.parent.parent != output else ""
                     tit = target.stem
-                    conn.execute(
-                        "INSERT INTO source_inventory(source_path,size_bytes,mtime_ns,sha256,disposition,output_path,metadata_state,lyrics_state,cover_state,duration,artist,title,retry_count,unresolvable,rules_version) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,0,0,?) ON CONFLICT(source_path) DO UPDATE SET size_bytes=excluded.size_bytes,mtime_ns=excluded.mtime_ns,sha256=excluded.sha256,disposition=excluded.disposition,output_path=excluded.output_path,metadata_state=excluded.metadata_state,lyrics_state=excluded.lyrics_state,cover_state=excluded.cover_state,duration=excluded.duration,artist=excluded.artist,title=excluded.title,retry_count=0,unresolvable=0,rules_version=excluded.rules_version,updated_at=CURRENT_TIMESTAMP",
-                        (str(source), stat.st_size, stat.st_mtime_ns, digest, "published", str(target), *states, duration, art, tit, RULES_VERSION),
-                    )
+                    has_error = any("error" in str(s) for s in states[:2])
+                    if has_error:
+                        conn.execute(
+                            "INSERT INTO source_inventory(source_path,size_bytes,mtime_ns,sha256,disposition,output_path,metadata_state,lyrics_state,cover_state,duration,artist,title,retry_count,unresolvable,rules_version) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,1,1,?) ON CONFLICT(source_path) DO UPDATE SET size_bytes=excluded.size_bytes,mtime_ns=excluded.mtime_ns,sha256=excluded.sha256,disposition=excluded.disposition,output_path=excluded.output_path,metadata_state=excluded.metadata_state,lyrics_state=excluded.lyrics_state,cover_state=excluded.cover_state,duration=excluded.duration,artist=excluded.artist,title=excluded.title,retry_count=source_inventory.retry_count+1,unresolvable=1,rules_version=excluded.rules_version,updated_at=CURRENT_TIMESTAMP",
+                            (str(source), stat.st_size, stat.st_mtime_ns, digest, "published", str(target), *states, duration, art, tit, RULES_VERSION),
+                        )
+                    else:
+                        conn.execute(
+                            "INSERT INTO source_inventory(source_path,size_bytes,mtime_ns,sha256,disposition,output_path,metadata_state,lyrics_state,cover_state,duration,artist,title,retry_count,unresolvable,rules_version) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,0,0,?) ON CONFLICT(source_path) DO UPDATE SET size_bytes=excluded.size_bytes,mtime_ns=excluded.mtime_ns,sha256=excluded.sha256,disposition=excluded.disposition,output_path=excluded.output_path,metadata_state=excluded.metadata_state,lyrics_state=excluded.lyrics_state,cover_state=excluded.cover_state,duration=excluded.duration,artist=excluded.artist,title=excluded.title,retry_count=0,unresolvable=0,rules_version=excluded.rules_version,updated_at=CURRENT_TIMESTAMP",
+                            (str(source), stat.st_size, stat.st_mtime_ns, digest, "published", str(target), *states, duration, art, tit, RULES_VERSION),
+                        )
                     conn.commit()
                 finally:
                     conn.close()
@@ -2284,10 +2291,10 @@ def classify_sources(source: Path, output: Path | None = None) -> dict[str, list
                     buckets["retry"].append(path)
                     continue
                 if "error" in meta or "error" in lrc:
-                    if retries < 1:
-                        buckets["retry"].append(path)
-                    else:
+                    if unres or retries >= 1:
                         buckets["unresolvable"].append(path)
+                    else:
+                        buckets["retry"].append(path)
                     continue
             # Only queue for stale re-judgement if explicitly enabled via environment variable
             # (otherwise old runs with rules_version=0 would force every track into a full re-scan).

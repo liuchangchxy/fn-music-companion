@@ -363,6 +363,8 @@ def config_valid(config: dict, lang: str = "zh") -> tuple[bool, str]:
 
 
 def connection() -> sqlite3.Connection:
+    import pipeline
+    pipeline.init_db(STATE / "ledger-v6.sqlite")
     database = sqlite3.connect(STATE / "ledger-v6.sqlite", timeout=60)
     database.row_factory = sqlite3.Row
     database.execute("PRAGMA journal_mode=WAL;")

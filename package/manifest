@@ -1,5 +1,5 @@
 appname               = fn-music-companion
-version               = 1.0.0
+version               = 1.0.1
 display_name          = 飞牛音乐伴侣 (MusicFlow)
 desc                  = 专为飞牛私有云 (fnOS) 量身打造的高保真音乐整理与元数据增强工具：支持 Btrfs 写时复制大幅节省存储空间、源目录只读挂载保护安全、QQ音乐+网易云双引擎标签与歌词封面补全、声纹跨格式智能去重。
 arch                  = x86_64
@@ -10,7 +10,7 @@ maintainer_url        = https://github.com/liuchangchxy/fn-music-companion
 distributor           = liuchangchxy
 distributor_url       = https://github.com/liuchangchxy/fn-music-companion
 helpurl               = https://github.com/liuchangchxy/fn-music-companion
-changelog             = v1.0.0 正式版发布：<br/>1. 深度适配飞牛音乐（fnOS Music）媒体库，规避扫描遗漏隐患；<br/>2. 引入工业级置信度评分引擎（Picard/Beets 物理时长门禁与非对称变体惩罚），有效抑制翻唱与伴奏误匹配；<br/>3. 同卷整理支持 Btrfs Reflink 写时复制，大幅降低物理磁盘占用；<br/>4. 跨格式声纹波形识别与品质置换，优先保留高音质版本；<br/>5. 支持伴随 CUE 分轨索引同步、双语滚动歌词合并与纯离线整理模式；<br/>6. 移动端（手机/平板/飞牛App）深度自适应排版。
+changelog             = v1.0.1 升级修复：<br/>1. 彻底解决整理后目录权限误判问题，移除容器内部 UID 限制并启用动态写入探针与父级继承机制；<br/>2. Docker 编排配置更新为强制拉取最新镜像（pull_policy: always），彻底规避 NAS 本地缓存导致旧镜像残留；<br/>3. 全界面、终端日志与交互弹窗实现完整中英双语即时切换。
 desktop_appname       = fn-music-companion.main
 desktop_uidir         = ui
 desktop_applaunchname = fn-music-companion.main

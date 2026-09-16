@@ -1,7 +1,7 @@
 services:
   organizer:
-    image: ${MUSIC_IMAGE:-changchxy/fn-music-companion:1.0.0}
-    pull_policy: if_not_present
+    image: ${MUSIC_IMAGE:-changchxy/fn-music-companion:1.0.1}
+    pull_policy: always
     container_name: fn-music-companion-organizer
     restart: unless-stopped
     environment:
@@ -20,6 +20,5 @@ services:
       - /etc/localtime:/etc/localtime:ro
     ports:
       - "${service_port:-8091}:8091"
-    user: "${TRIM_USER_UID:-1000}:${TRIM_USER_GID:-1000}"
     command: ["python3", "/opt/music-rebuild/app.py"]
 

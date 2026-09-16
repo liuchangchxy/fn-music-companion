@@ -403,6 +403,35 @@ class PipelineTests(unittest.TestCase):
             self.assertTrue(owned_copy.is_file())   # 自己有账 → 不动
             self.assertTrue(lonely.is_file())       # 兄弟无账 → 不是我们分叉出来的 → 不动
 
+    def test_sweep_orphan_conflict_copies_recovers_ledger_when_conflict_was_tracked(self) -> None:
+        """当账本错误指向了 (2) 冲突件而基准文件在磁盘未登记时，应纠正账本指向基准文件并归档 (2)。"""
+        with tempfile.TemporaryDirectory() as directory:
+            out_dir = Path(directory) / "output"
+            folder = out_dir / "Singer" / "Album"
+            folder.mkdir(parents=True)
+            base = folder / "Song.mp3"
+            base.write_bytes(b"music content")
+            copy = folder / "Song (2).mp3"
+            copy.write_bytes(b"music content")
+
+            with patch.object(pipeline, "STATE", Path(directory)), patch.object(pipeline, "LEDGER", Path(directory) / "ledger-v6.sqlite"), \
+                 patch.object(pipeline, "probe", return_value=(180.0, len(b"music content"), {}, False)):
+                conn = pipeline.db()
+                try:
+                    conn.execute("INSERT INTO source_inventory(source_path,size_bytes,mtime_ns,sha256,disposition,output_path,rules_version) VALUES(?,?,?,?,'published',?,?)",
+                                 ("/source/song.mp3", len(b"music content"), 1, "hash1", str(copy), pipeline.RULES_VERSION))
+                    conn.commit()
+                    archived_cnt = pipeline.sweep_orphan_conflict_copies(out_dir, conn)
+                    self.assertEqual(archived_cnt, 1)
+                    row = conn.execute("SELECT output_path FROM source_inventory WHERE source_path='/source/song.mp3'").fetchone()
+                    self.assertEqual(row["output_path"], str(base))
+                finally:
+                    conn.close()
+
+            self.assertTrue(base.is_file())
+            self.assertFalse(copy.exists())
+            self.assertTrue((out_dir / ".music-archive" / "Singer" / "Album" / "Song (2).mp3").is_file())
+
     def test_destination_uses_fallback_stem_when_tags_are_empty(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "song-9f2a1b3c.flac"

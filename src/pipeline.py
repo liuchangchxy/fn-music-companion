@@ -1852,8 +1852,10 @@ def publish_one(source: Path, run_root: Path, output: Path, real: bool, decoded_
             # source's own previous output, or the output of a source that this run has
             # already decided against — a dedupe loser must not keep a library copy.
             losing_occupant = occupant is not None and occupant != source and kept is not None and occupant not in kept
-            if target.exists() and sha256(target) == digest:
+            final_digest = sha256(temporary)
+            if target.exists() and (sha256(target) == final_digest or sha256(target) == digest):
                 temporary.unlink(missing_ok=True)
+                temporary = None
             elif target.exists() and (owner == target or losing_occupant):
                 if losing_occupant:
                     archive_superseded(target, output)
@@ -1863,15 +1865,38 @@ def publish_one(source: Path, run_root: Path, output: Path, real: bool, decoded_
                 shutil.move(str(temporary), str(target))
                 temporary = None
             elif target.exists():
-                base_stem = target.stem
-                counter = 2
-                while target.exists() and sha256(target) != digest:
-                    target = target.with_name(f"{base_stem} ({counter}){target.suffix}")
-                    counter += 1
-                if target.exists() and sha256(target) == digest:
-                    temporary.unlink(missing_ok=True)
+                is_same_song = False
+                try:
+                    target_dur, _, _, _ = probe(target)
+                    temp_dur, _, _, _ = probe(temporary)
+                    if target_dur > 0 and temp_dur > 0 and abs(target_dur - temp_dur) <= 1.0:
+                        is_same_song = True
+                except Exception:
+                    pass
+                if not is_same_song and target.stat().st_size == temporary.stat().st_size:
+                    is_same_song = True
+
+                if is_same_song:
+                    score_new = audio_quality_score(temporary)
+                    score_old = audio_quality_score(target)
+                    if score_new > score_old:
+                        archive_superseded(target, output)
+                        log(f"[发布 / Publish] {source.name}: 品质更高 ({score_new} > {score_old})，取代现有曲目 {target.parent.name}/{target.name}（旧件移入 {ARCHIVE_DIRNAME}）")
+                        shutil.move(str(temporary), str(target))
+                    else:
+                        log(f"[发布 / Publish] {source.name}: 目的库已存在同名且品质相当/更优曲目 ({target.parent.name}/{target.name})，复用现有曲目")
+                        temporary.unlink(missing_ok=True)
+                    temporary = None
                 else:
-                    shutil.move(str(temporary), str(target))
+                    base_stem = target.stem
+                    counter = 2
+                    while target.exists() and sha256(target) != final_digest and sha256(target) != digest:
+                        target = target.with_name(f"{base_stem} ({counter}){target.suffix}")
+                        counter += 1
+                    if target.exists() and (sha256(target) == final_digest or sha256(target) == digest):
+                        temporary.unlink(missing_ok=True)
+                    else:
+                        shutil.move(str(temporary), str(target))
                     temporary = None
             else:
                 shutil.move(str(temporary), str(target))
@@ -2026,18 +2051,33 @@ def sweep_orphan_conflict_copies(output: Path, connection: sqlite3.Connection) -
             continue
         owned = connection.execute("SELECT 1 FROM source_inventory WHERE output_path=? LIMIT 1", (str(base),)).fetchone()
         orphan = connection.execute("SELECT 1 FROM source_inventory WHERE output_path=? LIMIT 1", (str(path),)).fetchone()
-        if owned and not orphan:
-            # Verify that the orphan file actually has identical or nearly identical duration to base,
+        if (owned and not orphan) or (orphan and not owned):
+            # Verify that the conflict file actually has identical or nearly identical duration to base,
             # ensuring we never delete a genuinely different user track that happened to be named 'Song (2)'.
-            # If probe fails (e.g. dummy test file), fall back to checking if file size is reasonably close.
+            is_dup = False
             try:
                 base_dur, _, _, _ = probe(base)
                 orphan_dur, _, _, _ = probe(path)
-                if base_dur > 0 and orphan_dur > 0 and abs(base_dur - orphan_dur) > 1.0:
+                if base_dur > 0 and orphan_dur > 0 and abs(base_dur - orphan_dur) <= 1.0:
+                    is_dup = True
+                elif base_dur > 0 and orphan_dur > 0 and abs(base_dur - orphan_dur) > 1.0:
                     log(f"[清理 / Cleanup] {path.parent.name}/{path.name}: 与原件时长差异较大({abs(base_dur - orphan_dur):.1f}s)，判定为不同曲目，跳过自动清理")
                     continue
             except Exception:
                 pass
+
+            if not is_dup and base.stat().st_size == path.stat().st_size:
+                is_dup = True
+
+            if not is_dup and owned and not orphan:
+                is_dup = True
+
+            if not is_dup:
+                continue
+
+            if orphan and not owned:
+                connection.execute("UPDATE source_inventory SET output_path=? WHERE output_path=?", (str(base), str(path)))
+                connection.execute("UPDATE items SET output_path=? WHERE output_path=?", (str(base), str(path)))
 
             if archive_superseded(path, output, connection):
                 log(f"[清理 / Cleanup] {path.parent.name}/{path.name}: 验证为同曲历史冲突副本，已移入 {ARCHIVE_DIRNAME}")
@@ -2229,7 +2269,7 @@ def run_full(settings: dict, incremental: bool = False) -> dict:
         counts = None
         log(f"[全量整理 / Full Run] 开始全量整理：对全部 {len(all_paths)} 首输入曲目执行全局去重并与物理磁盘对齐。")
 
-    return run_batch("full", source, output, paths, True, False, classification=counts)
+    return run_batch("full", source, output, paths, True, True, classification=counts)
 
 
 def classify_sources(source: Path, output: Path | None = None) -> dict[str, list[Path]]:

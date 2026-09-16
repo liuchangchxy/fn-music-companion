@@ -567,8 +567,8 @@ def validate_settings(settings: dict) -> tuple[Path, Path]:
         for k in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"):
             os.environ[k] = proxy
     source_raw, output_raw = settings.get("source_dir"), settings.get("output_dir")
-    if not all(isinstance(value, str) and value.startswith("/vol") for value in (source_raw, output_raw)):
-        raise RuntimeError("只能使用真实 /volN/... 路径 / Only valid /volN/... paths can be used")
+    if not all(isinstance(value, str) and (value.startswith("/vol") or value.startswith("/music")) for value in (source_raw, output_raw)):
+        raise RuntimeError("只能使用 /music/... 或真实 /volN/... 路径 / Only valid /music/... or /volN/... paths can be used")
     source, output = Path(source_raw), Path(output_raw)
     source_resolved, output_resolved = source.resolve(strict=False), output.resolve(strict=False)
     if source_resolved == output_resolved or source_resolved in output_resolved.parents or output_resolved in source_resolved.parents:

@@ -9,8 +9,9 @@ import shutil
 import sqlite3
 import subprocess
 import threading
+import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -698,6 +699,96 @@ def start_mode(mode: str, lang: str = "zh") -> tuple[int, str]:
     return 202, json.dumps({"accepted": True, "mode": mode}, ensure_ascii=False)
 
 
+def compute_next_run(rule: str, custom_time: str = "03:00", from_dt: datetime | None = None) -> datetime:
+    now = from_dt or datetime.now()
+    rule = rule or "daily"
+    if rule in ("hourly", "interval_1h"):
+        candidate = (now + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+        return candidate
+    elif rule == "interval_6h":
+        return now + timedelta(hours=6)
+    elif rule == "interval_12h":
+        return now + timedelta(hours=12)
+    elif rule == "interval_24h":
+        return now + timedelta(hours=24)
+    elif rule in ("daily", "daily_03"):
+        try:
+            parts = str(custom_time).split(":")
+            h, m = int(parts[0]), int(parts[1]) if len(parts) > 1 else 0
+        except Exception:
+            h, m = 3, 0
+        target = now.replace(hour=h, minute=m, second=0, microsecond=0)
+        if target <= now:
+            target += timedelta(days=1)
+        return target
+    return now + timedelta(hours=24)
+
+
+def check_and_trigger_schedule(now_dt: datetime | None = None) -> bool:
+    now = now_dt or datetime.now()
+    cfg = read_json(CONFIG, {})
+    sched = cfg.get("schedule")
+    if not isinstance(sched, dict) or not sched.get("enabled"):
+        return False
+    if not cfg.get("initialized"):
+        return False
+
+    st = read_json(STATUS, {})
+    if st.get("state") == "running":
+        return False
+
+    next_run_str = sched.get("next_run")
+    rule = sched.get("rule", "daily")
+    custom_time = sched.get("custom_time") or sched.get("time") or "03:00"
+
+    if not next_run_str:
+        next_dt = compute_next_run(rule, custom_time, now)
+        sched["next_run"] = next_dt.strftime("%Y-%m-%d %H:%M:%S")
+        cfg["schedule"] = sched
+        write_json(CONFIG, cfg)
+        return False
+
+    try:
+        next_dt = datetime.strptime(next_run_str, "%Y-%m-%d %H:%M:%S")
+    except Exception:
+        next_dt = compute_next_run(rule, custom_time, now)
+        sched["next_run"] = next_dt.strftime("%Y-%m-%d %H:%M:%S")
+        cfg["schedule"] = sched
+        write_json(CONFIG, cfg)
+        return False
+
+    if now >= next_dt:
+        code, _ = start_mode("incremental", lang=sched.get("lang", "zh"))
+        if code == 202:
+            sched["last_run"] = now.strftime("%Y-%m-%d %H:%M:%S")
+            sched["next_run"] = compute_next_run(rule, custom_time, now).strftime("%Y-%m-%d %H:%M:%S")
+            cfg["schedule"] = sched
+            write_json(CONFIG, cfg)
+            return True
+    return False
+
+
+SCHEDULER_THREAD = None
+SCHEDULER_STOP_EVENT = threading.Event()
+
+
+def scheduler_loop() -> None:
+    while not SCHEDULER_STOP_EVENT.is_set():
+        try:
+            check_and_trigger_schedule()
+        except Exception:
+            pass
+        SCHEDULER_STOP_EVENT.wait(30)
+
+
+def start_scheduler() -> None:
+    global SCHEDULER_THREAD
+    if SCHEDULER_THREAD is None or not SCHEDULER_THREAD.is_alive():
+        SCHEDULER_STOP_EVENT.clear()
+        SCHEDULER_THREAD = threading.Thread(target=scheduler_loop, daemon=True, name="MusicFlow-Scheduler")
+        SCHEDULER_THREAD.start()
+
+
 DASHBOARD_HTML = Path(__file__).with_name("dashboard.html")
 
 def render_dashboard() -> str:
@@ -813,6 +904,7 @@ class Handler(BaseHTTPRequestHandler):
             st["authenticated"] = True
             st["sample_gate_passed"] = sample_ready(cfg)
             st["has_initial_full_run"] = bool(cfg.get("initialized"))
+            st["schedule"] = cfg.get("schedule", {})
             rep = report()
             if rep:
                 st["report"] = rep
@@ -1040,15 +1132,44 @@ class Handler(BaseHTTPRequestHandler):
                     clear_kb=bool(body.get("clear_kb", body.get("clear_knowledge_base", False))),
                     clear_ncm=bool(body.get("clear_ncm", body.get("clear_ncm_cache", False)))
                 )
-                self.send(200, json.dumps(res, ensure_ascii=False), "application/json")
             except Exception as exc:
                 self.send(400, json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False), "application/json")
+                return
+        if self.path == "/api/schedule":
+            cfg = get_or_init_config()
+            sched = cfg.get("schedule", {})
+            enabled = bool(body.get("enabled", False))
+            rule = str(body.get("rule", sched.get("rule", "daily"))).strip()
+            custom_time = str(body.get("custom_time", body.get("time", sched.get("custom_time", sched.get("time", "03:00"))))).strip()
+            lang = self.headers.get("Accept-Language", "zh")
+
+            sched["enabled"] = enabled
+            sched["rule"] = rule
+            sched["time"] = custom_time
+            sched["custom_time"] = custom_time
+            sched["lang"] = lang
+
+            if enabled:
+                next_dt = compute_next_run(rule, custom_time, datetime.now())
+                sched["next_run"] = next_dt.strftime("%Y-%m-%d %H:%M:%S")
+            else:
+                sched["next_run"] = None
+
+            cfg["schedule"] = sched
+            write_json(CONFIG, cfg)
+            msg = "定时设置已保存" if lang == "zh" else "Schedule settings saved"
+            self.send(200, json.dumps({
+                "ok": True,
+                "schedule": sched,
+                "message": msg
+            }, ensure_ascii=False), "application/json")
             return
         self.send(404, "不存在")
 
 
 if __name__ == "__main__":
     STATE.mkdir(parents=True, exist_ok=True)
+    start_scheduler()
     # Startup disaster recovery: clear stale lock files from abnormal restart/kill
     try:
         LOCK.unlink(missing_ok=True)

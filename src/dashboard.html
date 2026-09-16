@@ -502,6 +502,14 @@
     .badge-running { background: var(--primary-glow); color: var(--primary); }
     .badge-failed { background: var(--danger-glow); color: var(--danger); }
 
+    /* Toggle Switch */
+    .switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--card-border); transition: .25s; border-radius: 20px; }
+    .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .25s; border-radius: 50%; }
+    .switch input:checked + .slider { background-color: var(--primary); }
+    .switch input:checked + .slider:before { transform: translateX(16px); }
+
     /* Footer */
     footer {
       text-align: center;
@@ -1408,6 +1416,44 @@
           <button class="btn-main" id="openResetModalBtn" style="display: block; background: transparent; border: 1px dashed rgba(218, 54, 51, 0.4); color: var(--danger); margin-top: 10px; font-size: 13px;" onclick="openResetModal()">
             <span>🧹 清空缓存与历史记录 (从头开始)</span>
           </button>
+          
+          <!-- Schedule Card -->
+          <div class="schedule-card" id="scheduleBox" style="margin-top: 14px; padding: 12px 14px; border-radius: 8px; background: var(--bg-subtle); border: 1px solid var(--card-border);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 600; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">
+                <span>⏰</span>
+                <span id="schedTitle">定时自动增量整理</span>
+              </span>
+              <label class="switch" title="开启/关闭定时任务">
+                <input type="checkbox" id="schedEnabled" onchange="toggleScheduleEnable(this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+            
+            <div id="schedSettings" style="display: none; margin-top: 10px; font-size: 12.5px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                <div>
+                  <label id="schedFreqLabel" style="display: block; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 4px;">执行周期</label>
+                  <select id="schedRule" onchange="handleSchedRuleChange(this.value)" style="width: 100%; padding: 5px 8px; border-radius: 6px; border: 1px solid var(--card-border); background: var(--bg-panel); color: var(--text); font-size: 12px;">
+                    <option value="daily" id="optSchedDaily">每天固定时间</option>
+                    <option value="interval_6h" id="optSched6h">每 6 小时</option>
+                    <option value="interval_12h" id="optSched12h">每 12 小时</option>
+                    <option value="interval_24h" id="optSched24h">每 24 小时</option>
+                    <option value="interval_1h" id="optSched1h">每小时</option>
+                  </select>
+                </div>
+                <div id="schedTimeCol">
+                  <label id="schedTimeLabel" style="display: block; font-size: 11.5px; color: var(--text-secondary); margin-bottom: 4px;">触发时间</label>
+                  <input type="time" id="schedTime" value="03:00" style="width: 100%; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--card-border); background: var(--bg-panel); color: var(--text); font-size: 12px;">
+                </div>
+              </div>
+              
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--card-border); flex-wrap: wrap; gap: 6px;">
+                <span id="schedStatusText" style="font-size: 11.5px; color: var(--text-muted);">下次执行：--</span>
+                <button type="button" class="btn-main" id="saveSchedBtn" onclick="saveScheduleSettings()" style="width: auto; padding: 4px 10px; font-size: 11.5px; background: var(--primary);">保存设置</button>
+              </div>
+            </div>
+          </div>
           <div id="actionHint" class="notice" style="display: none;"></div>
         </div>
       </div>
@@ -1925,7 +1971,21 @@
           themeTitle: "切换明暗主题",
           refreshTitle: "刷新数据",
           guideBtnTitle: "新手极速上手与常见问题",
-          sponsorBtnTitle: "赞助支持与关于应用"
+          sponsorBtnTitle: "赞助支持与关于应用",
+          scheduleTitle: "定时自动增量整理",
+          schedFreqLabel: "执行周期",
+          schedTimeLabel: "触发时间",
+          optSchedDaily: "每天固定时间",
+          optSched6h: "每 6 小时",
+          optSched12h: "每 12 小时",
+          optSched24h: "每 24 小时",
+          optSched1h: "每小时",
+          saveSchedBtn: "保存设置",
+          schedNextRun: "下次执行：",
+          schedLastRun: "上次执行：",
+          schedPaused: "定时任务已暂停",
+          schedNeedInit: "⚠️ 需先完成首次整理",
+          schedSavedMsg: "定时设置已保存！"
         },
         actionStates: {
           running: { text: "整理流水线正在运行中...", banner: "⚙️ <b>流水线运行中</b>：正在自动执行声纹波形比对去重与正版歌词封面刮削，已完成曲目已实时写入，请安心等待。" },
@@ -2205,7 +2265,21 @@
           themeTitle: "Toggle Light/Dark Theme",
           refreshTitle: "Refresh Data",
           guideBtnTitle: "Quick Start & FAQ",
-          sponsorBtnTitle: "Sponsor & About"
+          sponsorBtnTitle: "Sponsor & About",
+          scheduleTitle: "Scheduled Incremental Run",
+          schedFreqLabel: "Frequency",
+          schedTimeLabel: "Time",
+          optSchedDaily: "Daily at fixed time",
+          optSched6h: "Every 6 hours",
+          optSched12h: "Every 12 hours",
+          optSched24h: "Every 24 hours",
+          optSched1h: "Hourly",
+          saveSchedBtn: "Save Schedule",
+          schedNextRun: "Next run: ",
+          schedLastRun: "Last run: ",
+          schedPaused: "Scheduler paused",
+          schedNeedInit: "⚠️ Initial full run required",
+          schedSavedMsg: "Schedule settings saved successfully!"
         },
         actionStates: {
           running: { text: "Pipeline is currently running...", banner: "⚙️ <b>Pipeline in progress</b>: Comparing acoustic fingerprints, scraping covers and lyrics. Published files are written in real-time." },
@@ -2711,6 +2785,29 @@
       if (oSelEl && oSelEl.options.length > 0 && oSelEl.options[0].value === "") {
         oSelEl.options[0].textContent = dict.controls.quickSelect || "快捷选择目录...";
       }
+
+      // Schedule Card I18N
+      const schedTitle = document.getElementById("schedTitle");
+      if (schedTitle && dict.controls.scheduleTitle) schedTitle.textContent = dict.controls.scheduleTitle;
+      const schedFreqLabel = document.getElementById("schedFreqLabel");
+      if (schedFreqLabel && dict.controls.schedFreqLabel) schedFreqLabel.textContent = dict.controls.schedFreqLabel;
+      const schedTimeLabel = document.getElementById("schedTimeLabel");
+      if (schedTimeLabel && dict.controls.schedTimeLabel) schedTimeLabel.textContent = dict.controls.schedTimeLabel;
+      const optSchedDaily = document.getElementById("optSchedDaily");
+      if (optSchedDaily && dict.controls.optSchedDaily) optSchedDaily.textContent = dict.controls.optSchedDaily;
+      const optSched6h = document.getElementById("optSched6h");
+      if (optSched6h && dict.controls.optSched6h) optSched6h.textContent = dict.controls.optSched6h;
+      const optSched12h = document.getElementById("optSched12h");
+      if (optSched12h && dict.controls.optSched12h) optSched12h.textContent = dict.controls.optSched12h;
+      const optSched24h = document.getElementById("optSched24h");
+      if (optSched24h && dict.controls.optSched24h) optSched24h.textContent = dict.controls.optSched24h;
+      const optSched1h = document.getElementById("optSched1h");
+      if (optSched1h && dict.controls.optSched1h) optSched1h.textContent = dict.controls.optSched1h;
+      const saveSchedBtn = document.getElementById("saveSchedBtn");
+      if (saveSchedBtn && dict.controls.saveSchedBtn) saveSchedBtn.textContent = dict.controls.saveSchedBtn;
+      if (typeof renderSchedule === "function") {
+        renderSchedule();
+      }
     }
 
     const phases = ["validate", "ncm_decode", "exact_dedupe", "acoustic_dedupe", "publish"];
@@ -2823,7 +2920,11 @@
         alert(err);
         return false;
       }
-      return true;
+      try {
+        return await res.json();
+      } catch (e) {
+        return true;
+      }
     }
 
     // Main Update Dashboard
@@ -3100,6 +3201,117 @@
       // Auto-open editor if directories are not configured yet
       if ((!cfg.source_dir || !cfg.output_dir) && typeof enableDirEditing === "function" && cfgActionBox && cfgActionBox.style.display === "none") {
         enableDirEditing();
+      }
+
+      if (typeof renderSchedule === "function") {
+        renderSchedule(cfg.schedule, cfg.initialized);
+      }
+    }
+
+    // Schedule Functions
+    function renderSchedule(sched, hasInitRun) {
+      const s = sched || (configCache && configCache.schedule) || {};
+      const isInit = (typeof hasInitRun === "boolean") ? hasInitRun : Boolean(configCache && configCache.initialized);
+
+      const enabledCb = document.getElementById("schedEnabled");
+      const schedSettings = document.getElementById("schedSettings");
+      const ruleSelect = document.getElementById("schedRule");
+      const timeInput = document.getElementById("schedTime");
+      const timeCol = document.getElementById("schedTimeCol");
+      const statusText = document.getElementById("schedStatusText");
+
+      if (!enabledCb || !schedSettings || !ruleSelect || !timeInput || !statusText) return;
+
+      const enabled = Boolean(s.enabled);
+      enabledCb.checked = enabled;
+      schedSettings.style.display = enabled ? "block" : "none";
+
+      if (s.rule) {
+        ruleSelect.value = s.rule;
+      }
+      if (s.custom_time || s.time) {
+        timeInput.value = s.custom_time || s.time;
+      }
+      if (timeCol) {
+        timeCol.style.display = (ruleSelect.value === "daily") ? "block" : "none";
+      }
+
+      if (!enabled) {
+        statusText.textContent = (I18N[currentLang] && I18N[currentLang].controls && I18N[currentLang].controls.schedPaused) || "定时任务已暂停";
+        statusText.style.color = "var(--text-muted)";
+      } else if (!isInit) {
+        statusText.textContent = (I18N[currentLang] && I18N[currentLang].controls && I18N[currentLang].controls.schedNeedInit) || "⚠️ 需先完成首次整理";
+        statusText.style.color = "#f59e0b";
+      } else if (s.next_run) {
+        const pfx = (I18N[currentLang] && I18N[currentLang].controls && I18N[currentLang].controls.schedNextRun) || "下次执行：";
+        statusText.textContent = `${pfx}${s.next_run}`;
+        statusText.style.color = "var(--text-secondary)";
+      } else {
+        statusText.textContent = "--";
+        statusText.style.color = "var(--text-muted)";
+      }
+    }
+
+    async function toggleScheduleEnable(checked) {
+      const schedSettings = document.getElementById("schedSettings");
+      if (schedSettings) {
+        schedSettings.style.display = checked ? "block" : "none";
+      }
+      await saveScheduleSettings(checked);
+    }
+
+    function handleSchedRuleChange(ruleVal) {
+      const timeCol = document.getElementById("schedTimeCol");
+      if (timeCol) {
+        timeCol.style.display = (ruleVal === "daily") ? "block" : "none";
+      }
+    }
+
+    async function saveScheduleSettings(forcedEnabled) {
+      const enabledCb = document.getElementById("schedEnabled");
+      const ruleSelect = document.getElementById("schedRule");
+      const timeInput = document.getElementById("schedTime");
+      const saveBtn = document.getElementById("saveSchedBtn");
+
+      const enabled = (typeof forcedEnabled === "boolean") ? forcedEnabled : (enabledCb ? enabledCb.checked : false);
+      const rule = ruleSelect ? ruleSelect.value : "daily";
+      const custom_time = timeInput ? timeInput.value : "03:00";
+
+      const payload = {
+        enabled: enabled,
+        rule: rule,
+        custom_time: custom_time,
+        time: custom_time
+      };
+
+      if (saveBtn) {
+        saveBtn.disabled = true;
+      }
+
+      try {
+        const res = await postJSON("/api/schedule", payload);
+        if (res && res.schedule) {
+          if (configCache) {
+            configCache.schedule = res.schedule;
+          }
+          renderSchedule(res.schedule, configCache ? configCache.initialized : false);
+          if (saveBtn) {
+            saveBtn.textContent = "✓";
+            setTimeout(() => {
+              if (saveBtn) {
+                saveBtn.textContent = (I18N[currentLang] && I18N[currentLang].controls && I18N[currentLang].controls.saveSchedBtn) || "保存设置";
+                saveBtn.disabled = false;
+              }
+            }, 1200);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error("Save schedule error:", err);
+      }
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = (I18N[currentLang] && I18N[currentLang].controls && I18N[currentLang].controls.saveSchedBtn) || "保存设置";
       }
     }
 

@@ -27,6 +27,18 @@
       "is_docker": true,
       "service_port": "8091",
       "releases": {
+        "1.1.0": {
+          "changelog": "v1.1.0 新增定时自动增量整理：支持每天固定时间、每6/12/24小时、每小时周期触发；自动化门禁拦截未初始化与并发任务；全新中英双语控制卡片与下次运行实时倒计时。",
+          "updated_at": "2026-09-16T21:45:00+08:00",
+          "os_min_version": "1.2.0401",
+          "packages": {
+            "x86": {
+              "download_url": "https://github.com/liuchangchxy/fn-music-companion/releases/download/v1.1.0/fn-music-companion-v1.1.0.fpk",
+              "sha256": "d3124b9b2375e1a1ae4d58d23f3a3ed54481f070e704e621eb068703ce803a65",
+              "size": 151899
+            }
+          }
+        },
         "1.0.1": {
           "changelog": "v1.0.1 升级修复：彻底解决整理后目录权限误判问题，移除容器内部 UID 限制并启用动态写入探针与父级继承机制；Docker 编排配置强制拉取最新镜像（pull_policy: always），彻底规避 NAS 本地缓存导致旧镜像残留。",
           "updated_at": "2026-09-16T21:28:00+08:00",

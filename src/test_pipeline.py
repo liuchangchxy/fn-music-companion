@@ -1669,6 +1669,80 @@ class AppTests(unittest.TestCase):
                 # Check log cleared
                 self.assertEqual(log_file.read_text(encoding="utf-8"), "")
 
+    def test_scheduler_compute_next_run_and_trigger(self) -> None:
+        from datetime import datetime, timedelta
+
+        # Test compute_next_run logic
+        base_dt = datetime(2026, 9, 16, 14, 0, 0)
+        
+        # 1. Hourly
+        next_hourly = app.compute_next_run("hourly", from_dt=base_dt)
+        self.assertEqual(next_hourly, datetime(2026, 9, 16, 15, 0, 0))
+
+        # 2. Intervals
+        self.assertEqual(app.compute_next_run("interval_6h", from_dt=base_dt), datetime(2026, 9, 16, 20, 0, 0))
+        self.assertEqual(app.compute_next_run("interval_12h", from_dt=base_dt), datetime(2026, 9, 17, 2, 0, 0))
+        self.assertEqual(app.compute_next_run("interval_24h", from_dt=base_dt), datetime(2026, 9, 17, 14, 0, 0))
+
+        # 3. Daily
+        # If now is 14:00 and target is 03:00, target should be next day 03:00
+        next_daily = app.compute_next_run("daily", custom_time="03:00", from_dt=base_dt)
+        self.assertEqual(next_daily, datetime(2026, 9, 17, 3, 0, 0))
+
+        # If now is 02:00 and target is 03:00, target should be today 03:00
+        early_dt = datetime(2026, 9, 16, 2, 0, 0)
+        next_daily_early = app.compute_next_run("daily", custom_time="03:00", from_dt=early_dt)
+        self.assertEqual(next_daily_early, datetime(2026, 9, 16, 3, 0, 0))
+
+        # Test check_and_trigger_schedule
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            cfg_file = temp_path / "config.json"
+            status_file = temp_path / "status.json"
+
+            with patch.object(app, "CONFIG", cfg_file), patch.object(app, "STATUS", status_file):
+                # Case 1: Disabled
+                cfg_file.write_text(json.dumps({"schedule": {"enabled": False}}), encoding="utf-8")
+                status_file.write_text(json.dumps({"state": "idle"}), encoding="utf-8")
+                self.assertFalse(app.check_and_trigger_schedule(base_dt))
+
+                # Case 2: Enabled but not initialized -> Should return False (guard against uninitialized run)
+                cfg_file.write_text(json.dumps({
+                    "initialized": False,
+                    "schedule": {"enabled": True, "rule": "interval_6h", "next_run": "2026-09-16 13:00:00"}
+                }), encoding="utf-8")
+                self.assertFalse(app.check_and_trigger_schedule(base_dt))
+
+                # Case 3: Enabled and initialized, but state is running -> Should return False
+                cfg_file.write_text(json.dumps({
+                    "initialized": True,
+                    "schedule": {"enabled": True, "rule": "interval_6h", "next_run": "2026-09-16 13:00:00"}
+                }), encoding="utf-8")
+                status_file.write_text(json.dumps({"state": "running"}), encoding="utf-8")
+                self.assertFalse(app.check_and_trigger_schedule(base_dt))
+
+                # Case 4: Enabled and initialized, state is idle, but next_run is in future -> Should return False
+                status_file.write_text(json.dumps({"state": "idle"}), encoding="utf-8")
+                cfg_file.write_text(json.dumps({
+                    "initialized": True,
+                    "schedule": {"enabled": True, "rule": "interval_6h", "next_run": "2026-09-16 15:00:00"}
+                }), encoding="utf-8")
+                self.assertFalse(app.check_and_trigger_schedule(base_dt))
+
+                # Case 5: Enabled, initialized, state idle, and next_run is due -> Triggers start_mode
+                cfg_file.write_text(json.dumps({
+                    "initialized": True,
+                    "schedule": {"enabled": True, "rule": "interval_6h", "next_run": "2026-09-16 13:00:00"}
+                }), encoding="utf-8")
+                with patch.object(app, "start_mode", return_value=(202, "{}")) as mock_start:
+                    self.assertTrue(app.check_and_trigger_schedule(base_dt))
+                    mock_start.assert_called_once_with("incremental", lang="zh")
+
+                    # Verify updated config next_run and last_run
+                    updated_cfg = json.loads(cfg_file.read_text(encoding="utf-8"))
+                    self.assertEqual(updated_cfg["schedule"]["last_run"], "2026-09-16 14:00:00")
+                    self.assertEqual(updated_cfg["schedule"]["next_run"], "2026-09-16 20:00:00")
+
 
 if __name__ == "__main__":
     unittest.main()

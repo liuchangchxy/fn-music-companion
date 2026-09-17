@@ -1066,6 +1066,23 @@ class Handler(BaseHTTPRequestHandler):
                             data["run"]["summary"] = json.loads(data["run"]["summary_json"])
                         except Exception:
                             pass
+                    summary = data["run"].get("summary") or {}
+                    if not isinstance(summary, dict):
+                        summary = {}
+                    if not summary.get("metrics"):
+                        disp_counts = {}
+                        for it in items:
+                            d = it["disposition"]
+                            disp_counts[d] = disp_counts.get(d, 0) + 1
+                        summary["metrics"] = {
+                            "scanned_total": len(items),
+                            "published": disp_counts.get("published", 0),
+                            "exact_duplicate": disp_counts.get("duplicate_exact", 0),
+                            "same_recording_duplicate": disp_counts.get("duplicate_same_recording", 0),
+                            "quality_upgraded": disp_counts.get("quality_upgrade", 0),
+                            "failed": disp_counts.get("failed", 0),
+                        }
+                    data["run"]["summary"] = summary
                     self.send(200, json.dumps(data, ensure_ascii=False), "application/json")
             except Exception as exc:
                 self.send(500, f"查询失败: {exc}", "text/plain; charset=utf-8")

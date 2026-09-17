@@ -3443,18 +3443,26 @@
       const elVersion = document.getElementById("m-version");
       const elFailed = document.getElementById("m-failed");
 
-      if (elScanned) elScanned.textContent = (m.scanned_total || 0).toLocaleString();
-      if (elPublished) elPublished.textContent = (m.published || 0).toLocaleString();
-      if (elExact) elExact.textContent = (m.exact_duplicates || 0).toLocaleString();
-      if (elAcoustic) elAcoustic.textContent = (m.acoustic_duplicates || 0).toLocaleString();
+      const scannedVal = m.scanned_total !== undefined ? m.scanned_total : (m.scanned || 0);
+      const publishedVal = m.published || 0;
+      const exactVal = m.exact_duplicate !== undefined ? m.exact_duplicate : (m.exact_duplicates || 0);
+      const acousticVal = m.same_recording_duplicate !== undefined ? m.same_recording_duplicate : (m.acoustic_duplicates || 0);
+
+      if (elScanned) elScanned.textContent = scannedVal.toLocaleString();
+      if (elPublished) elPublished.textContent = publishedVal.toLocaleString();
+      if (elExact) elExact.textContent = exactVal.toLocaleString();
+      if (elAcoustic) elAcoustic.textContent = acousticVal.toLocaleString();
 
       const lyrTotal = (m.lyrics_embedded || 0) + (m.lyrics_already_present || 0);
       if (elLyrics) elLyrics.textContent = lyrTotal.toLocaleString();
 
-      const covTotal = (m.cover_art_embedded || 0) + (m.cover_art_already_present || 0);
+      const covEmbedded = m.cover_embedded !== undefined ? m.cover_embedded : (m.cover_art_embedded || 0);
+      const covPresent = m.cover_already_present !== undefined ? m.cover_already_present : (m.cover_art_already_present || 0);
+      const covTotal = covEmbedded + covPresent;
       if (elCover) elCover.textContent = covTotal.toLocaleString();
 
-      if (elVersion) elVersion.textContent = (m.version_groups || 0).toLocaleString();
+      const verTotal = m.possible_version_groups !== undefined ? m.possible_version_groups : (m.version_groups || 0);
+      if (elVersion) elVersion.textContent = verTotal.toLocaleString();
       if (elFailed) elFailed.textContent = (m.failed || 0).toLocaleString();
 
       // Dynamic sub-hints
@@ -3950,12 +3958,23 @@
         `;
       }
 
-      const scanned = s.scanned !== undefined ? s.scanned : "-";
-      const published = s.published !== undefined ? s.published : "-";
-      const exact = s.exact_duplicates !== undefined ? s.exact_duplicates : "-";
-      const acoustic = s.acoustic_duplicates !== undefined ? s.acoustic_duplicates : "-";
-      const upgraded = s.upgraded !== undefined ? s.upgraded : "-";
-      const failed = s.failed !== undefined ? s.failed : "-";
+      const allItems = currentRunDetails.items || [];
+      const s = r.summary || {};
+      const m = (s && s.metrics) ? s.metrics : (s || {});
+
+      const countPublished = allItems.filter(it => it.disposition === "published" || it.disposition === "copied").length;
+      const countExact = allItems.filter(it => it.disposition === "duplicate_exact" || it.disposition === "exact_dedupe").length;
+      const countAcoustic = allItems.filter(it => it.disposition === "duplicate_same_recording" || it.disposition === "acoustic_dedupe").length;
+      const countUpgraded = allItems.filter(it => it.disposition === "upgraded" || it.disposition === "quality_upgrade").length;
+      const countFailed = allItems.filter(it => it.disposition === "failed").length;
+      const countDedupe = countExact + countAcoustic;
+
+      const scanned = m.scanned_total !== undefined ? m.scanned_total : (m.scanned !== undefined ? m.scanned : allItems.length);
+      const published = m.published !== undefined ? m.published : countPublished;
+      const exact = m.exact_duplicate !== undefined ? m.exact_duplicate : (m.exact_duplicates !== undefined ? m.exact_duplicates : countExact);
+      const acoustic = m.same_recording_duplicate !== undefined ? m.same_recording_duplicate : (m.acoustic_duplicates !== undefined ? m.acoustic_duplicates : countAcoustic);
+      const upgraded = m.quality_upgraded !== undefined ? m.quality_upgraded : (m.upgraded !== undefined ? m.upgraded : countUpgraded);
+      const failed = m.failed !== undefined ? m.failed : countFailed;
 
       const contentEl = document.getElementById("runDetailsBody");
       contentEl.innerHTML = `
@@ -3988,10 +4007,10 @@
 
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:4px;">
           <div class="filter-pills">
-            <button type="button" class="filter-pill ${currentRunFilter === 'all' ? 'active' : ''}" onclick="setRunFilter('all')">${escapeHTML(t("runsModal.filterAll"))} (${(currentRunDetails.items || []).length})</button>
-            <button type="button" class="filter-pill ${currentRunFilter === 'published' ? 'active' : ''}" onclick="setRunFilter('published')">${escapeHTML(t("runsModal.filterPublished"))}</button>
-            <button type="button" class="filter-pill ${currentRunFilter === 'dedupe' ? 'active' : ''}" onclick="setRunFilter('dedupe')">${escapeHTML(t("runsModal.filterDedupe"))}</button>
-            <button type="button" class="filter-pill ${currentRunFilter === 'failed' ? 'active' : ''}" onclick="setRunFilter('failed')">${escapeHTML(t("runsModal.filterFailed"))}</button>
+            <button type="button" class="filter-pill ${currentRunFilter === 'all' ? 'active' : ''}" onclick="setRunFilter('all')">${escapeHTML(t("runsModal.filterAll"))} (${allItems.length})</button>
+            <button type="button" class="filter-pill ${currentRunFilter === 'published' ? 'active' : ''}" onclick="setRunFilter('published')">${escapeHTML(t("runsModal.filterPublished"))} (${countPublished + countUpgraded})</button>
+            <button type="button" class="filter-pill ${currentRunFilter === 'dedupe' ? 'active' : ''}" onclick="setRunFilter('dedupe')">${escapeHTML(t("runsModal.filterDedupe"))} (${countDedupe})</button>
+            <button type="button" class="filter-pill ${currentRunFilter === 'failed' ? 'active' : ''}" onclick="setRunFilter('failed')">${escapeHTML(t("runsModal.filterFailed"))} (${countFailed})</button>
           </div>
           <div style="position:relative; min-width:200px; flex:1; max-width:320px;">
             <input type="text" placeholder="${escapeHTML(t("runsModal.searchPlaceholder"))}" value="${escapeHTML(runSearchKeyword)}" oninput="onRunSearchChange(this.value)" style="width:100%; font-size:12px; padding:6px 10px; border-radius:6px; border:1px solid var(--card-border); background:var(--bg-input); color:var(--text);">
@@ -4012,8 +4031,8 @@
       const allItems = currentRunDetails.items || [];
 
       const filtered = allItems.filter(it => {
-        if (currentRunFilter === "published" && !["copied", "upgraded"].includes(it.disposition)) return false;
-        if (currentRunFilter === "dedupe" && !["exact_dedupe", "acoustic_dedupe"].includes(it.disposition)) return false;
+        if (currentRunFilter === "published" && !["published", "copied", "upgraded", "quality_upgrade"].includes(it.disposition)) return false;
+        if (currentRunFilter === "dedupe" && !["duplicate_exact", "duplicate_same_recording", "exact_dedupe", "acoustic_dedupe"].includes(it.disposition)) return false;
         if (currentRunFilter === "failed" && it.disposition !== "failed") return false;
         if (runSearchKeyword) {
           const s = (it.source_path || "").toLowerCase();
@@ -4046,23 +4065,32 @@
               const outBase = (it.output_path || "").split("/").pop() || (it.output_path || "-");
 
               let dispBadge = "";
-              if (it.disposition === "copied") {
+              if (it.disposition === "published" || it.disposition === "copied") {
                 dispBadge = `<span class="badge-pill badge-done">${escapeHTML(t("runsModal.filterPublished"))}</span>`;
-              } else if (it.disposition === "upgraded") {
+              } else if (it.disposition === "upgraded" || it.disposition === "quality_upgrade") {
                 dispBadge = `<span class="badge-pill badge-running">${escapeHTML(t("metricsHints.qualityUpgraded") || "品质优化")}</span>`;
-              } else if (it.disposition === "exact_dedupe") {
+              } else if (it.disposition === "duplicate_exact" || it.disposition === "exact_dedupe") {
                 dispBadge = `<span class="badge-pill" style="background:var(--warning-glow);color:var(--warning);">${escapeHTML(t("history.phases.exact_dedupe") || "哈希重复")}</span>`;
-              } else if (it.disposition === "acoustic_dedupe") {
+              } else if (it.disposition === "duplicate_same_recording" || it.disposition === "acoustic_dedupe") {
                 dispBadge = `<span class="badge-pill" style="background:rgba(163,113,247,0.2);color:#bc8cff;">${escapeHTML(t("history.phases.acoustic_dedupe") || "声纹重复")}</span>`;
               } else if (it.disposition === "failed") {
                 dispBadge = `<span class="badge-pill badge-failed">${escapeHTML(t("runsModal.filterFailed"))}</span>`;
+              } else if (it.disposition === "candidate") {
+                dispBadge = `<span class="badge-pill" style="background:var(--primary-glow);color:var(--primary);">待处理</span>`;
               } else {
                 dispBadge = `<span class="badge-pill" style="background:var(--bg-subtle);color:var(--text-muted);">${escapeHTML(it.disposition || "-")}</span>`;
               }
 
-              const lyricsState = it.lyrics_state === "lyrics_downloaded" ? `<span style="color:var(--success-light);" title="歌词已下载">♪歌词✓</span>` : (it.lyrics_state === "lyrics_existing" ? `<span style="color:var(--text-muted);" title="原有歌词保留">♪原有</span>` : "");
-              const coverState = it.cover_state === "cover_embedded" ? `<span style="color:var(--success-light);" title="封面已写入">🖼️封面✓</span>` : (it.cover_state === "cover_existing" ? `<span style="color:var(--text-muted);" title="原有封面保留">🖼️原有</span>` : "");
-              const metaState = it.metadata_state ? `<span style="color:var(--text-secondary);font-size:11px;">${escapeHTML(it.metadata_state)}</span>` : "";
+              const lyricsState = (it.lyrics_state === "lyrics_embedded" || it.lyrics_state === "lyrics_downloaded") ? `<span style="color:var(--success-light);" title="歌词已下载">♪歌词✓</span>` : ((it.lyrics_state === "lyrics_already_present" || it.lyrics_state === "lyrics_existing") ? `<span style="color:var(--text-muted);" title="原有歌词保留">♪原有</span>` : "");
+              const coverState = it.cover_state === "cover_embedded" ? `<span style="color:var(--success-light);" title="封面已写入">🖼️封面✓</span>` : ((it.cover_state === "cover_already_present" || it.cover_state === "cover_existing") ? `<span style="color:var(--text-muted);" title="原有封面保留">🖼️原有</span>` : "");
+              let metaState = "";
+              if (it.metadata_state === "metadata_matched") {
+                metaState = `<span style="color:var(--primary);font-size:11px;">元数据✓</span>`;
+              } else if (it.metadata_state === "existing_tags") {
+                metaState = `<span style="color:var(--text-muted);font-size:11px;">原有标签</span>`;
+              } else if (it.metadata_state) {
+                metaState = `<span style="color:var(--text-secondary);font-size:11px;">${escapeHTML(it.metadata_state)}</span>`;
+              }
               const tagsCol = [metaState, lyricsState, coverState].filter(Boolean).join(" ");
 
               return `
